@@ -703,8 +703,8 @@ function renderDBoundary(){
 function renderBackprop(){
   ctx.clearRect(0,0,W,H);
   const dark=isDark(), cx=W/2, cy=H/2;
-  const z1 = bpW1 * bpX; const a1 = dbSigmoid(z1);
-  const z2 = bpW2 * a1; const a2 = dbSigmoid(z2);
+  const z1 = bpW1 * bpX; const a1 = sigmoid(z1);
+  const z2 = bpW2 * a1; const a2 = sigmoid(z2);
   const loss = 0.5*(a2-bpY)**2;
   
   const dL_da2 = a2 - bpY; const dL_dz2 = dL_da2 * a2*(1-a2);
