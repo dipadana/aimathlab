@@ -58,7 +58,7 @@ canvas {
   background: var(--canvas-bg);
   border: 1px solid var(--border2);
 }
-canvas.mode3d { cursor: grab; }
+canvas.mode3d { cursor: grab; touch-action: none; }
 canvas.mode3d:active { cursor: grabbing; }
 
 input[type=number], input[type=text], select {
