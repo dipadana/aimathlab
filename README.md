@@ -16,15 +16,9 @@ The project is split into five interactive modules:
 
 ## Running Locally
 
-There are no build steps or dependencies. To run the project locally, simply serve the directory with any static web server. 
+There are no build steps or dependencies. You can run the project locally by simply opening `index.html` directly in your web browser. 
 
-For example, using Python:
-
-```sh
-python3 -m http.server 8000
-```
-
-Then open `http://localhost:8000` in your browser.
+Alternatively, if you use a code editor like VS Code, you can use the "Live Server" extension for a better development experience.
 
 ## Acknowledgements
 
