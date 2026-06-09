@@ -90,7 +90,7 @@
       
       <div class="ref-subtitle"><span class="q-badge q-how" id="t-how2">HOW</span> <span id="t-mat-how-sub">Mathematical Mechanics</span></div>
       <div class="ref-text" id="t-mat-how">
-        A linear transformation is applied via $T(\mathbf{x}) = \mathbf{A}\mathbf{x}$. The behavior of $\mathbf{A}$ can be completely understood through its <strong>Singular Value Decomposition (SVD)</strong>: $\mathbf{A} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^T$. This theorem proves that <em>any</em> matrix transformation is simply a rotation ($\mathbf{V}^T$), a scaling along orthogonal axes ($\boldsymbol{\Sigma}$), followed by another rotation ($\mathbf{U}$).
+        A linear transformation is applied via $T(\mathbf{x}) = \mathbf{A}\mathbf{x}$. The behavior of $\mathbf{A}$ can be completely understood through its <strong>Singular Value Decomposition (SVD)</strong>: $\mathbf{A} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T$. This theorem proves that <em>any</em> matrix transformation is simply a rotation ($\mathbf{V}^T$), a scaling along orthogonal axes ($\mathbf{\Sigma}$), followed by another rotation ($\mathbf{U}$).
       </div>
       
       <div class="ref-subtitle"><span class="q-badge q-where" id="t-where2">WHERE</span> <span id="t-mat-where-sub">Modern Applications</span></div>
@@ -111,12 +111,12 @@
       
       <div class="ref-subtitle"><span class="q-badge q-why" id="t-why3">WHY</span> <span id="t-cal-why-sub">The Theoretical Necessity</span></div>
       <div class="ref-text" id="t-cal-why">
-        AI models do not simply "know" the correct weights; they must <em>search</em> for them. Optimization provides the compass. By framing learning as the minimization of a loss function $L(\boldsymbol{\theta})$, calculus provides the gradient vector $\nabla L$, which points in the direction of steepest ascent.
+        AI models do not simply "know" the correct weights; they must <em>search</em> for them. Optimization provides the compass. By framing learning as the minimization of a loss function $L(\mathbf{\theta})$, calculus provides the gradient vector $\nabla L$, which points in the direction of steepest ascent.
       </div>
       
       <div class="ref-subtitle"><span class="q-badge q-how" id="t-how3">HOW</span> <span id="t-cal-how-sub">Mathematical Mechanics</span></div>
       <div class="ref-text" id="t-cal-how">
-        <strong>Gradient Descent:</strong> The parameter update rule is $\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t - \alpha \nabla L(\boldsymbol{\theta}_t)$, where $\alpha$ is the learning rate. <br>
+        <strong>Gradient Descent:</strong> The parameter update rule is $\mathbf{\theta}_{t+1} = \mathbf{\theta}_t - \alpha \nabla L(\mathbf{\theta}_t)$, where $\alpha$ is the learning rate. <br>
         <strong>Taylor Series:</strong> The Taylor polynomial $f(x) \approx f(a) + f'(a)(x-a) + \frac{f''(a)}{2!}(x-a)^2$ is used to approximate loss landscapes. First-order optimization uses the linear term (Gradient Descent), while second-order methods use the quadratic term (Newton's Method).
       </div>
       
@@ -210,12 +210,12 @@ const dict = {
     
     mat_title: "2. Matrix Transformations & SVD",
     mat_why: "A neural network is fundamentally a composition of linear transformations interleaved with non-linearities. Matrices represent these linear mappings compactly. To learn hierarchical representations, an AI must stretch, rotate, and project data spaces, which is strictly defined by matrix multiplication.",
-    mat_how: "A linear transformation is applied via $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$. The behavior of $\\mathbf{A}$ can be completely understood through its <strong>Singular Value Decomposition (SVD)</strong>: $\\mathbf{A} = \\mathbf{U}\\boldsymbol{\\Sigma}\\mathbf{V}^T$. This theorem proves that <em>any</em> matrix transformation is simply a rotation ($\\mathbf{V}^T$), a scaling along orthogonal axes ($\\boldsymbol{\\Sigma}$), followed by another rotation ($\\mathbf{U}$).",
+    mat_how: "A linear transformation is applied via $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$. The behavior of $\\mathbf{A}$ can be completely understood through its <strong>Singular Value Decomposition (SVD)</strong>: $\\mathbf{A} = \\mathbf{U}\\mathbf{\\Sigma}\\mathbf{V}^T$. This theorem proves that <em>any</em> matrix transformation is simply a rotation ($\\mathbf{V}^T$), a scaling along orthogonal axes ($\\mathbf{\\Sigma}$), followed by another rotation ($\\mathbf{U}$).",
     mat_where: "<strong>Weight Matrices:</strong> The parameters of a dense neural network layer are stored in a weight matrix $\\mathbf{W}$.<br><strong>LoRA (Low-Rank Adaptation):</strong> Modern fine-tuning of LLMs relies on the principle that the change in weights $\\Delta \\mathbf{W}$ has a low intrinsic rank, allowing it to be decomposed into two smaller matrices $\\mathbf{A}$ and $\\mathbf{B}$, heavily relying on SVD theory.",
 
     cal_title: "3. Multivariable Calculus & Optimization",
-    cal_why: "AI models do not simply \"know\" the correct weights; they must <em>search</em> for them. Optimization provides the compass. By framing learning as the minimization of a loss function $L(\\boldsymbol{\\theta})$, calculus provides the gradient vector $\\nabla L$, which points in the direction of steepest ascent.",
-    cal_how: "<strong>Gradient Descent:</strong> The parameter update rule is $\\boldsymbol{\\theta}_{t+1} = \\boldsymbol{\\theta}_t - \\alpha \\nabla L(\\boldsymbol{\\theta}_t)$, where $\\alpha$ is the learning rate. <br><strong>Taylor Series:</strong> The Taylor polynomial $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ is used to approximate loss landscapes. First-order optimization uses the linear term (Gradient Descent), while second-order methods use the quadratic term (Newton's Method).",
+    cal_why: "AI models do not simply \"know\" the correct weights; they must <em>search</em> for them. Optimization provides the compass. By framing learning as the minimization of a loss function $L(\\mathbf{\\theta})$, calculus provides the gradient vector $\\nabla L$, which points in the direction of steepest ascent.",
+    cal_how: "<strong>Gradient Descent:</strong> The parameter update rule is $\\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t - \\alpha \\nabla L(\\mathbf{\\theta}_t)$, where $\\alpha$ is the learning rate. <br><strong>Taylor Series:</strong> The Taylor polynomial $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ is used to approximate loss landscapes. First-order optimization uses the linear term (Gradient Descent), while second-order methods use the quadratic term (Newton's Method).",
     cal_where: "Every modern neural network is trained using variants of stochastic gradient descent. The <strong>Adam Optimizer</strong> computes adaptive learning rates based on estimates of the first moment (the gradient) and the second moment (the uncentered variance of the gradient).",
 
     prob_title: "4. Probability, Statistics & Bayes",
@@ -246,12 +246,12 @@ const dict = {
     
     mat_title: "2. 行列変換と特異値分解（SVD）",
     mat_why: "ニューラルネットワークは、本質的に「線形変換」と「非線形変換」の繰り返しで構成されています。行列はこの線形変換を非常に効率的に表現します。複雑な特徴を学習するためには、入力空間を回転させたり引き伸ばしたりする必要がありますが、これはすべて行列の掛け算として厳密に定義されます。",
-    mat_how: "データに対する線形変換は $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$ の形で適用されます。行列 $\\mathbf{A}$ の性質は、<strong>特異値分解（SVD）</strong> によって完全に紐解くことができます（$\\mathbf{A} = \\mathbf{U}\\boldsymbol{\\Sigma}\\mathbf{V}^T$）。この定理により、「どのような行列変換も、回転（$\\mathbf{V}^T$）、軸に沿った拡大縮小（$\\boldsymbol{\\Sigma}$）、そしてもう一度回転（$\\mathbf{U}$）の組み合わせにすぎない」ことが証明されています。",
+    mat_how: "データに対する線形変換は $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$ の形で適用されます。行列 $\\mathbf{A}$ の性質は、<strong>特異値分解（SVD）</strong> によって完全に紐解くことができます（$\\mathbf{A} = \\mathbf{U}\\mathbf{\\Sigma}\\mathbf{V}^T$）。この定理により、「どのような行列変換も、回転（$\\mathbf{V}^T$）、軸に沿った拡大縮小（$\\mathbf{\\Sigma}$）、そしてもう一度回転（$\\mathbf{U}$）の組み合わせにすぎない」ことが証明されています。",
     mat_where: "<strong>重み行列（Weight Matrices）：</strong> ニューラルネットワークの各層のパラメータは、重み行列 $\\mathbf{W}$ として保持されます。<br><strong>LoRA (Low-Rank Adaptation)：</strong> 現代のLLMのファインチューニング手法であるLoRAは、「学習による重みの変化 $\\Delta \\mathbf{W}$ は、本質的にランク（次元）が低い」という仮定に基づいています。SVDの理論を応用し、巨大な行列を2つの小さな行列 $\\mathbf{A}$ と $\\mathbf{B}$ の積に分解することで計算量を激減させています。",
 
     cal_title: "3. 多変数微積分と最適化",
-    cal_why: "AIモデルは最初から最適な重み（パラメータ）を知っているわけではなく、学習を通じてそれを「探索」する必要があります。微積分はその探索のための羅針盤となります。学習の目的を「損失関数 $L(\\boldsymbol{\\theta})$ の最小化」と定義することで、微積分は最も急な傾きを示す勾配ベクトル $\\nabla L$ を導き出してくれます。",
-    cal_how: "<strong>勾配降下法：</strong> パラメータの更新式は $\\boldsymbol{\\theta}_{t+1} = \\boldsymbol{\\theta}_t - \\alpha \\nabla L(\\boldsymbol{\\theta}_t)$ となり、$\\alpha$ は学習率（Learning Rate）を表します。<br><strong>テイラー展開：</strong> 多項式近似である $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ は、複雑な損失関数の形状（Loss Landscape）を近似するために使われます。一次項のみを使うのが勾配降下法であり、二次項まで考慮するのがニュートン法などの二次最適化手法です。",
+    cal_why: "AIモデルは最初から最適な重み（パラメータ）を知っているわけではなく、学習を通じてそれを「探索」する必要があります。微積分はその探索のための羅針盤となります。学習の目的を「損失関数 $L(\\mathbf{\\theta})$ の最小化」と定義することで、微積分は最も急な傾きを示す勾配ベクトル $\\nabla L$ を導き出してくれます。",
+    cal_how: "<strong>勾配降下法：</strong> パラメータの更新式は $\\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t - \\alpha \\nabla L(\\mathbf{\\theta}_t)$ となり、$\\alpha$ は学習率（Learning Rate）を表します。<br><strong>テイラー展開：</strong> 多項式近似である $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ は、複雑な損失関数の形状（Loss Landscape）を近似するために使われます。一次項のみを使うのが勾配降下法であり、二次項まで考慮するのがニュートン法などの二次最適化手法です。",
     cal_where: "現代のディープラーニングモデルはすべて、確率的勾配降下法（SGD）の派生アルゴリズムで学習されています。特に有名な <strong>Adamオプティマイザ</strong> は、勾配の1次モーメント（平均）と2次モーメント（分散）を推定することで、パラメータごとに学習率を自動調整する強力な手法です。",
 
     prob_title: "4. 確率論、統計学、ベイズの定理",
@@ -282,12 +282,12 @@ const dict = {
     
     mat_title: "2. Transformasi Matriks & SVD",
     mat_why: "Jaringan saraf (Neural Network) pada dasarnya dibangun dari rangkaian transformasi linier dan fungsi aktivasi non-linier. Matriks sangat efisien dalam merepresentasikan transformasi linier ini. Untuk mempelajari fitur yang kompleks, AI harus memutar, meregangkan, dan memproyeksikan ruang data, di mana semua operasi ini didefinisikan dengan tegas melalui perkalian matriks.",
-    mat_how: "Transformasi linier pada data dilakukan melalui persamaan $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$. Sifat dari matriks $\\mathbf{A}$ dapat dibedah sepenuhnya melalui metode <strong>Singular Value Decomposition (SVD)</strong>: $\\mathbf{A} = \\mathbf{U}\\boldsymbol{\\Sigma}\\mathbf{V}^T$. Teorema ini membuktikan bahwa <em>semua jenis</em> transformasi matriks tidak lain hanyalah kombinasi dari rotasi ($\\mathbf{V}^T$), penskalaan (peregangan) di sumbu ortogonal ($\\boldsymbol{\\Sigma}$), lalu diikuti dengan rotasi lagi ($\\mathbf{U}$).",
+    mat_how: "Transformasi linier pada data dilakukan melalui persamaan $T(\\mathbf{x}) = \\mathbf{A}\\mathbf{x}$. Sifat dari matriks $\\mathbf{A}$ dapat dibedah sepenuhnya melalui metode <strong>Singular Value Decomposition (SVD)</strong>: $\\mathbf{A} = \\mathbf{U}\\mathbf{\\Sigma}\\mathbf{V}^T$. Teorema ini membuktikan bahwa <em>semua jenis</em> transformasi matriks tidak lain hanyalah kombinasi dari rotasi ($\\mathbf{V}^T$), penskalaan (peregangan) di sumbu ortogonal ($\\mathbf{\\Sigma}$), lalu diikuti dengan rotasi lagi ($\\mathbf{U}$).",
     mat_where: "<strong>Matriks Bobot (Weight Matrices):</strong> Parameter-parameter di dalam lapisan jaringan saraf disimpan dalam bentuk matriks bobot $\\mathbf{W}$.<br><strong>LoRA (Low-Rank Adaptation):</strong> Teknik fine-tuning modern untuk LLM ini berasumsi bahwa perubahan bobot selama pelatihan ($\\Delta \\mathbf{W}$) sebenarnya memiliki dimensi intrinsik yang rendah (low-rank). Memanfaatkan teori SVD, matriks raksasa ini dapat dipecah menjadi perkalian dua matriks kecil $\\mathbf{A}$ dan $\\mathbf{B}$ sehingga jauh lebih ringan dihitung.",
 
     cal_title: "3. Kalkulus Multivariabel & Optimisasi",
-    cal_why: "Model AI tidak otomatis \"tahu\" bobot yang benar sejak awal; mereka harus <em>mencarinya</em> melalui proses belajar. Di sinilah optimisasi berfungsi sebagai kompas. Dengan menganggap proses belajar sebagai upaya meminimalkan fungsi kerugian (Loss Function) $L(\\boldsymbol{\\theta})$, kalkulus menyediakan vektor gradien $\\nabla L$ yang menunjukkan arah kemiringan paling curam.",
-    cal_how: "<strong>Gradient Descent:</strong> Aturan pembaruan parameter dirumuskan sebagai $\\boldsymbol{\\theta}_{t+1} = \\boldsymbol{\\theta}_t - \\alpha \\nabla L(\\boldsymbol{\\theta}_t)$, di mana $\\alpha$ adalah <em>learning rate</em>.<br><strong>Deret Taylor:</strong> Polinomial Taylor $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ digunakan untuk memperkirakan bentuk lembah kerugian (Loss Landscape). Optimisasi orde pertama (seperti Gradient Descent) hanya menggunakan suku linier, sedangkan metode orde kedua (seperti Metode Newton) menggunakan suku kuadratik.",
+    cal_why: "Model AI tidak otomatis \"tahu\" bobot yang benar sejak awal; mereka harus <em>mencarinya</em> melalui proses belajar. Di sinilah optimisasi berfungsi sebagai kompas. Dengan menganggap proses belajar sebagai upaya meminimalkan fungsi kerugian (Loss Function) $L(\\mathbf{\\theta})$, kalkulus menyediakan vektor gradien $\\nabla L$ yang menunjukkan arah kemiringan paling curam.",
+    cal_how: "<strong>Gradient Descent:</strong> Aturan pembaruan parameter dirumuskan sebagai $\\mathbf{\\theta}_{t+1} = \\mathbf{\\theta}_t - \\alpha \\nabla L(\\mathbf{\\theta}_t)$, di mana $\\alpha$ adalah <em>learning rate</em>.<br><strong>Deret Taylor:</strong> Polinomial Taylor $f(x) \\approx f(a) + f'(a)(x-a) + \\frac{f''(a)}{2!}(x-a)^2$ digunakan untuk memperkirakan bentuk lembah kerugian (Loss Landscape). Optimisasi orde pertama (seperti Gradient Descent) hanya menggunakan suku linier, sedangkan metode orde kedua (seperti Metode Newton) menggunakan suku kuadratik.",
     cal_where: "Hampir semua neural network modern dilatih menggunakan turunan dari algoritma Stochastic Gradient Descent (SGD). Salah satu yang paling populer, <strong>Adam Optimizer</strong>, mampu menyesuaikan <em>learning rate</em> secara otomatis untuk tiap parameter berdasarkan perkiraan momen pertama (rata-rata gradien) dan momen kedua (varians gradien).",
 
     prob_title: "4. Probabilitas, Statistik & Bayes",
@@ -368,13 +368,9 @@ function updateInfo() {
   document.getElementById('t-neu-how').innerHTML = d.neu_how;
   document.getElementById('t-neu-where').innerHTML = d.neu_where;
 
-  if (window.MathJax && window.MathJax.startup) {
-    MathJax.startup.promise = MathJax.startup.promise
-      .then(() => {
-        MathJax.typesetClear();
-        return MathJax.typesetPromise();
-      })
-      .catch((err) => console.error('MathJax error:', err));
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    MathJax.typesetClear();
+    MathJax.typesetPromise().catch((err) => console.error('MathJax error:', err));
   }
 }
 
