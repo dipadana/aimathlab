@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vectors — AI Math Lab</title>
-<meta name="description" content="Interactive 2D/3D vector visualizer. Explore magnitude, direction, linear combinations, span, and basis — the language of AI feature spaces.">
+<title>Vectors | AI Math Lab</title>
+<meta name="description" content="Understand vectors by seeing them in action. We cover magnitude, direction, linear combinations, span, and basis in this interactive 2D and 3D visualizer.">
 <script>
   window.MathJax = {
     tex: {
@@ -63,9 +63,9 @@ body.mode3d #hint3d { display: flex; }
       </div>
     </div>
     <p style="color:var(--ink2);font-size: 15px;font-family:'DM Sans',sans-serif">
-      <span data-lang="en">Combining physics &amp; computer science perspectives — visualize magnitude &amp; direction.</span>
+      <span data-lang="en">Visualizing magnitude and direction from both physics and computer science perspectives.</span>
       <span data-lang="ja">物理学とコンピュータサイエンスの視点を組み合わせた、大きさ・方向の可視化。</span>
-      <span data-lang="id">Menggabungkan perspektif fisika &amp; ilmu komputer — visualisasikan besaran &amp; arah.</span>
+      <span data-lang="id">Menggabungkan perspektif fisika &amp; ilmu komputer  visualisasikan besaran &amp; arah.</span>
     </p>
   </div>
 
@@ -184,7 +184,7 @@ body.mode3d #hint3d { display: flex; }
           </span>
         </div>
         <div id="vec-list" style="padding:10px;background:var(--surface);display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
-          <p class="mono" style="font-size: 14px;color:var(--ink3)">— <span data-lang="en">empty</span><span data-lang="ja">空</span><span data-lang="id">kosong</span></p>
+          <p class="mono" style="font-size: 14px;color:var(--ink3)"><span data-lang="en">(empty)</span><span data-lang="ja">空</span><span data-lang="id">kosong</span></p>
         </div>
       </div>
 
@@ -797,7 +797,7 @@ function fmt(n) {
 function updateList() {
   const el=document.getElementById('vec-list');
   const lang=document.body.getAttribute('data-active-lang')||'en';
-  const emptyLabel=lang==='ja'?'— 空':lang==='id'?'— kosong':'— empty';
+  const emptyLabel=lang==='ja'?' 空':lang==='id'?' kosong':' empty';
   if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${emptyLabel}</p>`; return; }
   el.innerHTML=vectors.map((v,i)=>{
     const ex=fmt(v.ex-v.ox),ey=fmt(v.ey-v.oy),ez=fmt((v.ez||0)-(v.oz||0));

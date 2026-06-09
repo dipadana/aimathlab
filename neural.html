@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neural Networks — AI Math Lab</title>
-<meta name="description" content="Visualize MLP forward pass, activation functions, and gradient descent on a neural network — from neuron to deep learning.">
+<title>Neural Networks | AI Math Lab</title>
+<meta name="description" content="Watch a neural network learn in your browser. We visualize the forward pass, activation functions, and gradient descent step by step.">
 <script>
   window.MathJax = {
     tex: {
@@ -50,9 +50,9 @@
       <span data-lang="id">Visualisasi Jaringan Saraf</span>
     </h1>
     <p>
-      <span data-lang="en">Forward pass, activation functions, and gradient descent — from single neuron to deep MLP.</span>
-      <span data-lang="ja">順伝播・活性化関数・勾配降下法 — 単一ニューロンから深層MLPまで。</span>
-      <span data-lang="id">Forward pass, fungsi aktivasi, dan gradient descent — dari satu neuron ke MLP dalam.</span>
+      <span data-lang="en">Watch a neural network learn in your browser. We cover the forward pass, activation functions, and gradient descent.</span>
+      <span data-lang="ja">順伝播・活性化関数・勾配降下法  単一ニューロンから深層MLPまで。</span>
+      <span data-lang="id">Forward pass, fungsi aktivasi, dan gradient descent  dari satu neuron ke MLP dalam.</span>
     </p>
   </div>
 
@@ -588,7 +588,7 @@ function renderActivation(){
   for(let y=Math.ceil(yMin);y<=yMax;y+=0.5){if(Math.abs(y)<0.01)continue;ctx.fillText(y.toFixed(1),pad-5,toY(y)+4);}
   
   ctx.fillStyle=dark?'#d4a06a':'#9a6e00'; ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='left';
-  ctx.fillText('— f(x)',pad+4,pad+16);
+  ctx.fillText(' f(x)',pad+4,pad+16);
   ctx.fillStyle=dark?'rgba(154,136,216,0.8)':'rgba(91,74,158,0.7)';
   ctx.fillText('- - f\'(x)',pad+4,pad+30);
   const lang=document.body.getAttribute('data-active-lang')||'en';
