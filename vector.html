@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="ja" data-active-lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vectors — AI Math Lab</title>
+<meta name="description" content="Interactive 2D/3D vector visualizer. Explore magnitude, direction, linear combinations, span, and basis — the language of AI feature spaces.">
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* z-input only shown in 3D mode */
+#z-row { display: none; }
+body.mode3d #z-row { display: block; }
+body.mode3d #hint3d { display: flex; }
+#hint3d { display: none; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--ink3); margin-top: 6px; }
+</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<meta name="author" content="Rico Eriansyah">
+<meta name="keywords" content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab">
+<link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body data-active-lang="ja">
+
+<div class="page-shell">
+
+  
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+    <a class="back-link" href="index.html">
+      ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
+    </a>
+    <a href="references.html" style="font-family:'JetBrains Mono',monospace;font-size: 14px;color:var(--ink3);text-decoration:none;border:1px solid var(--border1);padding:4px 10px;border-radius:4px;margin-right:8px;background:var(--surface2);">Scientific Documentation</a>
+      <div class="lang-switcher">
+      <button class="lang-btn" id="lb-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn active" id="lb-ja" onclick="setLang('ja')">JA</button>
+      <button class="lang-btn" id="lb-id" onclick="setLang('id')">ID</button>
+    </div>
+  </div>
+
+  <div class="mb-7" style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:4px">
+      <h1 style="font-family:'Source Serif 4',Georgia,serif;font-size:1.5rem;font-weight:500;color:var(--ink)">
+        <span data-lang="en">Vector Space Visualizer</span>
+        <span data-lang="ja">ベクトル空間ビジュアライザー</span>
+        <span data-lang="id">Visualisasi Ruang Vektor</span>
+      </h1>
+      <div style="display:flex;gap:5px">
+        <button class="btn-mode active" id="btn2d" onclick="setMode('2d')">
+          <span data-lang="en">2D</span><span data-lang="ja">2次元</span><span data-lang="id">2D</span>
+        </button>
+        <button class="btn-mode" id="btn3d" onclick="setMode('3d')">
+          <span data-lang="en">3D</span><span data-lang="ja">3次元</span><span data-lang="id">3D</span>
+        </button>
+      </div>
+    </div>
+    <p style="color:var(--ink2);font-size: 15px;font-family:'DM Sans',sans-serif">
+      <span data-lang="en">Combining physics &amp; computer science perspectives — visualize magnitude &amp; direction.</span>
+      <span data-lang="ja">物理学とコンピュータサイエンスの視点を組み合わせた、大きさ・方向の可視化。</span>
+      <span data-lang="id">Menggabungkan perspektif fisika &amp; ilmu komputer — visualisasikan besaran &amp; arah.</span>
+    </p>
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+
+    <div style="flex:1;min-width:300px">
+      <div class="canvas-wrap">
+        <canvas id="canvas" height="500"></canvas>
+        <div id="zoom-badge">1×</div>
+      </div>
+      <div id="hint3d" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <i class="fa-solid fa-circle-info" style="flex-shrink:0; font-size: 15px;"></i>
+          <span data-lang="en">Drag to rotate · Wheel to zoom</span>
+          <span data-lang="ja">ドラッグで回転 · ホイールでズーム</span>
+          <span data-lang="id">Drag untuk putar · Scroll untuk zoom</span>
+        </div>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+          <input type="checkbox" id="auto-orbit" onchange="toggleOrbit(this.checked)">
+          <span data-lang="en" style="font-size:10px">Auto Orbit</span>
+          <span data-lang="ja" style="font-size:10px">自動回転</span>
+          <span data-lang="id" style="font-size:10px">Putar Otomatis</span>
+        </label>
+      </div>
+      <div id="stats" class="mono" style="margin-top:8px;font-size: 14px;color:var(--ink3);min-height:20px;display:flex;gap:16px;flex-wrap:wrap"></div>
+    </div>
+
+    <div style="width:260px;min-width:220px;display:flex;flex-direction:column;gap:14px">
+
+      <div style="border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+        <div style="padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <span class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Add Vector</span><span data-lang="ja">ベクトル追加</span><span data-lang="id">Tambah Vektor</span>
+          </span>
+        </div>
+        <div style="padding:14px 12px;background:var(--surface);display:flex;flex-direction:column;gap:10px">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Component x</span><span data-lang="ja">成分 x</span><span data-lang="id">Komponen x</span>
+              </label>
+              <input type="number" id="inp-x" value="0" step="0.5">
+            </div>
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Component y</span><span data-lang="ja">成分 y</span><span data-lang="id">Komponen y</span>
+              </label>
+              <input type="number" id="inp-y" value="0" step="0.5">
+            </div>
+          </div>
+
+          <div id="z-row">
+            <label class="fieldlabel">
+              <span data-lang="en">Component z</span><span data-lang="ja">成分 z</span><span data-lang="id">Komponen z</span>
+            </label>
+            <input type="number" id="inp-z" value="0" step="0.5">
+          </div>
+
+          <div>
+            <label class="fieldlabel">
+              <span data-lang="en">Scalar</span><span data-lang="ja">スカラー</span><span data-lang="id">Skalar</span>
+              <span style="font-style:italic;opacity:.7;color:red;"> **<span data-lang="en">scales the vector length</span><span data-lang="ja">ベクトルの長さを変えます</span><span data-lang="id">mengubah panjang vektor</span></span>
+            </label>
+            <input type="number" id="inp-scalar" value="0" step="0.25">
+          </div>
+
+          <div>
+            <label class="fieldlabel">
+              <span data-lang="en">Origin</span><span data-lang="ja">始点</span><span data-lang="id">Titik awal</span>
+            </label>
+            <select id="inp-op">
+              <option value="origin" id="opt-origin">
+                <span data-lang="en">From origin (0, 0)</span>
+              </option>
+              <option value="chain" id="opt-chain">
+                <span data-lang="en">From tip of previous</span>
+              </option>
+            </select>
+          </div>
+
+          <button class="btn btn-fill" style="width:100%;margin-top:2px" onclick="addVector()">
+            <span data-lang="en">Add</span><span data-lang="ja">追加</span><span data-lang="id">Tambah</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" style="flex:1" onclick="replayAll()">
+          <span data-lang="en">Replay</span><span data-lang="ja">再生</span><span data-lang="id">Putar Ulang</span>
+        </button>
+        <button class="btn btn-outline" style="flex:1" onclick="clearAll()">
+          <span data-lang="en">Clear</span><span data-lang="ja">クリア</span><span data-lang="id">Hapus</span>
+        </button>
+      </div>
+
+      <label class="toggle-row" for="toggle-resultant">
+        <span style="display:flex;flex-direction:column;gap:2px">
+          <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+            <span data-lang="en">Show Resultant (Σ)</span><span data-lang="ja">合力を表示 (Σ)</span><span data-lang="id">Tampilkan Resultan (Σ)</span>
+          </span>
+          <span style="font-size: 13px;font-family:'DM Sans',sans-serif;color:var(--ink3)">
+            <span data-lang="en">Draw sum vector from origin</span><span data-lang="ja">原点から合ベクトルを描画</span><span data-lang="id">Gambar vektor jumlah dari asal</span>
+          </span>
+        </span>
+        <span class="toggle-switch">
+          <input type="checkbox" id="toggle-resultant" onchange="toggleResultant(this.checked)">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </label>
+
+      <div style="border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+        <div style="padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <span class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Vector List</span><span data-lang="ja">ベクトルリスト</span><span data-lang="id">Daftar Vektor</span>
+          </span>
+        </div>
+        <div id="vec-list" style="padding:10px;background:var(--surface);display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto">
+          <p class="mono" style="font-size: 14px;color:var(--ink3)">— <span data-lang="en">empty</span><span data-lang="ja">空</span><span data-lang="id">kosong</span></p>
+        </div>
+      </div>
+
+      
+      <div class="panel" id="panel-lc">
+        <div class="panel-head" id="ph-lc" onclick="togglePanel('lc')">
+          <span class="ph-title">
+            <i class="fa-solid fa-arrow-right-long" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Linear Combination</span><span data-lang="ja">線形結合</span><span data-lang="id">Kombinasi Linear</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-lc">
+          <div id="lc-sliders"><p class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Add vectors first</span><span data-lang="ja">ベクトルを追加してください</span><span data-lang="id">Tambahkan vektor dulu</span>
+          </p></div>
+          <div id="lc-result" class="lc-result-box" style="display:none"></div>
+          <label class="toggle-row" for="toggle-lc" style="margin-top:2px">
+            <span style="display:flex;flex-direction:column;gap:2px">
+              <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+                <span data-lang="en">Show on Canvas</span><span data-lang="ja">キャンバスに表示</span><span data-lang="id">Tampilkan di Kanvas</span>
+              </span>
+              <span style="font-size: 13px;font-family:'DM Sans',sans-serif;color:var(--ink3)">
+                <span data-lang="en">Draw LC vector</span><span data-lang="ja">線形結合ベクトルを描画</span><span data-lang="id">Gambar vektor LC</span>
+              </span>
+            </span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="toggle-lc" onchange="lcShowOnCanvas=this.checked;render()">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      
+      <div class="panel" id="panel-span">
+        <div class="panel-head" id="ph-span" onclick="togglePanel('span')">
+          <span class="ph-title">
+            <i class="fa-solid fa-chart-area" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Span</span><span data-lang="ja">スパン (Span)</span><span data-lang="id">Rentang (Span)</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-span">
+          <div id="span-info"><p class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Add vectors first</span><span data-lang="ja">ベクトルを追加してください</span><span data-lang="id">Tambahkan vektor dulu</span>
+          </p></div>
+          <label class="toggle-row" for="toggle-span" style="margin-top:2px">
+            <span style="display:flex;flex-direction:column;gap:2px">
+              <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+                <span data-lang="en">Show Span</span><span data-lang="ja">スパンを表示</span><span data-lang="id">Tampilkan Span</span>
+              </span>
+              <span style="font-size: 13px;font-family:'DM Sans',sans-serif;color:var(--ink3)">
+                <span data-lang="en">Shade the subspace</span><span data-lang="ja">張る部分空間をシェーディング</span><span data-lang="id">Arsir subruang</span>
+              </span>
+            </span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="toggle-span" onchange="showSpan=this.checked;render()">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      
+      <div class="panel" id="panel-basis">
+        <div class="panel-head" id="ph-basis" onclick="togglePanel('basis')">
+          <span class="ph-title">
+            <i class="fa-solid fa-border-all" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Basis</span><span data-lang="ja">基底 (Basis)</span><span data-lang="id">Basis</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-basis">
+          <div id="basis-info"><p class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Add vectors first</span><span data-lang="ja">ベクトルを追加してください</span><span data-lang="id">Tambahkan vektor dulu</span>
+          </p></div>
+        </div>
+      </div>
+
+      
+      <div class="panel" id="panel-ops">
+        <div class="panel-head" id="ph-ops" onclick="togglePanel('ops')">
+          <span class="ph-title">
+            <i class="fa-solid fa-calculator" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Operations</span><span data-lang="ja">演算</span><span data-lang="id">Operasi</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-ops">
+          <div id="ops-info"><p class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Add at least two vectors</span><span data-lang="ja">ベクトルを2つ以上追加してください</span><span data-lang="id">Tambahkan minimal dua vektor</span>
+          </p></div>
+          <label class="toggle-row" for="toggle-dot" style="margin-top:2px;display:none" id="row-dot">
+            <span style="display:flex;flex-direction:column;gap:2px">
+              <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+                <span data-lang="en">Show Projection (v₁ on v₂)</span><span data-lang="ja">正射影を表示</span><span data-lang="id">Tampilkan Proyeksi</span>
+              </span>
+            </span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="toggle-dot" onchange="showProjection=this.checked;render()">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </span>
+          </label>
+          <label class="toggle-row" for="toggle-cross" style="margin-top:2px;display:none" id="row-cross">
+            <span style="display:flex;flex-direction:column;gap:2px">
+              <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+                <span data-lang="en">Show Cross Product (v₁ × v₂)</span><span data-lang="ja">外積を表示</span><span data-lang="id">Tampilkan Produk Silang</span>
+              </span>
+            </span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="toggle-cross" onchange="showCross=this.checked;render()">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      
+      <div class="panel">
+        <div class="panel-head" id="ph-theory" onclick="togglePanel('theory')">
+          <span class="ph-title">
+            <i class="fa-solid fa-book" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Theory Note</span><span data-lang="ja">理論ノート</span><span data-lang="id">Catatan Teori</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-theory">
+          <div id="theory-text" style="font-size: 15px;font-family:'DM Sans',sans-serif;color:var(--ink2);line-height:1.65"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+function setLang(lang) {
+  document.body.setAttribute('data-active-lang', lang);
+  document.documentElement.setAttribute('lang', lang === 'ja' ? 'ja' : lang === 'id' ? 'id' : 'en');
+  ['en','ja','id'].forEach(l => document.getElementById('lb-'+l).classList.toggle('active', l === lang));
+  localStorage.setItem('aiml-lang', lang);
+  const opSel = document.getElementById('inp-op');
+  if (lang === 'ja') {
+    opSel.options[0].text = '原点から (0, 0)';
+    opSel.options[1].text = '前のベクトルの末尾から';
+  } else if (lang === 'id') {
+    opSel.options[0].text = 'Dari titik asal (0, 0)';
+    opSel.options[1].text = 'Dari ujung vektor sebelumnya';
+  } else {
+    opSel.options[0].text = 'From origin (0, 0)';
+    opSel.options[1].text = 'From tip of previous vector';
+  }
+  if (typeof updateTheoryNote === 'function') updateTheoryNote();
+  if (typeof updatePanels === 'function') updatePanels();
+}
+const _savedLang = localStorage.getItem('aiml-lang');
+setTimeout(() => { if (_savedLang) setLang(_savedLang); else setLang('ja'); }, 0);
+
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const badge  = document.getElementById('zoom-badge');
+const PALETTES = {
+  light: ['#2a5caa','#b84040','#2e7d52','#8b5a2b','#5b4a9e','#3a7a8a','#7a4060'],
+  dark:  ['#6a9fd8','#d47070','#5aba80','#d4a06a','#9a88d8','#60bac8','#c07898'],
+};
+let W, H, CX, CY;
+const BASE_UNIT = 36;
+let unitPx = BASE_UNIT, targetUnit = BASE_UNIT, zoomRaf = null;
+let vectors = [], animState = [], currentMode = '2d';
+let showResultant = false, resultantAnimProgress = 0, resultantAnimRaf = null;
+let cam = { azimuth: 0.55, elevation: 0.42, scale: 1.0 };
+let drag = { active: false, startX: 0, startY: 0, startAz: 0, startEl: 0 };
+let lcCoeffs = [], lcShowOnCanvas = false, showSpan = false;
+let showProjection = false, showCross = false, orbitRaf = null;
+
+function toggleOrbit(on) {
+  if (on) {
+    if (!orbitRaf) {
+      let lastTime = performance.now();
+      function step(now) {
+        const dt = now - lastTime; lastTime = now;
+        cam.azimuth += dt * 0.0003; render();
+        orbitRaf = requestAnimationFrame(step);
+      }
+      orbitRaf = requestAnimationFrame(step);
+    }
+  } else {
+    if (orbitRaf) { cancelAnimationFrame(orbitRaf); orbitRaf = null; }
+  }
+}
+
+function togglePanel(name) {
+  document.getElementById('ph-'+name).classList.toggle('collapsed');
+  document.getElementById('pb-'+name).classList.toggle('collapsed');
+}
+function toggleResultant(on) {
+  showResultant = on;
+  if (on && vectors.length >= 2 && animState.every((p,i) => i >= vectors.length || p >= 0.99)) {
+    resultantAnimProgress = 0; animateResultant();
+  } else if (!on) {
+    if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf = null; }
+    resultantAnimProgress = 0; render();
+  } else render();
+}
+function animateResultant(onDone) {
+  if (resultantAnimRaf) cancelAnimationFrame(resultantAnimRaf);
+  const start = performance.now(), dur = 560;
+  function step(now) {
+    const t = Math.min(1, (now-start)/dur);
+    resultantAnimProgress = easeOutCubic(t); render();
+    if (t < 1) resultantAnimRaf = requestAnimationFrame(step);
+    else { resultantAnimProgress = 1; render(); resultantAnimRaf = null; if (onDone) onDone(); }
+  }
+  resultantAnimRaf = requestAnimationFrame(step);
+}
+function isDark() { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
+function palette() { return isDark() ? PALETTES.dark : PALETTES.light; }
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOutCubic(t) { return 1 - Math.pow(1-t,3); }
+
+function setMode(m) {
+  currentMode = m;
+  document.body.classList.toggle('mode3d', m === '3d');
+  document.getElementById('btn2d').classList.toggle('active', m === '2d');
+  document.getElementById('btn3d').classList.toggle('active', m === '3d');
+  canvas.classList.toggle('mode3d', m === '3d');
+  clearAll(); updatePanels(); render();
+}
+
+function wc(x,y) { return [CX+x*unitPx, CY-y*unitPx]; }
+function project3d(x,y,z) {
+  const az=cam.azimuth, el=cam.elevation;
+  const cosA=Math.cos(az),sinA=Math.sin(az),cosE=Math.cos(el),sinE=Math.sin(el);
+  const x1=x*cosA+z*sinA, z1=-x*sinA+z*cosA;
+  const y2=y*cosE-z1*sinE, z2=y*sinE+z1*cosE;
+  const s=unitPx*cam.scale;
+  return [CX+x1*s, CY-y2*s, z2];
+}
+function resize() {
+  const dpr=window.devicePixelRatio||1, cssW=canvas.offsetWidth, cssH=500;
+  canvas.width=cssW*dpr; canvas.height=cssH*dpr;
+  canvas.style.height=cssH+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  W=cssW; H=cssH; CX=W/2; CY=H/2; render();
+}
+function computeTargetUnit() {
+  if (!vectors.length) return BASE_UNIT;
+  let mx=0,my=0;
+  vectors.forEach(v => { mx=Math.max(mx,Math.abs(v.ox),Math.abs(v.ex)); my=Math.max(my,Math.abs(v.oy),Math.abs(v.ey)); if(currentMode==='3d'){mx=Math.max(mx,Math.abs(v.oz||0),Math.abs(v.ez||0));} });
+  if (mx===0&&my===0) return BASE_UNIT;
+  const cW=(W>0?W:600),cH=(H>0?H:500),MARGIN=0.72;
+  const byX=mx>0?(cW/2*MARGIN)/mx:Infinity, byY=my>0?(cH/2*MARGIN)/my:Infinity;
+  return Math.min(BASE_UNIT,Math.min(byX,byY));
+}
+function animateZoom(newTarget) {
+  targetUnit=newTarget;
+  if (zoomRaf) cancelAnimationFrame(zoomRaf);
+  const startUnit=unitPx, diff=targetUnit-startUnit;
+  const ratio=Math.abs(newTarget-startUnit)/Math.max(startUnit,newTarget);
+  if (ratio<0.001) { unitPx=newTarget; render(); updateZoomBadge(); return; }
+  const start=performance.now(), dur=520;
+  function step(now) {
+    const t=Math.min(1,(now-start)/dur);
+    unitPx=startUnit+diff*easeInOut(t); render();
+    if (t<1) zoomRaf=requestAnimationFrame(step);
+    else { unitPx=targetUnit; render(); updateZoomBadge(); }
+  }
+  zoomRaf=requestAnimationFrame(step);
+}
+function updateZoomBadge() {
+  const ratio=unitPx/BASE_UNIT;
+  if (Math.abs(ratio-1)<0.02) { badge.classList.remove('visible'); }
+  else { badge.textContent=ratio<1?`1:${Math.round(1/ratio)}`:`${ratio.toFixed(1)}×`; badge.classList.add('visible'); }
+}
+function niceGridStep(u) {
+  const candidates=[1,2,5,10,20,25,50,100,200,250,500,1000,2000,5000,10000];
+  for (const c of candidates) if (c*u>=36) return c;
+  return candidates[candidates.length-1];
+}
+function formatLabel(n) {
+  const a=Math.abs(n);
+  if (a>=1e6) return (n/1e6).toFixed(a%1e6===0?0:1)+"M";
+  if (a>=1e3) return (n/1e3).toFixed(a%1e3===0?0:1)+"k";
+  return n.toString();
+}
+function drawGrid2d() {
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark();
+  const gridLine=dark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.05)';
+  const axisLine=dark?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.22)';
+  const tickCol=dark?'rgba(255,255,255,0.28)':'rgba(0,0,0,0.3)';
+  const labelCol=dark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.35)';
+  const step=niceGridStep(unitPx);
+  const range=Math.ceil((Math.max(W,H)/2)/unitPx/step)*step+step;
+  for (let i=-range;i<=range;i+=step) {
+    const isAxis=i===0;
+    ctx.strokeStyle=isAxis?axisLine:gridLine; ctx.lineWidth=isAxis?1:0.5;
+    const [x1,y1]=wc(i,-range),[x2,y2]=wc(i,range);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const [xa,ya]=wc(-range,i),[xb,yb]=wc(range,i);
+    ctx.beginPath(); ctx.moveTo(xa,ya); ctx.lineTo(xb,yb); ctx.stroke();
+  }
+  ctx.font='10px "JetBrains Mono",monospace';
+  for (let i=-range;i<=range;i+=step) {
+    if (i===0) continue;
+    const [x,y]=wc(i,0); if (x<0||x>W) continue;
+    ctx.strokeStyle=tickCol; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(x,CY-3); ctx.lineTo(x,CY+3); ctx.stroke();
+    ctx.fillStyle=labelCol; ctx.textAlign='center'; ctx.fillText(formatLabel(i),x,CY+15);
+    const [xa,ya]=wc(0,i); if (ya<0||ya>H) continue;
+    ctx.beginPath(); ctx.moveTo(CX-3,ya); ctx.lineTo(CX+3,ya); ctx.stroke();
+    ctx.fillStyle=labelCol; ctx.textAlign='right'; ctx.fillText(formatLabel(i),CX-8,ya+4);
+  }
+  ctx.fillStyle=dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.45)';
+  ctx.font='12px "JetBrains Mono",monospace'; ctx.textAlign='left';
+  ctx.fillText('x',Math.min(W-18,CX+range*unitPx+6),CY+4);
+  ctx.fillText('y',CX+6,Math.max(14,CY-range*unitPx+4));
+  ctx.fillStyle=dark?'rgba(255,255,255,0.25)':'rgba(0,0,0,0.25)';
+  const [ox,oy]=wc(0,0); ctx.beginPath(); ctx.arc(ox,oy,2.5,0,Math.PI*2); ctx.fill();
+}
+function drawArrow2d(ox,oy,ex,ey,color,progress,label) {
+  const [sx,sy]=wc(ox,oy);
+  const tx2=ox+(ex-ox)*progress, ty2=oy+(ey-oy)*progress;
+  const [px,py]=wc(tx2,ty2);
+  const dx=px-sx, dy=py-sy, len=Math.sqrt(dx*dx+dy*dy);
+  if (len<2) return;
+  const angle=Math.atan2(dy,dx), headLen=Math.min(13,len*0.28);
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=1.8; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(px-Math.cos(angle)*headLen*0.6,py-Math.sin(angle)*headLen*0.6); ctx.stroke();
+  ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(px,py);
+  ctx.lineTo(px-headLen*Math.cos(angle-0.45),py-headLen*Math.sin(angle-0.45));
+  ctx.lineTo(px-headLen*0.45*Math.cos(angle),py-headLen*0.45*Math.sin(angle));
+  ctx.lineTo(px-headLen*Math.cos(angle+0.45),py-headLen*Math.sin(angle+0.45));
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=0.45; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+  if (progress>=0.99) {
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=isDark()?'#141312':'#fdfcf8'; ctx.beginPath(); ctx.arc(px,py,1.8,0,Math.PI*2); ctx.fill();
+  }
+  if (label&&progress>0.25) {
+    const fade=Math.min(1,(progress-0.25)/0.35);
+    const mx2=(sx+px)/2-Math.sin(angle)*16, my2=(sy+py)/2+Math.cos(angle)*16;
+    ctx.save(); ctx.globalAlpha=fade; ctx.font='11px "JetBrains Mono",monospace';
+    ctx.fillStyle=color; ctx.textAlign='center'; ctx.fillText(label,mx2,my2); ctx.restore();
+  }
+  ctx.restore();
+}
+function drawGrid3d() {
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark(), axisAlpha=dark?0.55:0.60, gridAlpha=dark?0.06:0.07;
+  const labelCol=dark?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.40)';
+  const step=niceGridStep(unitPx*cam.scale);
+  const range=Math.ceil((Math.max(W,H)/2)/(unitPx*cam.scale)/step)*step+step*2;
+  ctx.lineWidth=0.5;
+  for (let i=-range;i<=range;i+=step) {
+    ctx.strokeStyle=`rgba(${dark?'255,255,255':'0,0,0'},${gridAlpha})`;
+    const [ax,ay]=project3d(i,0,-range),[bx,by]=project3d(i,0,range);
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    const [cx2,cy2]=project3d(-range,0,i),[dx2,dy2]=project3d(range,0,i);
+    ctx.beginPath(); ctx.moveTo(cx2,cy2); ctx.lineTo(dx2,dy2); ctx.stroke();
+  }
+  const axisLen=range;
+  const axes=[
+    {from:[-axisLen,0,0],to:[axisLen,0,0],color:`rgba(${dark?'100,159,216':'42,92,170'},${axisAlpha})`,label:'x',lp:[axisLen+step*0.6,0,0]},
+    {from:[0,-axisLen,0],to:[0,axisLen,0],color:`rgba(${dark?'90,186,128':'46,125,82'},${axisAlpha})`,label:'y',lp:[0,axisLen+step*0.6,0]},
+    {from:[0,0,-axisLen],to:[0,0,axisLen],color:`rgba(${dark?'212,112,112':'184,64,64'},${axisAlpha})`,label:'z',lp:[0,0,axisLen+step*0.6]},
+  ];
+  axes.forEach(a => {
+    const [sx,sy]=project3d(...a.from),[ex,ey]=project3d(...a.to);
+    ctx.strokeStyle=a.color; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
+    const dx=ex-sx,dy2=ey-sy,len=Math.sqrt(dx*dx+dy2*dy2);
+    if (len>0) {
+      const ang=Math.atan2(dy2,dx),hl=8;
+      ctx.fillStyle=a.color; ctx.beginPath(); ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-hl*Math.cos(ang-0.4),ey-hl*Math.sin(ang-0.4));
+      ctx.lineTo(ex-hl*Math.cos(ang+0.4),ey-hl*Math.sin(ang+0.4));
+      ctx.closePath(); ctx.fill();
+    }
+    const [lx,ly]=project3d(...a.lp);
+    ctx.fillStyle=labelCol; ctx.font='14px "JetBrains Mono",monospace'; ctx.textAlign='center'; ctx.fillText(a.label,lx,ly+4);
+  });
+
+  for (let i=-range; i<=range; i+=step) {
+    if (i===0) continue;
+    const [xx, xy] = project3d(i, 0, 0);
+    if (xx>=-20 && xx<=W+20 && xy>=-20 && xy<=H+20) {
+      ctx.fillStyle=labelCol; ctx.font='12px "JetBrains Mono",monospace'; ctx.textAlign='center';
+      ctx.fillText(formatLabel(i), xx, xy+14);
+    }
+    const [yx, yy] = project3d(0, i, 0);
+    if (yx>=-20 && yx<=W+20 && yy>=-20 && yy<=H+20) {
+      ctx.fillStyle=labelCol; ctx.font='12px "JetBrains Mono",monospace'; ctx.textAlign='right';
+      ctx.fillText(formatLabel(i), yx-6, yy+4);
+    }
+    const [zx, zy] = project3d(0, 0, i);
+    if (zx>=-20 && zx<=W+20 && zy>=-20 && zy<=H+20) {
+      ctx.fillStyle=labelCol; ctx.font='12px "JetBrains Mono",monospace'; ctx.textAlign='center';
+      ctx.fillText(formatLabel(i), zx+10, zy+10);
+    }
+  }
+}
+function drawArrow3d(ox,oy,oz,ex,ey,ez,color,progress,label) {
+  const fx=ox+(ex-ox)*progress,fy=oy+(ey-oy)*progress,fz=oz+(ez-oz)*progress;
+  const [sx,sy]=project3d(ox,oy,oz),[px,py]=project3d(fx,fy,fz);
+  const dx=px-sx,dy=py-sy,len=Math.sqrt(dx*dx+dy*dy);
+  if (len<2) return;
+  const angle=Math.atan2(dy,dx),headLen=Math.min(13,len*0.28);
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(px-Math.cos(angle)*headLen*0.6,py-Math.sin(angle)*headLen*0.6); ctx.stroke();
+  ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(px,py);
+  ctx.lineTo(px-headLen*Math.cos(angle-0.45),py-headLen*Math.sin(angle-0.45));
+  ctx.lineTo(px-headLen*0.45*Math.cos(angle),py-headLen*0.45*Math.sin(angle));
+  ctx.lineTo(px-headLen*Math.cos(angle+0.45),py-headLen*Math.sin(angle+0.45));
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=0.45; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+  if (progress>=0.99) {
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=isDark()?'#141312':'#fdfcf8'; ctx.beginPath(); ctx.arc(px,py,1.8,0,Math.PI*2); ctx.fill();
+    const [projPx,projPy]=project3d(fx,0,fz);
+    ctx.setLineDash([3,4]); ctx.strokeStyle=color; ctx.globalAlpha=0.22; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(projPx,projPy); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=0.18;
+    ctx.beginPath(); ctx.arc(projPx,projPy,2.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+  }
+  if (label&&progress>0.25) {
+    const fade=Math.min(1,(progress-0.25)/0.35);
+    const mx2=(sx+px)/2-Math.sin(angle)*16,my2=(sy+py)/2+Math.cos(angle)*16;
+    ctx.save(); ctx.globalAlpha=fade; ctx.font='11px "JetBrains Mono",monospace';
+    ctx.fillStyle=color; ctx.textAlign='center'; ctx.fillText(label,mx2,my2); ctx.restore();
+  }
+  ctx.restore();
+}
+function drawResultantArrow() {
+  if (!showResultant||vectors.length<2) return;
+  const progress=resultantAnimProgress; if (progress<=0) return;
+  let rx=0,ry=0,rz=0;
+  vectors.forEach(v=>{rx+=v.ex-v.ox;ry+=v.ey-v.oy;rz+=(v.ez||0)-(v.oz||0);});
+  if (rx===0&&ry===0&&rz===0) return;
+  const dark=isDark(), rColor=dark?'#f0c040':'#9a6e00';
+  ctx.save(); ctx.globalAlpha=0.92;
+  if (currentMode==='2d') {
+    const [sx,sy]=wc(0,0),[endX,endY]=wc(rx,ry);
+    const fpx=sx+(endX-sx)*progress,fpy=sy+(endY-sy)*progress;
+    const dx=endX-sx,dy=endY-sy,len=Math.sqrt(dx*dx+dy*dy);
+    if (len<2) { ctx.restore(); return; }
+    const angle=Math.atan2(dy,dx),hl=Math.min(15,len*0.28);
+    ctx.setLineDash([6,4]); ctx.strokeStyle=rColor; ctx.lineWidth=2.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(fpx-Math.cos(angle)*hl*0.6,fpy-Math.sin(angle)*hl*0.6); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=rColor; ctx.beginPath(); ctx.moveTo(fpx,fpy);
+    ctx.lineTo(fpx-hl*Math.cos(angle-0.45),fpy-hl*Math.sin(angle-0.45));
+    ctx.lineTo(fpx-hl*0.45*Math.cos(angle),fpy-hl*0.45*Math.sin(angle));
+    ctx.lineTo(fpx-hl*Math.cos(angle+0.45),fpy-hl*Math.sin(angle+0.45)); ctx.closePath(); ctx.fill();
+    if (progress>0.25) {
+      const fade=Math.min(1,(progress-0.25)/0.35);
+      ctx.save(); ctx.globalAlpha=fade*0.92; ctx.font='bold 12px "JetBrains Mono",monospace';
+      ctx.fillStyle=rColor; ctx.textAlign='center';
+      ctx.fillText('Σ',(sx+fpx)/2-Math.sin(angle)*18,(sy+fpy)/2+Math.cos(angle)*18); ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+function drawSpan2d() {
+  if (!showSpan||!vectors.length) return;
+  const dark=isDark();
+  const dirs=vectors.map(v=>({dx:v.ex-v.ox,dy:v.ey-v.oy}));
+  const nonZero=dirs.filter(d=>Math.abs(d.dx)>1e-9||Math.abs(d.dy)>1e-9);
+  if (!nonZero.length) return;
+  const ref=nonZero[0];
+  const allCollinear=nonZero.every(d=>Math.abs(d.dx*ref.dy-d.dy*ref.dx)<1e-9);
+  ctx.save();
+  if (allCollinear) {
+    const norm=Math.sqrt(ref.dx*ref.dx+ref.dy*ref.dy),ux=ref.dx/norm,uy=ref.dy/norm,far=Math.max(W,H);
+    const [x1,y1]=wc(ux*far/unitPx,uy*far/unitPx),[x2,y2]=wc(-ux*far/unitPx,-uy*far/unitPx);
+    ctx.strokeStyle=dark?'rgba(160,200,255,0.18)':'rgba(42,92,170,0.14)'; ctx.lineWidth=2; ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
+  } else {
+    ctx.fillStyle=dark?'rgba(90,186,128,0.06)':'rgba(46,125,82,0.06)'; ctx.fillRect(0,0,W,H);
+  }
+  ctx.restore();
+}
+function drawLinearCombination() {
+  if (!lcShowOnCanvas||!vectors.length) return;
+  let rx=0,ry=0,rz=0;
+  vectors.forEach((v,i)=>{const c=lcCoeffs[i]!==undefined?lcCoeffs[i]:1;rx+=(v.ex-v.ox)*c;ry+=(v.ey-v.oy)*c;rz+=((v.ez||0)-(v.oz||0))*c;});
+  const dark=isDark(),lcColor=dark?'#c084fc':'#7c3aed';
+  ctx.save(); ctx.globalAlpha=0.88;
+  if (currentMode==='2d') drawArrow2d(0,0,rx,ry,lcColor,1,'LC');
+  else drawArrow3d(0,0,0,rx,ry,rz,lcColor,1,'LC');
+  ctx.restore();
+}
+function drawOperations2d() {
+  if (!showProjection || vectors.length < 2) return;
+  const v1 = vectors[0], v2 = vectors[1], u = [v1.ex-v1.ox, v1.ey-v1.oy], v = [v2.ex-v2.ox, v2.ey-v2.oy];
+  const dot = u[0]*v[0] + u[1]*v[1], vMagSq = v[0]*v[0] + v[1]*v[1];
+  if (vMagSq < 1e-9) return;
+  const p = [v[0]*dot/vMagSq, v[1]*dot/vMagSq], dark = isDark(), pColor = dark?'#c084fc':'#7c3aed';
+  drawArrow2d(0, 0, p[0], p[1], pColor, 1, 'proj');
+  const [sx,sy] = wc(u[0], u[1]), [ex,ey] = wc(p[0], p[1]);
+  ctx.save(); ctx.strokeStyle = dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
+  ctx.setLineDash([4,4]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke(); ctx.restore();
+}
+
+function drawOperations3d() {
+  if (vectors.length < 2) return;
+  const dark = isDark(), pColor = dark?'#c084fc':'#7c3aed', cColor = dark?'#f0c040':'#9a6e00';
+  const v1 = vectors[0], v2 = vectors[1], u = [v1.ex-v1.ox, v1.ey-v1.oy, (v1.ez||0)-(v1.oz||0)], v = [v2.ex-v2.ox, v2.ey-v2.oy, (v2.ez||0)-(v2.oz||0)];
+  if (showProjection) {
+    const dot = u[0]*v[0] + u[1]*v[1] + u[2]*v[2], vMagSq = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (vMagSq > 1e-9) {
+      const p = [v[0]*dot/vMagSq, v[1]*dot/vMagSq, v[2]*dot/vMagSq];
+      drawArrow3d(0,0,0, p[0],p[1],p[2], pColor, 1, 'proj');
+      const [sx,sy] = project3d(u[0],u[1],u[2]), [ex,ey] = project3d(p[0],p[1],p[2]);
+      ctx.save(); ctx.strokeStyle = dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
+      ctx.setLineDash([4,4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke(); ctx.restore();
+    }
+  }
+  if (showCross) {
+    const cx = u[1]*v[2] - u[2]*v[1], cy = u[2]*v[0] - u[0]*v[2], cz = u[0]*v[1] - u[1]*v[0];
+    drawArrow3d(0,0,0, cx,cy,cz, cColor, 1, 'v₁×v₂');
+    const p1 = project3d(0,0,0), p2 = project3d(u[0],u[1],u[2]), p3 = project3d(u[0]+v[0], u[1]+v[1], u[2]+v[2]), p4 = project3d(v[0],v[1],v[2]);
+    ctx.save(); ctx.fillStyle = dark?'rgba(240,192,64,0.1)':'rgba(154,110,0,0.1)';
+    ctx.strokeStyle = dark?'rgba(240,192,64,0.4)':'rgba(154,110,0,0.4)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.lineTo(p4[0],p4[1]); ctx.closePath();
+    ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+}
+
+function render() {
+  if (currentMode==='2d') {
+    drawGrid2d(); drawSpan2d();
+    vectors.forEach((v,i)=>drawArrow2d(v.ox,v.oy,v.ex,v.ey,v.color,animState[i]!==undefined?animState[i]:1,v.name));
+    drawResultantArrow(); drawLinearCombination(); drawOperations2d();
+  } else {
+    drawGrid3d();
+    vectors.forEach((v,i)=>drawArrow3d(v.ox,v.oy,v.oz||0,v.ex,v.ey,v.ez||0,v.color,animState[i]!==undefined?animState[i]:1,v.name));
+    drawResultantArrow(); drawLinearCombination(); drawOperations3d();
+  }
+  updateStats();
+}
+function animateOne(idx, onDone) {
+  const start=performance.now(), dur=480;
+  function step(now) {
+    const t=Math.min(1,(now-start)/dur); animState[idx]=easeOutCubic(t); render();
+    if (t<1) requestAnimationFrame(step);
+    else { animState[idx]=1; render(); if (onDone) onDone(); }
+  }
+  requestAnimationFrame(step);
+}
+function replayAll() {
+  if (!vectors.length) return;
+  animState=vectors.map(()=>0); resultantAnimProgress=0;
+  if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
+  render(); animateZoom(computeTargetUnit());
+  let i=0;
+  function next() {
+    if (i>=vectors.length) { if (showResultant&&vectors.length>=2) setTimeout(()=>animateResultant(),120); return; }
+    animateOne(i,()=>{i++;setTimeout(next,60);}); 
+  }
+  setTimeout(next,80);
+}
+function addVector() {
+  const x=parseFloat(document.getElementById('inp-x').value)||0;
+  const y=parseFloat(document.getElementById('inp-y').value)||0;
+  const z=currentMode==='3d'?(parseFloat(document.getElementById('inp-z').value)||0):0;
+  const scalar=parseFloat(document.getElementById('inp-scalar').value)||1;
+  const op=document.getElementById('inp-op').value;
+  const rx=parseFloat((x*scalar).toFixed(8)),ry=parseFloat((y*scalar).toFixed(8)),rz=parseFloat((z*scalar).toFixed(8));
+  let ox=0,oy=0,oz=0;
+  if (op==='chain'&&vectors.length>0) { const last=vectors[vectors.length-1]; ox=last.ex; oy=last.ey; oz=last.ez||0; }
+  const pal=palette(), color=pal[vectors.length%pal.length], name=`v${vectors.length+1}`;
+  vectors.push({ox,oy,oz,ex:ox+rx,ey:oy+ry,ez:oz+rz,color,name,raw:{x,y,z},scalar,op});
+  animState.push(0); resultantAnimProgress=0;
+  if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
+  updateList(); updatePanels();
+  const newTarget=computeTargetUnit(), needsZoom=Math.abs(newTarget-unitPx)>unitPx*0.005;
+  const afterAnim=()=>{ if (showResultant&&vectors.length>=2) setTimeout(()=>animateResultant(),80); };
+  if (needsZoom) { animateZoom(newTarget); setTimeout(()=>animateOne(vectors.length-1,afterAnim),150); }
+  else animateOne(vectors.length-1,afterAnim);
+}
+function clearAll() {
+  vectors=[]; animState=[]; lcCoeffs=[];
+  if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
+  resultantAnimProgress=0; animateZoom(BASE_UNIT); updateList(); updatePanels(); render();
+}
+function removeVector(idx) {
+  const el=document.getElementById(`vi-${idx}`); if (!el) return;
+  el.classList.add('removing');
+  setTimeout(()=>{
+    vectors.splice(idx,1); animState.splice(idx,1); lcCoeffs.splice(idx,1);
+    vectors.forEach((v,j)=>{ v.name=`v${j+1}`; v.color=palette()[j%palette().length]; });
+    if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
+    resultantAnimProgress=(showResultant&&vectors.length>=2)?1:0;
+    updateList(); updatePanels(); animateZoom(vectors.length?computeTargetUnit():BASE_UNIT); render();
+  },180);
+}
+function fmt(n) {
+  const abs=Math.abs(n);
+  if (abs>=1e6) return parseFloat((n/1e6).toFixed(3))+'M';
+  if (abs>=1e3) return parseFloat((n/1e3).toFixed(3))+'k';
+  return parseFloat(n.toFixed(4)).toString();
+}
+function updateList() {
+  const el=document.getElementById('vec-list');
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const emptyLabel=lang==='ja'?'— 空':lang==='id'?'— kosong':'— empty';
+  if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${emptyLabel}</p>`; return; }
+  el.innerHTML=vectors.map((v,i)=>{
+    const ex=fmt(v.ex-v.ox),ey=fmt(v.ey-v.oy),ez=fmt((v.ez||0)-(v.oz||0));
+    const compStr=currentMode==='3d'?`(${ex},&thinsp;${ey},&thinsp;${ez})`:`(${ex},&thinsp;${ey})`;
+    const chainLabel=lang==='ja'?'チェーン':lang==='id'?'rantai':'chain';
+    const chainTag=v.op==='chain'?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent2) 12%,transparent);color:var(--accent2)">${chainLabel}</span>`:'';
+    const scalarTag=v.scalar!==1?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent3) 12%,transparent);color:var(--accent3)">×${v.scalar}</span>`:'';
+    return `<div class="vitem" id="vi-${i}">
+      <span class="dot" style="background:${v.color}"></span>
+      <span class="mono" style="font-size: 14px;font-weight:500;color:${v.color};min-width:22px">${v.name}</span>
+      <span class="mono" style="font-size: 14px;color:var(--ink2)">${compStr}</span>
+      ${chainTag}${scalarTag}
+      <button class="remove-btn" onclick="removeVector(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+function gramSchmidt(vecs) {
+  const basis=[];
+  for (const v of vecs) {
+    let u=[...v];
+    for (const b of basis) { const dot=u[0]*b[0]+u[1]*b[1]+u[2]*b[2]; u=u.map((x,i)=>x-dot*b[i]); }
+    const norm=Math.sqrt(u.reduce((s,x)=>s+x*x,0));
+    if (norm>1e-9) basis.push(u.map(x=>x/norm));
+  }
+  return basis;
+}
+function computeRank() { return gramSchmidt(vectors.map(v=>[v.ex-v.ox,v.ey-v.oy,(v.ez||0)-(v.oz||0)])).length; }
+
+function updateLCPanel() {
+  const slidersEl=document.getElementById('lc-sliders'), resultEl=document.getElementById('lc-result');
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
+  if (!vectors.length) { slidersEl.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`; resultEl.style.display='none'; lcCoeffs=[]; return; }
+  while (lcCoeffs.length<vectors.length) lcCoeffs.push(1); lcCoeffs.length=vectors.length;
+  slidersEl.innerHTML=vectors.map((v,i)=>{
+    const c=lcCoeffs[i];
+    return `<div class="lc-row"><span class="lc-name" style="color:${v.color}">${v.name}</span>
+      <input type="range" id="lc-s-${i}" min="-4" max="4" step="0.1" value="${c}"
+        oninput="lcCoeffs[${i}]=parseFloat(this.value);document.getElementById('lc-v-${i}').textContent=parseFloat(this.value).toFixed(1);updateLCResult();render()">
+      <span class="lc-val" id="lc-v-${i}">${c.toFixed(1)}</span></div>`;
+  }).join('');
+  updateLCResult();
+}
+function updateLCResult() {
+  const resultEl=document.getElementById('lc-result');
+  if (!vectors.length) { resultEl.style.display='none'; return; }
+  let rx=0,ry=0,rz=0;
+  const terms=vectors.map((v,i)=>{
+    const c=lcCoeffs[i]!==undefined?lcCoeffs[i]:1;
+    rx+=(v.ex-v.ox)*c; ry+=(v.ey-v.oy)*c; rz+=((v.ez||0)-(v.oz||0))*c;
+    const sign=i===0?'':(c>=0?' + ':' − ');
+    const absC=Math.abs(c).toFixed(1);
+    return `${sign}${absC}<span style="color:${v.color}">${v.name}</span>`;
+  });
+  const dim=currentMode==='3d'?`(${fmt(rx)}, ${fmt(ry)}, ${fmt(rz)})`:`(${fmt(rx)}, ${fmt(ry)})`;
+  const mag=currentMode==='3d'?Math.sqrt(rx*rx+ry*ry+rz*rz):Math.sqrt(rx*rx+ry*ry);
+  resultEl.style.display='block';
+  resultEl.innerHTML=`<div style="margin-bottom:4px;color:var(--ink3);font-size:10px">LC =</div>
+    <div style="margin-bottom:6px">${terms.join('')}</div>
+    <div style="color:var(--ink);font-size:12px">= <strong>${dim}</strong></div>
+    <div style="color:var(--ink3);font-size: 13px;margin-top:3px">|LC| = ${fmt(mag)}</div>`;
+  render();
+}
+function updateSpanPanel() {
+  const el=document.getElementById('span-info');
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
+  if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`; return; }
+  const dim=currentMode==='3d'?3:2, rank=computeRank(), dark=isDark();
+  let spanName,color,desc;
+  const msgs={
+    zero: {en:'All vectors are zero. Span is only the origin.',ja:'すべてのベクトルがゼロベクトルです。スパンは原点のみ。',id:'Semua vektor nol. Span hanya titik asal.'},
+    line: {en:`A single line (1D subspace)<br>span = {t·<strong>${vectors[0].name}</strong> | t ∈ ℝ}`,ja:`一本の直線（1次元部分空間）<br>span = {t·<strong>${vectors[0].name}</strong> | t ∈ ℝ}`,id:`Sebuah garis (subruang 1D)<br>span = {t·<strong>${vectors[0].name}</strong> | t ∈ ℝ}`},
+    r2:   {en:'Spans the entire plane ℝ².',ja:'全平面 ℝ² にスパンします。',id:'Mencakup seluruh bidang ℝ².'},
+    plane:{en:'A 2D plane in 3D space.',ja:'3次元空間内の2次元平面にスパンします。',id:'Bidang 2D dalam ruang 3D.'},
+    r3:   {en:'Spans the entire 3D space ℝ³.',ja:'全3次元空間 ℝ³ にスパンします。',id:'Mencakup seluruh ruang 3D ℝ³.'},
+  };
+  if (rank===0)           { spanName='{0}';  color=dark?'#6b6b6b':'#999'; desc=msgs.zero[lang]; }
+  else if (rank===1)      { spanName='line'; color=dark?'#6a9fd8':'#2a5caa'; desc=msgs.line[lang]; }
+  else if (rank===2&&dim===2) { spanName='ℝ²'; color=dark?'#5aba80':'#2e7d52'; desc=msgs.r2[lang]; }
+  else if (rank===2&&dim===3) { spanName='plane'; color=dark?'#5aba80':'#2e7d52'; desc=msgs.plane[lang]; }
+  else if (rank===3)      { spanName='ℝ³'; color=dark?'#d4a06a':'#8b5a2b'; desc=msgs.r3[lang]; }
+  else                    { spanName=`rank ${rank}`; color=dark?'#9a88d8':'#5b4a9e'; desc=`rank = ${rank}`; }
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span class="span-badge" style="color:${color};border-color:color-mix(in srgb,${color} 40%,transparent);background:color-mix(in srgb,${color} 10%,transparent)">
+      <span class="span-dot" style="background:${color}"></span>span = ${spanName}</span>
+    <span class="mono" style="font-size: 13px;color:var(--ink3)">rank = ${rank} / ${dim}</span></div>
+    <p style="font-size: 14px;font-family:'DM Sans',sans-serif;color:var(--ink2);line-height:1.6;margin-top:4px">${desc}</p>`;
+}
+function updateBasisPanel() {
+  const el=document.getElementById('basis-info');
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
+  if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`; return; }
+  const dim=currentMode==='3d'?3:2,rank=computeRank(),n=vectors.length,dark=isDark();
+  const isLI=rank===n,isBasis=isLI&&rank===dim,isOver=n>dim;
+  const statusMsgs={
+    over:{en:'Linearly Dependent (overcomplete)',ja:'線形従属（過剰）',id:'Bergantung Linear (berlebih)'},
+    dep:{en:'Linearly Dependent',ja:'線形従属',id:'Bergantung Linear'},
+    basis:{en:`Basis for ℝ${dim} ✓`,ja:`ℝ${dim} の基底 ✓`,id:`Basis untuk ℝ${dim} ✓`},
+    span:{en:'Basis for its span',ja:'スパンの基底',id:'Basis untuk spannya'},
+  };
+  let statusText,statusColor;
+  if (isOver) { statusText=statusMsgs.over[lang]; statusColor=dark?'#d47070':'#b84040'; }
+  else if (!isLI) { statusText=statusMsgs.dep[lang]; statusColor=dark?'#d47070':'#b84040'; }
+  else if (isBasis) { statusText=statusMsgs.basis[lang]; statusColor=dark?'#5aba80':'#2e7d52'; }
+  else { statusText=statusMsgs.span[lang]; statusColor=dark?'#d4a06a':'#8b5a2b'; }
+  const vecs=vectors.map(v=>[v.ex-v.ox,v.ey-v.oy,(v.ez||0)-(v.oz||0)]);
+  const onb=gramSchmidt(vecs);
+  const onbStr=onb.map((u,i)=>{
+    const comps=currentMode==='3d'?`(${u[0].toFixed(3)}, ${u[1].toFixed(3)}, ${u[2].toFixed(3)})`:`(${u[0].toFixed(3)}, ${u[1].toFixed(3)})`;
+    return `<div>ê${i+1} = <strong>${comps}</strong></div>`;
+  }).join('');
+  const onbLabel=lang==='ja'?'正規直交基底 (Gram-Schmidt)':lang==='id'?'Basis ortonormal (Gram-Schmidt)':'Orthonormal basis (Gram-Schmidt)';
+  const liMsg=lang==='ja'?`${rank} 本のベクトルが線形独立です。`:lang==='id'?`${rank} vektor bebas linear.`:`${rank} vectors are linearly independent.`;
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+    <span class="basis-pill" style="background:color-mix(in srgb,${statusColor} 14%,transparent);color:${statusColor};border:1px solid color-mix(in srgb,${statusColor} 35%,transparent)">${statusText}</span>
+    <span class="mono" style="font-size: 13px;color:var(--ink3)">${n} · rank ${rank}</span></div>
+    ${!isLI?`<p style="font-size: 14px;font-family:'DM Sans',sans-serif;color:var(--ink2);margin-bottom:6px">${liMsg}</p>`:''}
+    ${onb.length?`<div class="basis-block"><div style="color:var(--ink3);font-size: 12px;margin-bottom:4px">${onbLabel}</div>${onbStr}</div>`:''}`;
+}
+function updateOpsPanel() {
+  const el = document.getElementById('ops-info'), dotRow = document.getElementById('row-dot'), crossRow = document.getElementById('row-cross');
+  const lang = document.body.getAttribute('data-active-lang')||'en';
+  if (vectors.length < 2) {
+    el.innerHTML = `<p class="mono" style="font-size: 14px;color:var(--ink3)">${lang==='ja'?'ベクトルを2つ以上追加してください':lang==='id'?'Tambahkan minimal dua vektor':'Add at least two vectors'}</p>`;
+    dotRow.style.display = 'none'; crossRow.style.display = 'none'; showProjection = false; showCross = false;
+    document.getElementById('toggle-dot').checked = false; document.getElementById('toggle-cross').checked = false;
+    return;
+  }
+  const v1 = vectors[0], v2 = vectors[1];
+  const dx1 = v1.ex-v1.ox, dy1 = v1.ey-v1.oy, dz1 = (v1.ez||0)-(v1.oz||0);
+  const dx2 = v2.ex-v2.ox, dy2 = v2.ey-v2.oy, dz2 = (v2.ez||0)-(v2.oz||0);
+  const dot = dx1*dx2 + dy1*dy2 + dz1*dz2, mag1 = Math.sqrt(dx1*dx1+dy1*dy1+dz1*dz1), mag2 = Math.sqrt(dx2*dx2+dy2*dy2+dz2*dz2);
+  const cosTheta = mag1*mag2 > 0 ? dot/(mag1*mag2) : 0;
+  const theta = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
+  const cx = dy1*dz2 - dz1*dy2, cy = dz1*dx2 - dx1*dz2, cz = dx1*dy2 - dy1*dx2;
+  const crossMag = Math.sqrt(cx*cx+cy*cy+cz*cz);
+  
+  el.innerHTML = `
+    <div style="font-size: 14px;color:var(--ink3);margin-bottom:6px">Operations on <strong>${v1.name}</strong> and <strong>${v2.name}</strong>:</div>
+    <div style="margin-bottom:4px"><span style="color:var(--ink3)">Dot Product (v₁·v₂) = </span><strong>${fmt(dot)}</strong></div>
+    <div><span style="color:var(--ink3)">Angle (θ) = </span><strong>${(theta*180/Math.PI).toFixed(1)}°</strong></div>
+    ${currentMode === '3d' ? `<div style="margin-top:4px"><span style="color:var(--ink3)">Cross Mag |v₁×v₂| = </span><strong>${fmt(crossMag)}</strong></div>
+    <div style="color:var(--ink3);font-size: 13px;margin-top:2px">v₁×v₂ = (${fmt(cx)}, ${fmt(cy)}, ${fmt(cz)})</div>` : ''}
+  `;
+  dotRow.style.display = 'flex'; crossRow.style.display = currentMode === '3d' ? 'flex' : 'none';
+}
+
+function updateTheoryNote() {
+  const lang = document.body.getAttribute('data-active-lang')||'en';
+  const notes = {
+    en:`<p><strong>Vector Spaces:</strong> A vector space $\\mathcal{V}$ over $\\mathbb{R}$ is defined by linear combination. The <em>Span</em> is the set of all possible linear combinations.</p><p><strong>Dot Product:</strong> $\\mathbf{u} \\cdot \\mathbf{v} = \\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\cos(\\theta)$. Formally, it induces an inner product space, defining geometric concepts like length and orthogonality (when $\\mathbf{u} \\cdot \\mathbf{v} = 0$). Projection of $\\mathbf{u}$ onto $\\mathbf{v}$ is $\\text{proj}_{\\mathbf{v}}(\\mathbf{u}) = \\frac{\\mathbf{u} \\cdot \\mathbf{v}}{\\|\\mathbf{v}\\|^2}\\mathbf{v}$.</p><p><strong>Cross Product:</strong> In $\\mathbb{R}^3$, $\\mathbf{u} \\times \\mathbf{v}$ yields a vector orthogonal to both, with magnitude $\\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\sin(\\theta)$ representing the parallelogram area.</p><p style="font-size: 13px;color:var(--ink3);margin-top:8px">Reference: Strang, G. (2016). <em>Introduction to Linear Algebra</em>. Wellesley-Cambridge Press.</p>`,
+    ja:`<p><strong>ベクトル空間:</strong> 実数上のベクトル空間 $\\mathcal{V}$ は線形結合によって定義されます。<em>スパン（張る空間）</em>は、すべての可能な線形結合の集合です。</p><p><strong>内積（Dot Product）:</strong> $\\mathbf{u} \\cdot \\mathbf{v} = \\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\cos(\\theta)$。形式的には計量ベクトル空間を導入し、長さや直交性（$\\mathbf{u} \\cdot \\mathbf{v} = 0$）などの幾何学的概念を定義します。</p><p><strong>外積（Cross Product）:</strong> $\\mathbb{R}^3$ において、$\\mathbf{u} \\times \\mathbf{v}$ は両方に直交するベクトルを生成し、その大きさ $\\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\sin(\\theta)$ は平行四辺形の面積を表します。</p><p style="font-size: 13px;color:var(--ink3);margin-top:8px">参考文献: Strang, G. (2016). <em>Introduction to Linear Algebra</em>. Wellesley-Cambridge Press.</p>`,
+    id:`<p><strong>Ruang Vektor:</strong> Ruang vektor $\\mathcal{V}$ atas $\\mathbb{R}$ didefinisikan oleh kombinasi linear. <em>Span (Rentang)</em> adalah himpunan semua kombinasi linear yang mungkin.</p><p><strong>Produk Titik (Dot Product):</strong> $\\mathbf{u} \\cdot \\mathbf{v} = \\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\cos(\\theta)$. Secara formal, ini menginduksi ruang hasil kali dalam, mendefinisikan panjang dan ortogonalitas. Proyeksi $\\mathbf{u}$ pada $\\mathbf{v}$ adalah $\\text{proj}_{\\mathbf{v}}(\\mathbf{u}) = \\frac{\\mathbf{u} \\cdot \\mathbf{v}}{\\|\\mathbf{v}\\|^2}\\mathbf{v}$.</p><p><strong>Produk Silang (Cross Product):</strong> Dalam $\\mathbb{R}^3$, $\\mathbf{u} \\times \\mathbf{v}$ menghasilkan vektor ortogonal, dengan besaran $\\|\\mathbf{u}\\|\\|\\mathbf{v}\\|\\sin(\\theta)$ mewakili luas jajaran genjang.</p><p style="font-size: 13px;color:var(--ink3);margin-top:8px">Referensi: Strang, G. (2016). <em>Introduction to Linear Algebra</em>. Wellesley-Cambridge Press.</p>`
+  };
+  const el = document.getElementById('theory-text');
+  if (el) { el.innerHTML = notes[lang] || notes.en; }
+  if (window.MathJax) { MathJax.typesetPromise([el]).catch(()=>{}); }
+}
+
+function updatePanels() { updateLCPanel(); updateSpanPanel(); updateBasisPanel(); updateOpsPanel(); }
+function updateStats() {
+  const el=document.getElementById('stats');
+  if (!vectors.length||animState[vectors.length-1]<0.99) { el.innerHTML=''; return; }
+  const last=vectors[vectors.length-1];
+  const dx=last.ex-last.ox,dy=last.ey-last.oy,dz=(last.ez||0)-(last.oz||0);
+  const mag=currentMode==='3d'?Math.sqrt(dx*dx+dy*dy+dz*dz):Math.sqrt(dx*dx+dy*dy);
+  const deg=Math.atan2(dy,dx)*180/Math.PI;
+  let rx=0,ry=0,rz=0;
+  vectors.forEach(v=>{rx+=v.ex-v.ox;ry+=v.ey-v.oy;rz+=(v.ez||0)-(v.oz||0);});
+  const resMag=currentMode==='3d'?Math.sqrt(rx*rx+ry*ry+rz*rz):Math.sqrt(rx*rx+ry*ry);
+  const s=(label,val,color)=>`<span style="color:var(--ink3)">${label}&thinsp;<span style="color:${color||'var(--ink2)'}">${val}</span></span>`;
+  el.innerHTML=[
+    s(`|${last.name}|`,fmt(mag),last.color),
+    currentMode==='2d'?s('θ',`${parseFloat(deg.toFixed(1))}°`,last.color):'',
+    vectors.length>1?s('|Σ|',fmt(resMag),'var(--accent3)'):'',
+  ].filter(Boolean).join('<span style="color:var(--ink3);margin:0 4px">·</span>');
+}
+
+canvas.addEventListener('mousedown',e=>{if(currentMode!=='3d')return;drag.active=true;drag.startX=e.clientX;drag.startY=e.clientY;drag.startAz=cam.azimuth;drag.startEl=cam.elevation;});
+window.addEventListener('mousemove',e=>{if(!drag.active)return;const dx=(e.clientX-drag.startX)*0.007,dy=(e.clientY-drag.startY)*0.007;cam.azimuth=drag.startAz+dx;cam.elevation=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,drag.startEl+dy));render();});
+window.addEventListener('mouseup',()=>{drag.active=false;});
+canvas.addEventListener('wheel',e=>{if(currentMode!=='3d')return;e.preventDefault();cam.scale=Math.max(0.1,Math.min(10,cam.scale*(e.deltaY>0?0.92:1.08)));render();},{passive:false});
+canvas.addEventListener('touchstart',e=>{if(currentMode!=='3d')return;if(e.touches.length===1){drag.active=true;drag.startX=e.touches[0].clientX;drag.startY=e.touches[0].clientY;drag.startAz=cam.azimuth;drag.startEl=cam.elevation;}},{passive:true});
+canvas.addEventListener('touchmove',e=>{if(currentMode!=='3d'||!drag.active||e.touches.length!==1)return;const dx=(e.touches[0].clientX-drag.startX)*0.008,dy=(e.touches[0].clientY-drag.startY)*0.008;cam.azimuth=drag.startAz+dx;cam.elevation=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,drag.startEl+dy));render();},{passive:true});
+canvas.addEventListener('touchend',()=>{drag.active=false;});
+canvas.addEventListener('dblclick',()=>{if(currentMode!=='3d')return;cam.azimuth=0.55;cam.elevation=0.42;cam.scale=1.0;render();});
+window.addEventListener('resize',resize);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{vectors.forEach((v,i)=>{v.color=palette()[i%palette().length];});updateList();render();});
+resize();
+updateTheoryNote();
+</script>
+<div style="text-align: center; padding: 40px 20px 50px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
+  Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
+</div>
+</body>
+</html>

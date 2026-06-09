@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en" data-active-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Networks — AI Math Lab</title>
+<meta name="description" content="Visualize MLP forward pass, activation functions, and gradient descent on a neural network — from neuron to deep learning.">
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.tab-bar { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
+.tab-btn { font-family:'JetBrains Mono',monospace; font-size: 14px; padding:5px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--ink3); transition:background 0.12s,color 0.12s; }
+.tab-btn.active { background:var(--accent5); color:#fff; border-color:var(--accent5); }
+.neuron-input { width:50px; font-family:'JetBrains Mono',monospace; font-size: 15px; padding:4px 6px; }
+</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<meta name="author" content="Rico Eriansyah">
+<meta name="keywords" content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab">
+<link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body data-active-lang="en">
+<div class="page-shell">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+    <a class="back-link" href="index.html">
+      ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
+    </a>
+    <a href="references.html" style="font-family:'JetBrains Mono',monospace;font-size: 14px;color:var(--ink3);text-decoration:none;border:1px solid var(--border1);padding:4px 10px;border-radius:4px;margin-right:8px;background:var(--surface2);">Scientific Documentation</a>
+      <div class="lang-switcher">
+      <button class="lang-btn active" id="lb-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lb-ja" onclick="setLang('ja')">JA</button>
+      <button class="lang-btn" id="lb-id" onclick="setLang('id')">ID</button>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <h1>
+      <span data-lang="en">Neural Network Visualizer</span>
+      <span data-lang="ja">ニューラルネットワーク ビジュアライザー</span>
+      <span data-lang="id">Visualisasi Jaringan Saraf</span>
+    </h1>
+    <p>
+      <span data-lang="en">Forward pass, activation functions, and gradient descent — from single neuron to deep MLP.</span>
+      <span data-lang="ja">順伝播・活性化関数・勾配降下法 — 単一ニューロンから深層MLPまで。</span>
+      <span data-lang="id">Forward pass, fungsi aktivasi, dan gradient descent — dari satu neuron ke MLP dalam.</span>
+    </p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-mlp" onclick="setTab('mlp')">MLP</button>
+    <button class="tab-btn" id="tab-dboundary" onclick="setTab('dboundary')">Decision Boundary</button>
+    <button class="tab-btn" id="tab-backprop" onclick="setTab('backprop')">Backpropagation</button>
+    <button class="tab-btn" id="tab-act" onclick="setTab('act')">
+      <span data-lang="en">Activations</span><span data-lang="ja">活性化関数</span><span data-lang="id">Aktivasi</span>
+    </button>
+    <button class="tab-btn" id="tab-perceptron" onclick="setTab('perceptron')">Perceptron</button>
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+
+    
+    <div style="flex:1;min-width:320px">
+      <div class="canvas-wrap">
+        <canvas id="canvas" height="480"></canvas>
+      </div>
+      <div id="stats" class="mono" style="margin-top:8px;font-size: 14px;color:var(--ink3);display:flex;gap:16px;flex-wrap:wrap;min-height:20px"></div>
+    </div>
+
+    
+    <div style="width:270px;min-width:230px;display:flex;flex-direction:column;gap:14px">
+
+      
+      <div id="ctrl-mlp" style="display:flex;flex-direction:column;gap:10px">
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">
+              <span data-lang="en">Network Architecture</span>
+              <span data-lang="ja">ネットワーク構造</span>
+              <span data-lang="id">Arsitektur Jaringan</span>
+            </span>
+          </div>
+          <div class="panel-body">
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Layers (neurons/layer, comma separated)</span>
+                <span data-lang="ja">層 (ニューロン数をカンマ区切りで)</span>
+                <span data-lang="id">Lapisan (neuron/lapisan, pisah koma)</span>
+              </label>
+              <input type="text" id="arch-input" value="2,4,3,1" oninput="parseArch()" style="font-family:'JetBrains Mono',monospace;font-size:12px">
+            </div>
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Activation</span><span data-lang="ja">活性化関数</span><span data-lang="id">Aktivasi</span>
+              </label>
+              <select id="act-select" onchange="buildNetwork();render()">
+                <option value="relu">ReLU</option>
+                <option value="sigmoid">Sigmoid</option>
+                <option value="tanh">Tanh</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">
+              <span data-lang="en">Input Values</span><span data-lang="ja">入力値</span><span data-lang="id">Nilai Input</span>
+            </span>
+          </div>
+          <div class="panel-body">
+            <div id="input-fields" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-fill" style="flex:1" onclick="runForward()">
+            <span data-lang="en">Forward Pass</span><span data-lang="ja">順伝播</span><span data-lang="id">Forward Pass</span>
+          </button>
+          <button class="btn btn-outline" onclick="randomizeWeights()">
+            <span data-lang="en">Randomize</span><span data-lang="ja">ランダム化</span><span data-lang="id">Acak</span>
+          </button>
+        </div>
+
+        <div class="result-box" id="mlp-result"></div>
+      </div>
+
+      
+      <div id="ctrl-act" style="display:none;flex-direction:column;gap:10px">
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">
+              <span data-lang="en">Activation Functions</span><span data-lang="ja">活性化関数</span><span data-lang="id">Fungsi Aktivasi</span>
+            </span>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn-mode active" id="abt-relu" onclick="setActFn('relu')">ReLU</button>
+              <button class="btn-mode" id="abt-sigmoid" onclick="setActFn('sigmoid')">Sigmoid</button>
+              <button class="btn-mode" id="abt-tanh" onclick="setActFn('tanh')">Tanh</button>
+              <button class="btn-mode" id="abt-leaky" onclick="setActFn('leaky')">Leaky ReLU</button>
+              <button class="btn-mode" id="abt-gelu" onclick="setActFn('gelu')">GELU</button>
+            </div>
+            <div class="slider-row">
+              <span class="sl-name">x</span>
+              <input type="range" id="act-x" min="-5" max="5" step="0.05" value="0.5" oninput="actX=parseFloat(this.value);document.getElementById('act-x-val').textContent=actX.toFixed(2);render()">
+              <span class="sl-val" id="act-x-val">0.50</span>
+            </div>
+          </div>
+        </div>
+        <div class="result-box" id="act-result"></div>
+      </div>
+
+      
+      <div id="ctrl-perceptron" style="display:none;flex-direction:column;gap:10px">
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">
+              <span data-lang="en">Single Neuron</span><span data-lang="ja">単一ニューロン</span><span data-lang="id">Neuron Tunggal</span>
+            </span>
+          </div>
+          <div class="panel-body">
+            <div class="slider-row">
+              <span class="sl-name">x₁</span>
+              <input type="range" id="p-x1" min="-3" max="3" step="0.1" value="1" oninput="pX1=parseFloat(this.value);document.getElementById('p-x1-v').textContent=pX1.toFixed(1);render()">
+              <span class="sl-val" id="p-x1-v">1.0</span>
+            </div>
+            <div class="slider-row">
+              <span class="sl-name">x₂</span>
+              <input type="range" id="p-x2" min="-3" max="3" step="0.1" value="0.5" oninput="pX2=parseFloat(this.value);document.getElementById('p-x2-v').textContent=pX2.toFixed(1);render()">
+              <span class="sl-val" id="p-x2-v">0.5</span>
+            </div>
+            <div class="slider-row">
+              <span class="sl-name">w₁</span>
+              <input type="range" id="p-w1" min="-3" max="3" step="0.1" value="0.8" oninput="pW1=parseFloat(this.value);document.getElementById('p-w1-v').textContent=pW1.toFixed(1);render()">
+              <span class="sl-val" id="p-w1-v">0.8</span>
+            </div>
+            <div class="slider-row">
+              <span class="sl-name">w₂</span>
+              <input type="range" id="p-w2" min="-3" max="3" step="0.1" value="0.5" oninput="pW2=parseFloat(this.value);document.getElementById('p-w2-v').textContent=pW2.toFixed(1);render()">
+              <span class="sl-val" id="p-w2-v">0.5</span>
+            </div>
+            <div class="slider-row">
+              <span class="sl-name">b</span>
+              <input type="range" id="p-b" min="-3" max="3" step="0.1" value="0" oninput="pBias=parseFloat(this.value);document.getElementById('p-b-v').textContent=pBias.toFixed(1);render()">
+              <span class="sl-val" id="p-b-v">0.0</span>
+            </div>
+          </div>
+        </div>
+        <div class="result-box" id="perc-result"></div>
+      </div>
+
+      
+      <div id="ctrl-dboundary" style="display:none;flex-direction:column;gap:10px">
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">Training XOR (2→4→1)</span>
+          </div>
+          <div class="panel-body">
+            <div class="slider-row">
+              <span class="sl-name">LR (α)</span>
+              <input type="range" id="db-lr" min="0.01" max="0.5" step="0.01" value="0.1" oninput="dbLr=parseFloat(this.value);document.getElementById('db-lr-v').textContent=dbLr.toFixed(2)">
+              <span class="sl-val" id="db-lr-v">0.10</span>
+            </div>
+            <button class="btn btn-fill" style="width:100%;margin-top:8px" id="db-train-btn" onclick="toggleDbTraining()">
+              Start Training
+            </button>
+            <button class="btn btn-outline" style="width:100%;margin-top:4px" onclick="resetDbNetwork()">
+              Reset Weights
+            </button>
+          </div>
+        </div>
+        <div class="result-box" id="db-result"></div>
+      </div>
+
+      
+      <div id="ctrl-backprop" style="display:none;flex-direction:column;gap:10px">
+        <div class="panel">
+          <div class="panel-head" style="cursor:default">
+            <span class="ph-title">Chain Rule</span>
+          </div>
+          <div class="panel-body">
+            <div class="slider-row">
+              <span class="sl-name">Target y</span>
+              <input type="range" id="bp-y" min="0" max="1" step="0.1" value="1" oninput="bpY=parseFloat(this.value);document.getElementById('bp-y-v').textContent=bpY.toFixed(1);render()">
+              <span class="sl-val" id="bp-y-v">1.0</span>
+            </div>
+            <button class="btn btn-fill" style="width:100%;margin-top:8px" onclick="stepBackprop()">
+              Gradient Step
+            </button>
+          </div>
+        </div>
+        <div class="result-box" id="bp-result"></div>
+      </div>
+
+      
+      <div class="panel">
+        <div class="panel-head" id="ph-theory" onclick="togglePanel('theory')">
+          <span class="ph-title">
+            <i class="fa-solid fa-book" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Theory Note</span><span data-lang="ja">理論ノート</span><span data-lang="id">Catatan Teori</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-theory">
+          <div id="theory-text" style="font-size: 15px;font-family:'DM Sans',sans-serif;color:var(--ink2);line-height:1.65"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+function setLang(lang){
+  document.body.setAttribute('data-active-lang',lang);
+  document.documentElement.setAttribute('lang',lang==='ja'?'ja':lang==='id'?'id':'en');
+  ['en','ja','id'].forEach(l=>document.getElementById('lb-'+l).classList.toggle('active',l===lang));
+  localStorage.setItem('aiml-lang',lang);
+  updateTheoryNote(); render();
+}
+setTimeout(() => { const _sl=localStorage.getItem('aiml-lang'); if(_sl) setLang(_sl); }, 0);
+function togglePanel(name){document.getElementById('ph-'+name)?.classList.toggle('collapsed');document.getElementById('pb-'+name)?.classList.toggle('collapsed');}
+
+
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+let W,H;
+function isDark(){return window.matchMedia('(prefers-color-scheme: dark)').matches;}
+
+
+let currentTab='mlp';
+function setTab(t){
+  currentTab=t;
+  ['mlp','dboundary','backprop','act','perceptron'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(el) el.classList.toggle('active',id===t);
+    const c=document.getElementById('ctrl-'+id);
+    if(c) c.style.display=id===t?'flex':'none';
+  });
+  if (currentTab !== 'dboundary' && dbIsTraining) toggleDbTraining();
+  updateTheoryNote(); render();
+}
+
+
+const ACTS={
+  relu:{f:x=>Math.max(0,x),df:x=>x>0?1:0,label:'ReLU'},
+  sigmoid:{f:x=>1/(1+Math.exp(-x)),df:x=>{const s=1/(1+Math.exp(-x));return s*(1-s);},label:'Sigmoid'},
+  tanh:{f:x=>Math.tanh(x),df:x=>1-Math.tanh(x)**2,label:'Tanh'},
+  leaky:{f:x=>x>0?x:0.1*x,df:x=>x>0?1:0.1,label:'Leaky ReLU (α=0.1)'},
+  gelu:{f:x=>0.5*x*(1+Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x*x*x))),df:x=>{const h=0.5*(1+Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x**3)));return h+x*0.5*(1-Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x**3))**2)*Math.sqrt(2/Math.PI)*(1+3*0.044715*x**2);},label:'GELU'},
+};
+let currentActFn='relu', actX=0.5;
+function setActFn(fn){
+  currentActFn=fn;
+  ['relu','sigmoid','tanh','leaky','gelu'].forEach(id=>{
+    document.getElementById('abt-'+id)?.classList.toggle('active',id===fn);
+  });
+  render();
+}
+
+
+let arch=[2,4,3,1], network=null, activations=[], forwardDone=false;
+function parseArch(){
+  const v=document.getElementById('arch-input').value;
+  const nums=v.split(',').map(s=>parseInt(s.trim())).filter(n=>n>0&&n<=10);
+  if(nums.length>=2) arch=nums;
+  buildNetwork();
+}
+function randW(){return (Math.random()*2-1)*0.8;}
+function buildNetwork(){
+  network={layers:[]};
+  for(let i=1;i<arch.length;i++){
+    const layer={weights:[],biases:[]};
+    for(let j=0;j<arch[i];j++){
+      layer.weights.push(Array.from({length:arch[i-1]},()=>randW()));
+      layer.biases.push(randW()*0.2);
+    }
+    network.layers.push(layer);
+  }
+  activations=[]; forwardDone=false;
+  buildInputFields();
+  render();
+}
+function randomizeWeights(){buildNetwork();}
+function buildInputFields(){
+  const el=document.getElementById('input-fields');
+  el.innerHTML='';
+  for(let i=0;i<arch[0];i++){
+    const inp=document.createElement('input');
+    inp.type='number'; inp.value=(Math.random()*2-1).toFixed(2);
+    inp.className='neuron-input'; inp.id=`net-inp-${i}`;
+    inp.step='0.1';
+    el.appendChild(inp);
+  }
+}
+function sigmoid(x){return 1/(1+Math.exp(-x));}
+function getActFn(){return ACTS[document.getElementById('act-select')?.value||'relu'];}
+function forwardPass(inputs){
+  let cur=inputs;
+  const allActs=[cur.slice()];
+  for(const layer of network.layers){
+    const next=[];
+    for(let j=0;j<layer.weights.length;j++){
+      let z=layer.biases[j];
+      for(let k=0;k<cur.length;k++) z+=layer.weights[j][k]*cur[k];
+      next.push(getActFn().f(z));
+    }
+    cur=next;
+    allActs.push(cur.slice());
+  }
+  return allActs;
+}
+function runForward(){
+  const inputs=[];
+  for(let i=0;i<arch[0];i++){
+    inputs.push(parseFloat(document.getElementById(`net-inp-${i}`)?.value)||0);
+  }
+  activations=forwardPass(inputs);
+  forwardDone=true;
+  render();
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const outLabel=lang==='ja'?'出力':lang==='id'?'Output':'Output';
+  const actLabel=lang==='ja'?'活性化':lang==='id'?'Aktivasi':'Activations';
+  document.getElementById('mlp-result').innerHTML=`
+    <div><span style="color:var(--ink3)">${outLabel}: </span><strong>${activations[activations.length-1].map(v=>v.toFixed(4)).join(', ')}</strong></div>
+    <div style="color:var(--ink3);font-size: 13px;margin-top:4px">${actLabel} ${getActFn().label}</div>
+  `;
+}
+
+
+let pX1=1,pX2=0.5,pW1=0.8,pW2=0.5,pBias=0;
+
+
+let dbW1, dbB1, dbW2, dbB2, dbEpoch=0;
+let dbLr=0.1, dbIsTraining=false, dbAnimFrame=null;
+const dbData = [{x: [-1,-1], y:0}, {x:[1,-1], y:1}, {x:[-1,1], y:1}, {x:[1,1], y:0}];
+function initDbNetwork() {
+  dbW1 = Array.from({length:4},()=>[randW()*2,randW()*2]);
+  dbB1 = Array.from({length:4},()=>randW()*2);
+  dbW2 = [randW()*2,randW()*2,randW()*2,randW()*2];
+  dbB2 = randW()*2;
+  dbEpoch = 0;
+}
+function resetDbNetwork() { initDbNetwork(); if(!dbIsTraining) render(); }
+function toggleDbTraining() {
+  dbIsTraining = !dbIsTraining;
+  document.getElementById('db-train-btn').textContent = dbIsTraining ? 'Stop Training' : 'Start Training';
+  if (dbIsTraining) dbLoop();
+  else cancelAnimationFrame(dbAnimFrame);
+}
+function dbSigmoidDeriv(out) { return out*(1-out); }
+function dbForward(x) {
+  const h = [];
+  for(let i=0; i<4; i++) h.push(sigmoid(dbW1[i][0]*x[0] + dbW1[i][1]*x[1] + dbB1[i]));
+  let z = dbB2;
+  for(let i=0; i<4; i++) z += dbW2[i]*h[i];
+  return {h, out: sigmoid(z)};
+}
+function dbTrainStep() {
+  for(let step=0; step<20; step++){
+    let i = Math.floor(Math.random()*dbData.length);
+    let {x, y} = dbData[i];
+    let {h, out} = dbForward(x);
+    let lossD = out - y;
+    let dOutZ = lossD * dbSigmoidDeriv(out);
+    
+    let dW2 = [], dB2 = dOutZ;
+    for(let j=0; j<4; j++) dW2.push(dOutZ * h[j]);
+    
+    let dH = [];
+    for(let j=0; j<4; j++) dH.push(dOutZ * dbW2[j]);
+    
+    let dW1 = [[0,0],[0,0],[0,0],[0,0]], dB1 = [0,0,0,0];
+    for(let j=0; j<4; j++){
+      let dHZ = dH[j] * dbSigmoidDeriv(h[j]);
+      dW1[j][0] = dHZ * x[0];
+      dW1[j][1] = dHZ * x[1];
+      dB1[j] = dHZ;
+    }
+    
+    for(let j=0; j<4; j++) {
+      dbW2[j] -= dbLr * dW2[j];
+      dbW1[j][0] -= dbLr * dW1[j][0];
+      dbW1[j][1] -= dbLr * dW1[j][1];
+      dbB1[j] -= dbLr * dB1[j];
+    }
+    dbB2 -= dbLr * dB2;
+    dbEpoch++;
+  }
+}
+function dbLoop() {
+  dbTrainStep(); render();
+  if (dbIsTraining) dbAnimFrame = requestAnimationFrame(dbLoop);
+}
+initDbNetwork();
+
+let bpW1=0.5, bpW2=-0.5, bpX=1.0, bpY=1.0, bpLr=0.2;
+function stepBackprop() {
+  const a1 = sigmoid(bpW1 * bpX);
+  const a2 = sigmoid(bpW2 * a1);
+  const dL_da2 = a2 - bpY;
+  const dL_dw2 = dL_da2 * a2*(1-a2) * a1;
+  const dL_dw1 = dL_da2 * a2*(1-a2) * bpW2 * a1*(1-a1) * bpX;
+  bpW1 -= bpLr * dL_dw1; bpW2 -= bpLr * dL_dw2;
+  render();
+}
+
+
+function drawNeuron(cx,cy,r,activation,color,label){
+  const dark=isDark();
+  const fill=activation!==null?interpolateColor(activation,dark):color;
+  ctx.fillStyle=fill;
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  if(label!==null&&label!==undefined){
+    ctx.fillStyle=dark?'rgba(255,255,255,0.9)':'rgba(0,0,0,0.8)';
+    ctx.font=`${Math.min(10,r*0.7)}px "JetBrains Mono",monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(typeof label==='number'?label.toFixed(2):label,cx,cy);
+    ctx.textBaseline='alphabetic';
+  }
+}
+function interpolateColor(v,dark){
+  
+  const clamped=Math.max(0,Math.min(1,v));
+  if(dark){
+    const r=Math.round(106+(212-106)*clamped),g=Math.round(159+(160-159)*clamped),b=Math.round(216+(64-216)*clamped);
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const r=Math.round(42+(184-42)*clamped),g=Math.round(92+(64-92)*clamped),b=Math.round(170+(64-170)*clamped);
+    return `rgb(${r},${g},${b})`;
+  }
+}
+function drawEdge(x1,y1,x2,y2,weight){
+  const dark=isDark();
+  const w=Math.abs(weight);
+  const positive=weight>=0;
+  ctx.strokeStyle=positive?(dark?'rgba(106,159,216,0.5)':'rgba(42,92,170,0.4)'):(dark?'rgba(212,112,112,0.5)':'rgba(184,64,64,0.4)');
+  ctx.lineWidth=Math.min(3,0.4+w*1.2);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+}
+
+
+function renderMLP(){
+  ctx.clearRect(0,0,W,H);
+  if(!network) return;
+  const dark=isDark();
+  const pad=40, layers=arch.length;
+  const xStep=(W-2*pad)/(layers-1);
+  const maxN=Math.max(...arch);
+  const r=Math.max(8,Math.min(20,Math.floor(Math.min(xStep*0.4,(H-2*pad)/maxN/2*0.85))));
+  
+  const positions=arch.map((n,li)=>{
+    const x=pad+li*xStep;
+    const totalH=(n-1)*(r*2+8);
+    const startY=(H-totalH)/2;
+    return Array.from({length:n},(_,ni)=>({x,y:startY+ni*(r*2+8)}));
+  });
+  
+  for(let li=0;li<arch.length-1;li++){
+    const layer=network.layers[li];
+    positions[li].forEach((from,fi)=>{
+      positions[li+1].forEach((to,ti)=>{
+        drawEdge(from.x,from.y,to.x,to.y,layer.weights[ti][fi]);
+      });
+    });
+  }
+  
+  positions.forEach((layerPos,li)=>{
+    layerPos.forEach((pos,ni)=>{
+      const act=forwardDone&&activations[li]?activations[li][ni]:null;
+      const col=dark?'#2a2a2a':'#e8e4dd';
+      drawNeuron(pos.x,pos.y,r,act,col,act);
+    });
+  });
+  
+  ctx.fillStyle=dark?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)';
+  ctx.font='9px "JetBrains Mono",monospace'; ctx.textAlign='center';
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  positions.forEach((layerPos,li)=>{
+    const x=layerPos[0].x;
+    const labels=li===0?{en:'Input',ja:'入力',id:'Input'}:li===positions.length-1?{en:'Output',ja:'出力',id:'Output'}:{en:`Hidden ${li}`,ja:`隠れ${li}`,id:`Tersembunyi ${li}`};
+    ctx.fillText(labels[lang]||labels.en,x,H-8);
+  });
+}
+
+
+function renderActivation(){
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark();
+  const pad=50,xMin=-5,xMax=5;
+  const fn=ACTS[currentActFn];
+  
+  let yMin=Infinity,yMax=-Infinity;
+  for(let x=xMin;x<=xMax;x+=0.1){const y=fn.f(x);if(isFinite(y)){yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);}}
+  yMin-=0.15; yMax+=0.15;
+  const toX=x=>(x-xMin)/(xMax-xMin)*(W-2*pad)+pad;
+  const toY=y=>H-pad-(y-yMin)/(yMax-yMin)*(H-2*pad);
+  
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.05)'; ctx.lineWidth=0.5;
+  for(let x=xMin;x<=xMax;x++) { ctx.beginPath(); ctx.moveTo(toX(x),pad); ctx.lineTo(toX(x),H-pad); ctx.stroke(); }
+  for(let y=Math.ceil(yMin);y<=yMax;y++) { ctx.beginPath(); ctx.moveTo(pad,toY(y)); ctx.lineTo(W-pad,toY(y)); ctx.stroke(); }
+  
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,toY(0)); ctx.lineTo(W-pad,toY(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(toX(0),pad); ctx.lineTo(toX(0),H-pad); ctx.stroke();
+  
+  ctx.strokeStyle=dark?'rgba(154,136,216,0.5)':'rgba(91,74,158,0.4)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([5,4]);
+  ctx.beginPath(); let first2=true;
+  for(let x=xMin;x<=xMax;x+=0.05){
+    const y=fn.df(x); if(!isFinite(y)||Math.abs(y)>20){first2=true;continue;}
+    const px=toX(x),py=toY(y);
+    if(first2){ctx.moveTo(px,py);first2=false;}else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+  
+  ctx.strokeStyle=dark?'#d4a06a':'#9a6e00'; ctx.lineWidth=2.5;
+  ctx.beginPath(); let first=true;
+  for(let x=xMin;x<=xMax;x+=0.04){
+    const y=fn.f(x); if(!isFinite(y)||Math.abs(y)>20){first=true;continue;}
+    const px=toX(x),py=toY(y);
+    if(first){ctx.moveTo(px,py);first=false;}else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  
+  const y0=fn.f(actX),dy0=fn.df(actX);
+  const px0=toX(actX),py0=toY(y0);
+  ctx.fillStyle=dark?'#d4a06a':'#9a6e00';
+  ctx.beginPath(); ctx.arc(px0,py0,6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=dark?'#141312':'#fdfcf8';
+  ctx.beginPath(); ctx.arc(px0,py0,2.5,0,Math.PI*2); ctx.fill();
+  
+  ctx.font='9px "JetBrains Mono",monospace'; ctx.fillStyle=dark?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)'; ctx.textAlign='center';
+  for(let x=-4;x<=4;x+=2){if(x===0)continue;ctx.fillText(x,toX(x),H-pad+14);}
+  ctx.textAlign='right';
+  for(let y=Math.ceil(yMin);y<=yMax;y+=0.5){if(Math.abs(y)<0.01)continue;ctx.fillText(y.toFixed(1),pad-5,toY(y)+4);}
+  
+  ctx.fillStyle=dark?'#d4a06a':'#9a6e00'; ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='left';
+  ctx.fillText('— f(x)',pad+4,pad+16);
+  ctx.fillStyle=dark?'rgba(154,136,216,0.8)':'rgba(91,74,158,0.7)';
+  ctx.fillText('- - f\'(x)',pad+4,pad+30);
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const valLabel=lang==='ja'?'値':lang==='id'?'nilai':'f(x)';
+  const derivLabel=lang==='ja'?'微分値':lang==='id'?'turunan':"f'(x)";
+  document.getElementById('act-result').innerHTML=`
+    <div><span style="color:var(--ink3)">${fn.label}</span></div>
+    <div><span style="color:var(--ink3)">x = </span><strong>${actX.toFixed(3)}</strong></div>
+    <div><span style="color:var(--ink3)">${valLabel} = </span><strong>${y0.toFixed(4)}</strong></div>
+    <div><span style="color:var(--ink3)">${derivLabel} = </span><span style="color:${dark?'#9a88d8':'#5b4a9e'}">${dy0.toFixed(4)}</span></div>
+  `;
+}
+
+
+function renderPerceptron(){
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark();
+  const cx=W/2, cy=H/2;
+  const neuronX=cx+40, neuronR=30;
+  const inputXs=[cx-170,cx-170], inputYs=[cy-50,cy+50];
+  
+  [[pX1,0],[pX2,1]].forEach(([v,i])=>{
+    const ix=inputXs[i],iy=inputYs[i];
+    const w=i===0?pW1:pW2;
+    drawEdge(ix,iy,neuronX,cy,w);
+    drawNeuron(ix,iy,18,null,dark?'#3a3a4a':'#c8c4bc',v.toFixed(2));
+    
+    const mx=(ix+neuronX)/2-5, my=(iy+cy)/2+4;
+    ctx.fillStyle=dark?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.5)';
+    ctx.font='9px "JetBrains Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(`w${i+1}=${w.toFixed(1)}`,mx,my-10);
+    
+    ctx.fillStyle=dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
+    ctx.fillText(`x${i+1}=${v.toFixed(1)}`,ix,iy-25);
+  });
+  
+  const biasX=neuronX,biasY=cy+100;
+  ctx.strokeStyle=dark?'rgba(212,112,112,0.4)':'rgba(184,64,64,0.3)'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(biasX,biasY-15); ctx.lineTo(biasX,cy+neuronR); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=dark?'rgba(212,112,112,0.7)':'rgba(184,64,64,0.6)'; ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='center';
+  ctx.fillText(`b=${pBias.toFixed(1)}`,biasX,biasY);
+  
+  const z=pX1*pW1+pX2*pW2+pBias;
+  const output=ACTS.sigmoid.f(z);
+  drawNeuron(neuronX,cy,neuronR,output,dark?'#d4a06a':'#9a6e00',output.toFixed(3));
+  
+  ctx.fillStyle=dark?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.55)';
+  ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='center';
+  ctx.fillText('σ(z)',neuronX,cy-neuronR-10);
+  
+  const outX=neuronX+neuronR+50;
+  ctx.strokeStyle=dark?'rgba(212,160,106,0.7)':'rgba(154,110,0,0.7)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(neuronX+neuronR,cy); ctx.lineTo(outX-15,cy); ctx.stroke();
+  const ang=0,hl=10;
+  ctx.fillStyle=dark?'#d4a06a':'#9a6e00';
+  ctx.beginPath(); ctx.moveTo(outX,cy); ctx.lineTo(outX-hl,cy-hl*0.4); ctx.lineTo(outX-hl,cy+hl*0.4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=dark?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.5)';
+  ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='left';
+  ctx.fillText(`${output.toFixed(3)}`,outX+5,cy+4);
+  
+  ctx.fillStyle=dark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.3)';
+  ctx.font='11px "JetBrains Mono",monospace'; ctx.textAlign='center';
+  ctx.fillText(`z = x₁w₁ + x₂w₂ + b = ${z.toFixed(3)}`,cx,H-40);
+  ctx.fillText(`output = σ(z) = σ(${z.toFixed(3)}) = ${output.toFixed(4)}`,cx,H-22);
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const zLabel=lang==='ja'?'線形結合 z':lang==='id'?'Jumlah berbobot z':'Weighted sum z';
+  const sigLabel='σ(z) = 1 / (1 + e⁻ᶻ)';
+  document.getElementById('perc-result').innerHTML=`
+    <div><span style="color:var(--ink3)">${zLabel} = </span><strong>${z.toFixed(4)}</strong></div>
+    <div><span style="color:var(--ink3)">${sigLabel} = </span><strong>${output.toFixed(4)}</strong></div>
+  `;
+}
+
+function renderDBoundary(){
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark(), res=8, cx=W/2, cy=H/2, scale=120;
+  
+  for(let py=0; py<H; py+=res){
+    for(let px=0; px<W; px+=res){
+      const x = (px-cx)/scale, y = (cy-py)/scale;
+      const {out} = dbForward([x, y]);
+      ctx.fillStyle = dark?`rgba(154,136,216,${out*0.8})`:`rgba(91,74,158,${out*0.8})`;
+      ctx.fillRect(px,py,res,res);
+    }
+  }
+  
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+  
+  dbData.forEach(d => {
+    const px = cx + d.x[0]*scale, py = cy - d.x[1]*scale;
+    ctx.fillStyle = d.y===1 ? (dark?'#d47070':'#b84040') : (dark?'#5aba80':'#2e7d52');
+    ctx.strokeStyle = dark?'#fff':'#000'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(px,py,8,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  });
+  
+  let loss = 0;
+  dbData.forEach(d => {
+    let {out} = dbForward(d.x);
+    loss += - (d.y*Math.log(out + 1e-8) + (1-d.y)*Math.log(1-out + 1e-8));
+  });
+  loss /= dbData.length;
+  
+  document.getElementById('db-result').innerHTML = `
+    <div><span style="color:var(--ink3)">Epoch = </span><strong>${dbEpoch}</strong></div>
+    <div><span style="color:var(--ink3)">BCE Loss = </span><strong>${loss.toFixed(4)}</strong></div>
+  `;
+}
+
+function renderBackprop(){
+  ctx.clearRect(0,0,W,H);
+  const dark=isDark(), cx=W/2, cy=H/2;
+  const z1 = bpW1 * bpX; const a1 = dbSigmoid(z1);
+  const z2 = bpW2 * a1; const a2 = dbSigmoid(z2);
+  const loss = 0.5*(a2-bpY)**2;
+  
+  const dL_da2 = a2 - bpY; const dL_dz2 = dL_da2 * a2*(1-a2);
+  const dL_dw2 = dL_dz2 * a1; const dL_da1 = dL_dz2 * bpW2;
+  const dL_dz1 = dL_da1 * a1*(1-a1); const dL_dw1 = dL_dz1 * bpX;
+  
+  const r = 25, x0 = cx - 180, x1 = cx - 60, x2 = cx + 60, xL = cx + 180;
+  drawEdge(x0,cy, x1,cy, bpW1); drawEdge(x1,cy, x2,cy, bpW2); drawEdge(x2,cy, xL,cy, 1.0);
+  
+  drawNeuron(x0, cy, r, null, dark?'#3a3a4a':'#c8c4bc', bpX.toFixed(2));
+  drawNeuron(x1, cy, r, a1, dark?'#d4a06a':'#9a6e00', a1.toFixed(2));
+  drawNeuron(x2, cy, r, a2, dark?'#d4a06a':'#9a6e00', a2.toFixed(2));
+  drawNeuron(xL, cy, r, null, dark?'#d47070':'#b84040', `L`);
+  
+  ctx.fillStyle=dark?'#fff':'#000'; ctx.font='10px "JetBrains Mono",monospace'; ctx.textAlign='center';
+  ctx.fillText('x', x0, cy-r-8); ctx.fillText('a₁=σ(w₁x)', x1, cy-r-8);
+  ctx.fillText('a₂=σ(w₂a₁)', x2, cy-r-8); ctx.fillText(`L=½(a₂-y)²`, xL, cy-r-8);
+  
+  ctx.fillStyle=dark?'rgba(154,136,216,1)':'rgba(91,74,158,1)';
+  ctx.fillText(`∂L/∂w₁=${dL_dw1.toFixed(3)}`, (x0+x1)/2, cy+20);
+  ctx.fillText(`w₁=${bpW1.toFixed(3)}`, (x0+x1)/2, cy-10);
+  ctx.fillText(`∂L/∂w₂=${dL_dw2.toFixed(3)}`, (x1+x2)/2, cy+20);
+  ctx.fillText(`w₂=${bpW2.toFixed(3)}`, (x1+x2)/2, cy-10);
+  
+  document.getElementById('bp-result').innerHTML = `
+    <div><span style="color:var(--ink3)">Target y = </span><strong>${bpY.toFixed(2)}</strong></div>
+    <div><span style="color:var(--ink3)">Output a₂ = </span><strong>${a2.toFixed(4)}</strong></div>
+    <div><span style="color:var(--ink3)">Loss L = </span><strong>${loss.toFixed(4)}</strong></div>
+  `;
+}
+
+function render(){
+  if(!W) return;
+  if(currentTab==='mlp') renderMLP();
+  else if(currentTab==='dboundary') renderDBoundary();
+  else if(currentTab==='backprop') renderBackprop();
+  else if(currentTab==='act') renderActivation();
+  else if(currentTab==='perceptron') renderPerceptron();
+}
+
+function updateTheoryNote(){
+  const lang=document.body.getAttribute('data-active-lang')||'en';
+  const notes={
+    mlp:{
+      en:`<p><strong>Multilayer Perceptron (MLP):</strong> Applies $\\mathbf{W}\\mathbf{x} + \\mathbf{b}$ at each layer, followed by a nonlinear activation. The forward pass computes outputs layer by layer. Backpropagation computes gradients using the chain rule.</p><p style="font-size: 13px;color:var(--ink3);margin-top:8px">Reference: Goodfellow, I., Bengio, Y., & Courville, A. (2016). <em>Deep Learning</em>. MIT Press.</p>`,
+      ja:`<p><strong>多層パーセプトロン (MLP):</strong> 各層で $\\mathbf{W}\\mathbf{x} + \\mathbf{b}$ と非線形活性化を適用します。順伝播は出力を計算し、逆伝播は連鎖律で勾配を計算します。</p>`,
+      id:`<p><strong>Multilayer Perceptron (MLP):</strong> Menerapkan $\\mathbf{W}\\mathbf{x} + \\mathbf{b}$ di setiap lapisan. Forward pass menghitung output, backpropagation menghitung gradien.</p>`
+    },
+    dboundary:{
+      en:`<p><strong>Decision Boundary:</strong> A hypersurface partitioning the feature space into classes. For XOR (non-linearly separable), at least one hidden layer with a nonlinear activation is required to warp the space.</p><p style="font-size: 13px;color:var(--ink3);margin-top:8px">Reference: Bishop, C. M. (2006). <em>Pattern Recognition and Machine Learning</em>.</p>`,
+      ja:`<p><strong>決定境界:</strong> 特徴空間をクラスに分割する超曲面。XORのような非線形分離可能な問題には、隠れ層と非線形活性化が不可欠です。</p>`,
+      id:`<p><strong>Batas Keputusan:</strong> Permukaan hiper yang mempartisi ruang fitur ke dalam kelas. Untuk XOR, lapisan tersembunyi diperlukan.</p>`
+    },
+    backprop:{
+      en:`<p><strong>Backpropagation:</strong> Efficiently computes gradients using the reverse-mode auto-differentiation (chain rule). $\\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial a_2} \\frac{\\partial a_2}{\\partial z_2} \\frac{\\partial z_2}{\\partial a_1} \\frac{\\partial a_1}{\\partial z_1} \\frac{\\partial z_1}{\\partial w_1}$.</p>`,
+      ja:`<p><strong>誤差逆伝播法:</strong> 連鎖律を用いて効率的に勾配を計算します。微分係数を後ろから掛け合わせることで重みの更新量を決定します。</p>`,
+      id:`<p><strong>Backpropagation:</strong> Menghitung gradien secara efisien menggunakan aturan rantai dari kalkulus.</p>`
+    },
+    act:{
+      en:`<p><strong>Activation Functions:</strong> Introduce nonlinearity. Without them, a deep network is mathematically equivalent to a single linear layer. ReLU ($f(x) = \\max(0, x)$) helps avoid vanishing gradients. GELU is standard in Transformers.</p>`,
+      ja:`<p><strong>活性化関数:</strong> 非線形性を導入します。ReLU ($f(x) = \\max(0, x)$) は勾配消失を防ぎます。</p>`,
+      id:`<p><strong>Fungsi Aktivasi:</strong> Memperkenalkan nonlinearitas. ReLU mencegah gradien menghilang.</p>`
+    },
+    perceptron:{
+      en:`<p><strong>Perceptron:</strong> The fundamental neuron model. Computes $z = \\mathbf{w}^T \\mathbf{x} + b$, then applies an activation $\\sigma(z)$. It defines a linear hyperplane in the input space.</p>`,
+      ja:`<p><strong>パーセプトロン:</strong> 基本的なニューロンモデル。$z = \\mathbf{w}^T \\mathbf{x} + b$ を計算し、活性化 $\\sigma(z)$ を適用します。</p>`,
+      id:`<p><strong>Perceptron:</strong> Model neuron dasar yang menghitung jumlah berbobot dan mengaplikasikan fungsi aktivasi.</p>`
+    }
+  };
+  const note=notes[currentTab]||notes.mlp;
+  const el = document.getElementById('theory-text');
+  if (el) { el.innerHTML = note[lang]||note.en; }
+  if (window.MathJax) { MathJax.typesetPromise([el]).catch(()=>{}); }
+}
+
+function resize(){
+  const dpr=window.devicePixelRatio||1,cssW=canvas.offsetWidth,cssH=480;
+  canvas.width=cssW*dpr; canvas.height=cssH*dpr;
+  canvas.style.height=cssH+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  W=cssW; H=cssH; render();
+}
+window.addEventListener('resize',resize);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+buildNetwork();
+resize();
+updateTheoryNote();
+</script>
+<div style="text-align: center; padding: 40px 20px 50px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
+  Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
+</div>
+</body>
+</html>
