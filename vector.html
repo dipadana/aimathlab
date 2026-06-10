@@ -753,6 +753,67 @@ function drawSpan2d() {
   }
   ctx.restore();
 }
+function drawSpan3d() {
+  if (!showSpan||!vectors.length) return;
+  const dark=isDark();
+  const dirs=vectors.map(v=>({x:v.ex-v.ox,y:v.ey-v.oy,z:(v.ez||0)-(v.oz||0)}));
+  const nonZero=dirs.filter(d=>Math.abs(d.x)>1e-9||Math.abs(d.y)>1e-9||Math.abs(d.z)>1e-9);
+  if (!nonZero.length) return;
+  const ref=nonZero[0];
+  let allCollinear = true;
+  for (let i=1; i<nonZero.length; i++) {
+    const d = nonZero[i];
+    const cx = ref.y*d.z - ref.z*d.y, cy = ref.z*d.x - ref.x*d.z, cz = ref.x*d.y - ref.y*d.x;
+    if (Math.sqrt(cx*cx+cy*cy+cz*cz) > 1e-9) { allCollinear = false; break; }
+  }
+  ctx.save();
+  if (allCollinear) {
+    const norm = Math.sqrt(ref.x*ref.x + ref.y*ref.y + ref.z*ref.z);
+    const ux = ref.x/norm, uy = ref.y/norm, uz = ref.z/norm;
+    const far = 25; 
+    const [x1,y1] = project3d(ux*far, uy*far, uz*far);
+    const [x2,y2] = project3d(-ux*far, -uy*far, -uz*far);
+    ctx.strokeStyle=dark?'rgba(160,200,255,0.18)':'rgba(42,92,170,0.14)'; ctx.lineWidth=2; ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
+  } else {
+    let v1 = ref, v2 = null;
+    for (let i=1; i<nonZero.length; i++) {
+      const d = nonZero[i];
+      const cx = v1.y*d.z - v1.z*d.y, cy = v1.z*d.x - v1.x*d.z, cz = v1.x*d.y - v1.y*d.x;
+      if (Math.sqrt(cx*cx+cy*cy+cz*cz) > 1e-9) { v2 = d; break; }
+    }
+    const nx = v1.y*v2.z - v1.z*v2.y, ny = v1.z*v2.x - v1.x*v2.z, nz = v1.x*v2.y - v1.y*v2.x;
+    let allCoplanar = true;
+    for (let i=0; i<nonZero.length; i++) {
+      if (Math.abs(nx*nonZero[i].x + ny*nonZero[i].y + nz*nonZero[i].z) > 1e-6) { allCoplanar = false; break; }
+    }
+    if (allCoplanar) {
+      const e1_norm = Math.sqrt(v1.x*v1.x + v1.y*v1.y + v1.z*v1.z);
+      const e1 = {x: v1.x/e1_norm, y: v1.y/e1_norm, z: v1.z/e1_norm};
+      const v2_dot_e1 = v2.x*e1.x + v2.y*e1.y + v2.z*e1.z;
+      const e2_un = {x: v2.x - v2_dot_e1*e1.x, y: v2.y - v2_dot_e1*e1.y, z: v2.z - v2_dot_e1*e1.z};
+      const e2_norm = Math.sqrt(e2_un.x*e2_un.x + e2_un.y*e2_un.y + e2_un.z*e2_un.z);
+      const e2 = {x: e2_un.x/e2_norm, y: e2_un.y/e2_norm, z: e2_un.z/e2_norm};
+      const far = 15; 
+      const corners = [
+        {x: e1.x*far + e2.x*far, y: e1.y*far + e2.y*far, z: e1.z*far + e2.z*far},
+        {x: -e1.x*far + e2.x*far, y: -e1.y*far + e2.y*far, z: -e1.z*far + e2.z*far},
+        {x: -e1.x*far - e2.x*far, y: -e1.y*far - e2.y*far, z: -e1.z*far - e2.z*far},
+        {x: e1.x*far - e2.x*far, y: e1.y*far - e2.y*far, z: e1.z*far - e2.z*far}
+      ];
+      ctx.fillStyle = dark?'rgba(90,186,128,0.15)':'rgba(46,125,82,0.12)';
+      ctx.beginPath();
+      corners.forEach((c, i) => {
+        const [px, py] = project3d(c.x, c.y, c.z);
+        if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle=dark?'rgba(90,186,128,0.06)':'rgba(46,125,82,0.06)'; ctx.fillRect(0,0,W,H);
+    }
+  }
+  ctx.restore();
+}
 function drawLinearCombination() {
   if (!lcShowOnCanvas||!vectors.length) return;
   let rx=0,ry=0,rz=0;
@@ -808,7 +869,7 @@ function render() {
     vectors.forEach((v,i)=>drawArrow2d(v.ox,v.oy,v.ex,v.ey,v.color,animState[i]!==undefined?animState[i]:1,v.name));
     drawResultantArrow(); drawLinearCombination(); drawOperations2d();
   } else {
-    drawGrid3d();
+    drawGrid3d(); drawSpan3d();
     vectors.forEach((v,i)=>drawArrow3d(v.ox,v.oy,v.oz||0,v.ex,v.ey,v.ez||0,v.color,animState[i]!==undefined?animState[i]:1,v.name));
     drawResultantArrow(); drawLinearCombination(); drawOperations3d();
   }
