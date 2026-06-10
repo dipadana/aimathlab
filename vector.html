@@ -55,6 +55,9 @@ body.mode3d #hint3d { display: flex; }
           <li><button id="lb-id" onclick="setLang('id')">Indonesia</button></li>
         </ul>
       </div>
+      <button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
+        <i class="fa-solid fa-moon"></i>
+      </button>
     </div>
   </div>
 
@@ -73,6 +76,9 @@ body.mode3d #hint3d { display: flex; }
           <span data-lang="en">3D</span><span data-lang="ja">3次元</span><span data-lang="id">3D</span>
         </button>
       </div>
+      <button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
+        <i class="fa-solid fa-moon"></i>
+      </button>
     </div>
     <p style="color:var(--ink2);font-size: 15px;font-family:'DM Sans',sans-serif">
       <span data-lang="en">Visualizing magnitude and direction from both physics and computer science perspectives.</span>
@@ -972,6 +978,9 @@ function updateList() {
         <input type="number" value="${v.raw.y}" step="0.5" onchange="updateVecAxis(${i}, 'y', this.value)" style="width:45px;padding:2px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">
         ${currentMode==='3d' ? `<span class="mono" style="font-size:12px;color:var(--ink3)">Z:</span><input type="number" value="${v.raw.z}" step="0.5" onchange="updateVecAxis(${i}, 'z', this.value)" style="width:45px;padding:2px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">` : ''}
       </div>
+      <button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
+        <i class="fa-solid fa-moon"></i>
+      </button>
     </div>`;
   }).join('');
 }
