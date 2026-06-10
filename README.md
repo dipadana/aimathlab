@@ -1,5 +1,7 @@
 # AI Math Lab
 
+<img src="favicon.png" alt="AI Math Lab Logo" width="120" align="right">
+
 AI Math Lab is a collection of interactive visualizers designed to help you build intuition for the core mathematics behind artificial intelligence and machine learning. 
 
 It runs entirely in the browser using HTML5 Canvas and vanilla JavaScript.
