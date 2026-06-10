@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vectors | AI Math Lab</title>
 <meta name="description" content="Understand vectors by seeing them in action. We cover magnitude, direction, linear combinations, span, and basis in this interactive 2D and 3D visualizer.">
+<script src="theme.js"></script>
 <script>
   window.MathJax = {
     tex: {
@@ -18,8 +19,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
-#z-row { display: none; }
-body.mode3d #z-row { display: block; }
+#z-row, #scale-z-row { display: none; }
+body.mode3d #z-row, body.mode3d #scale-z-row { display: block; }
 body.mode3d #hint3d { display: flex; }
 #hint3d { display: none; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--ink3); margin-top: 6px; }
 </style>
@@ -33,15 +34,27 @@ body.mode3d #hint3d { display: flex; }
 <div class="page-shell">
 
   
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+  <div class="sticky-header module-header">
     <a class="back-link" href="index.html">
       ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
     </a>
-    <a href="references.html" style="font-family:'JetBrains Mono',monospace;font-size: 14px;color:var(--ink3);text-decoration:none;border:1px solid var(--border1);padding:4px 10px;border-radius:4px;margin-right:8px;background:var(--surface2);">Scientific Documentation</a>
-      <div class="lang-switcher">
-      <button class="lang-btn" id="lb-en" onclick="setLang('en')">EN</button>
-      <button class="lang-btn active" id="lb-ja" onclick="setLang('ja')">JA</button>
-      <button class="lang-btn" id="lb-id" onclick="setLang('id')">ID</button>
+    <div class="header-actions">
+      <a href="references.html" class="docs-btn">
+        <i class="fa-solid fa-book"></i>
+        <span class="docs-text" data-lang="en">Docs</span>
+        <span class="docs-text" data-lang="ja">文書</span>
+        <span class="docs-text" data-lang="id">Dokumen</span>
+      </a>
+      <div class="custom-lang-dropdown">
+        <button class="lang-btn-icon" onclick="toggleLangMenu(event)" id="lang-menu-btn" aria-label="Select Language">
+          <i class="fa-solid fa-globe"></i>
+        </button>
+        <ul class="lang-menu" id="lang-menu">
+          <li><button id="lb-en" onclick="setLang('en')">English</button></li>
+          <li><button id="lb-ja" onclick="setLang('ja')">日本語</button></li>
+          <li><button id="lb-id" onclick="setLang('id')">Indonesia</button></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -187,7 +200,39 @@ body.mode3d #hint3d { display: flex; }
         </div>
       </div>
 
-      
+      <div style="border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-top:12px">
+        <div style="padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <span class="mono" style="font-size: 14px;color:var(--ink3)">
+            <span data-lang="en">Scale Selected Vectors</span><span data-lang="ja">選択したベクトルをスケーリング</span><span data-lang="id">Skalakan Vektor Terpilih</span>
+          </span>
+        </div>
+        <div style="padding:14px 12px;background:var(--surface);display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Scale x</span><span data-lang="ja">スケール x</span><span data-lang="id">Skala x</span>
+              </label>
+              <input type="number" id="inp-scale-x" value="1" step="0.5">
+            </div>
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">Scale y</span><span data-lang="ja">スケール y</span><span data-lang="id">Skala y</span>
+              </label>
+              <input type="number" id="inp-scale-y" value="1" step="0.5">
+            </div>
+          </div>
+          <div id="scale-z-row">
+            <label class="fieldlabel">
+              <span data-lang="en">Scale z</span><span data-lang="ja">スケール z</span><span data-lang="id">Skala z</span>
+            </label>
+            <input type="number" id="inp-scale-z" value="1" step="0.5">
+          </div>
+          <button class="btn btn-fill" style="width:100%;margin-top:2px" onclick="applyScale()">
+            <span data-lang="en">Apply Scale</span><span data-lang="ja">適用</span><span data-lang="id">Terapkan Skala</span>
+          </button>
+        </div>
+      </div>
+
       <div class="panel" id="panel-lc">
         <div class="panel-head" id="ph-lc" onclick="togglePanel('lc')">
           <span class="ph-title">
@@ -322,6 +367,15 @@ body.mode3d #hint3d { display: flex; }
 
 <script>
 
+function toggleLangMenu(e) {
+  e.stopPropagation();
+  document.getElementById('lang-menu').classList.toggle('show');
+}
+window.addEventListener('click', () => {
+  const m = document.getElementById('lang-menu');
+  if(m) m.classList.remove('show');
+});
+
 function setLang(lang) {
   document.body.setAttribute('data-active-lang', lang);
   document.documentElement.setAttribute('lang', lang === 'ja' ? 'ja' : lang === 'id' ? 'id' : 'en');
@@ -402,7 +456,6 @@ function animateResultant(onDone) {
   }
   resultantAnimRaf = requestAnimationFrame(step);
 }
-function isDark() { return window.matchMedia('(prefers-color-scheme: dark)').matches; }
 function palette() { return isDark() ? PALETTES.dark : PALETTES.light; }
 function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 function easeOutCubic(t) { return 1 - Math.pow(1-t,3); }
@@ -648,6 +701,32 @@ function drawResultantArrow() {
       ctx.fillStyle=rColor; ctx.textAlign='center';
       ctx.fillText('Σ',(sx+fpx)/2-Math.sin(angle)*18,(sy+fpy)/2+Math.cos(angle)*18); ctx.restore();
     }
+  } else {
+    const fpx=rx*progress,fpy=ry*progress,fpz=rz*progress;
+    const [sx,sy]=project3d(0,0,0);
+    const [px,py]=project3d(fpx,fpy,fpz);
+    const dx=px-sx,dy=py-sy,len=Math.sqrt(dx*dx+dy*dy);
+    if (len<2) { ctx.restore(); return; }
+    const angle=Math.atan2(dy,dx),hl=Math.min(15,len*0.28);
+    ctx.setLineDash([6,4]); ctx.strokeStyle=rColor; ctx.lineWidth=2.2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(px-Math.cos(angle)*hl*0.6,py-Math.sin(angle)*hl*0.6); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=rColor; ctx.beginPath(); ctx.moveTo(px,py);
+    ctx.lineTo(px-hl*Math.cos(angle-0.45),py-hl*Math.sin(angle-0.45));
+    ctx.lineTo(px-hl*0.45*Math.cos(angle),py-hl*0.45*Math.sin(angle));
+    ctx.lineTo(px-hl*Math.cos(angle+0.45),py-hl*Math.sin(angle+0.45)); ctx.closePath(); ctx.fill();
+    if (progress>=0.99) {
+      const [projPx,projPy]=project3d(fpx,0,fpz);
+      ctx.setLineDash([3,4]); ctx.strokeStyle=rColor; ctx.globalAlpha=0.22; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(projPx,projPy); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=0.18;
+      ctx.beginPath(); ctx.arc(projPx,projPy,2.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+    }
+    if (progress>0.25) {
+      const fade=Math.min(1,(progress-0.25)/0.35);
+      ctx.save(); ctx.globalAlpha=fade*0.92; ctx.font='bold 12px "JetBrains Mono",monospace';
+      ctx.fillStyle=rColor; ctx.textAlign='center';
+      ctx.fillText('Σ',(sx+px)/2-Math.sin(angle)*18,(sy+py)/2+Math.cos(angle)*18); ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -762,7 +841,8 @@ function addVector() {
   let ox=0,oy=0,oz=0;
   if (op==='chain'&&vectors.length>0) { const last=vectors[vectors.length-1]; ox=last.ex; oy=last.ey; oz=last.ez||0; }
   const pal=palette(), color=pal[vectors.length%pal.length], name=`v${vectors.length+1}`;
-  vectors.push({ox,oy,oz,ex:ox+rx,ey:oy+ry,ez:oz+rz,color,name,raw:{x,y,z},scalar,op});
+  vectors.push({ox,oy,oz,ex:ox+rx,ey:oy+ry,ez:oz+rz,color,name,raw:{x,y,z},scalar,op,selected:false});
+  recalculateVectors();
   animState.push(0); resultantAnimProgress=0;
   if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
   updateList(); updatePanels();
@@ -781,11 +861,84 @@ function removeVector(idx) {
   el.classList.add('removing');
   setTimeout(()=>{
     vectors.splice(idx,1); animState.splice(idx,1); lcCoeffs.splice(idx,1);
+    recalculateVectors();
     vectors.forEach((v,j)=>{ v.name=`v${j+1}`; v.color=palette()[j%palette().length]; });
     if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
     resultantAnimProgress=(showResultant&&vectors.length>=2)?1:0;
     updateList(); updatePanels(); animateZoom(vectors.length?computeTargetUnit():BASE_UNIT); render();
   },180);
+}
+function recalculateVectors() {
+  let lastEx = 0, lastEy = 0, lastEz = 0;
+  vectors.forEach((v, i) => {
+    let ox = 0, oy = 0, oz = 0;
+    if (v.op === 'chain' && i > 0) {
+      ox = lastEx; oy = lastEy; oz = lastEz;
+    }
+    const rx = parseFloat((v.raw.x * v.scalar).toFixed(8));
+    const ry = parseFloat((v.raw.y * v.scalar).toFixed(8));
+    const rz = parseFloat((v.raw.z * v.scalar).toFixed(8));
+    v.ox = ox; v.oy = oy; v.oz = oz;
+    v.ex = ox + rx; v.ey = oy + ry; v.ez = oz + rz;
+    lastEx = v.ex; lastEy = v.ey; lastEz = v.ez;
+  });
+}
+function updateVecAxis(idx, axis, val) {
+  const v = parseFloat(val) || 0;
+  vectors[idx].raw[axis] = v;
+  recalculateVectors();
+  updateList();
+  render();
+}
+function toggleSelect(idx, checked) {
+  vectors[idx].selected = checked;
+}
+function applyScale() {
+  const sx = parseFloat(document.getElementById('inp-scale-x').value) || 1;
+  const sy = parseFloat(document.getElementById('inp-scale-y').value) || 1;
+  const sz = parseFloat(document.getElementById('inp-scale-z').value) || 1;
+  
+  const anims = [];
+  vectors.forEach(v => {
+    if (v.selected) {
+      anims.push({
+        v: v,
+        startX: v.raw.x, startY: v.raw.y, startZ: v.raw.z,
+        targetX: v.raw.x * sx, targetY: v.raw.y * sy, targetZ: v.raw.z * sz
+      });
+    }
+  });
+  
+  if (anims.length === 0) return;
+  
+  const start = performance.now();
+  const dur = 600;
+  
+  function step(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const ease = easeOutCubic(t);
+    
+    anims.forEach(a => {
+      a.v.raw.x = a.startX + (a.targetX - a.startX) * ease;
+      a.v.raw.y = a.startY + (a.targetY - a.startY) * ease;
+      a.v.raw.z = a.startZ + (a.targetZ - a.startZ) * ease;
+    });
+    
+    recalculateVectors();
+    render();
+    
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      updateList();
+      const newTarget = computeTargetUnit();
+      if (Math.abs(newTarget - unitPx) > unitPx * 0.005) {
+        animateZoom(newTarget);
+      }
+    }
+  }
+  
+  requestAnimationFrame(step);
 }
 function fmt(n) {
   const abs=Math.abs(n);
@@ -804,12 +957,21 @@ function updateList() {
     const chainLabel=lang==='ja'?'チェーン':lang==='id'?'rantai':'chain';
     const chainTag=v.op==='chain'?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent2) 12%,transparent);color:var(--accent2)">${chainLabel}</span>`:'';
     const scalarTag=v.scalar!==1?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent3) 12%,transparent);color:var(--accent3)">×${v.scalar}</span>`:'';
-    return `<div class="vitem" id="vi-${i}">
-      <span class="dot" style="background:${v.color}"></span>
-      <span class="mono" style="font-size: 14px;font-weight:500;color:${v.color};min-width:22px">${v.name}</span>
-      <span class="mono" style="font-size: 14px;color:var(--ink2)">${compStr}</span>
-      ${chainTag}${scalarTag}
-      <button class="remove-btn" onclick="removeVector(${i})">×</button>
+    return `<div class="vitem" id="vi-${i}" style="flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;width:100%">
+        <input type="checkbox" ${v.selected ? 'checked' : ''} onchange="toggleSelect(${i}, this.checked)">
+        <span class="dot" style="background:${v.color}"></span>
+        <span class="mono" style="font-size: 14px;font-weight:500;color:${v.color};min-width:22px">${v.name}</span>
+        ${chainTag}${scalarTag}
+        <button class="remove-btn" onclick="removeVector(${i})" style="margin-left:auto">×</button>
+      </div>
+      <div style="display:flex;gap:4px;width:100%;padding-left:26px;align-items:center">
+        <span class="mono" style="font-size:12px;color:var(--ink3)">X:</span>
+        <input type="number" value="${v.raw.x}" step="0.5" onchange="updateVecAxis(${i}, 'x', this.value)" style="width:45px;padding:2px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">
+        <span class="mono" style="font-size:12px;color:var(--ink3)">Y:</span>
+        <input type="number" value="${v.raw.y}" step="0.5" onchange="updateVecAxis(${i}, 'y', this.value)" style="width:45px;padding:2px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">
+        ${currentMode==='3d' ? `<span class="mono" style="font-size:12px;color:var(--ink3)">Z:</span><input type="number" value="${v.raw.z}" step="0.5" onchange="updateVecAxis(${i}, 'z', this.value)" style="width:45px;padding:2px;font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px">` : ''}
+      </div>
     </div>`;
   }).join('');
 }
@@ -990,7 +1152,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>
 resize();
 updateTheoryNote();
 </script>
-<div style="text-align: center; padding: 40px 20px 50px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
+<div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
   Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
 </div>
 </body>

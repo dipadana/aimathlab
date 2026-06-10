@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculus | AI Math Lab</title>
 <meta name="description" content="Visualize derivatives as tangent lines, definite integrals as area, and gradient descent  the training engine of every neural network.">
+<script src="theme.js"></script>
 <script>
   window.MathJax = {
     tex: {
@@ -18,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
-.tab-bar { display:flex; gap:4px; margin-bottom:12px; }
+.tab-bar { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
 .tab-btn { font-family:'JetBrains Mono',monospace; font-size: 14px; padding:5px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--ink3); transition:background 0.12s,color 0.12s; }
 .tab-btn.active { background:var(--accent2); color:#fff; border-color:var(--accent2); }
 </style>
@@ -31,15 +32,27 @@
 <div class="page-shell">
 
   
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+  <div class="sticky-header module-header">
     <a class="back-link" href="index.html">
       ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
     </a>
-    <a href="references.html" style="font-family:'JetBrains Mono',monospace;font-size: 14px;color:var(--ink3);text-decoration:none;border:1px solid var(--border1);padding:4px 10px;border-radius:4px;margin-right:8px;background:var(--surface2);">Scientific Documentation</a>
-      <div class="lang-switcher">
-      <button class="lang-btn active" id="lb-en" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" id="lb-ja" onclick="setLang('ja')">JA</button>
-      <button class="lang-btn" id="lb-id" onclick="setLang('id')">ID</button>
+    <div class="header-actions">
+      <a href="references.html" class="docs-btn">
+        <i class="fa-solid fa-book"></i>
+        <span class="docs-text" data-lang="en">Docs</span>
+        <span class="docs-text" data-lang="ja">文書</span>
+        <span class="docs-text" data-lang="id">Dokumen</span>
+      </a>
+      <div class="custom-lang-dropdown">
+        <button class="lang-btn-icon" onclick="toggleLangMenu(event)" id="lang-menu-btn" aria-label="Select Language">
+          <i class="fa-solid fa-globe"></i>
+        </button>
+        <ul class="lang-menu" id="lang-menu">
+          <li><button id="lb-en" onclick="setLang('en')">English</button></li>
+          <li><button id="lb-ja" onclick="setLang('ja')">日本語</button></li>
+          <li><button id="lb-id" onclick="setLang('id')">Indonesia</button></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -263,6 +276,15 @@
 </div>
 
 <script>
+
+function toggleLangMenu(e) {
+  e.stopPropagation();
+  document.getElementById('lang-menu').classList.toggle('show');
+}
+window.addEventListener('click', () => {
+  const m = document.getElementById('lang-menu');
+  if(m) m.classList.remove('show');
+});
 
 function setLang(lang) {
   document.body.setAttribute('data-active-lang', lang);
@@ -659,8 +681,8 @@ gdPath=[{x:gdX0,y:FNS.gd.f(gdX0)}];
 gd2dPath=[{x:gd2dX0,y:gd2dY0}];
 updateTheoryNote();
 </script>
-<div style="text-align: center; padding: 40px 20px 50px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
-  Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
-</div>
+  <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
+    Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
+  </div>
 </body>
 </html>
