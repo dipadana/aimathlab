@@ -44,6 +44,91 @@
   font-family: 'JetBrains Mono', monospace; font-size: 14px;
   padding: 4px 10px; border-radius: 20px; border: 1px solid;
 }
+/* ── Linear Map Explorer ── */
+.lme-vec-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.lme-equation {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink2);
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border2);
+  overflow-x: auto;
+}
+.lme-equation .lme-x   { color: #6a9fd8; font-weight: 600; }
+.lme-equation .lme-y   { color: #d4a06a; font-weight: 600; }
+.lme-equation .lme-out { color: #5aba80; font-weight: 600; }
+.lme-equation .lme-muted { color: var(--ink3); }
+.lme-equation .lme-col1 { color: #6a9fd8; }
+.lme-equation .lme-col2 { color: #d4a06a; }
+.lme-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid transparent;
+  transition: background 0.2s;
+}
+.lme-step.step-input  { background: color-mix(in srgb, #6a9fd8 10%, transparent); border-color: color-mix(in srgb, #6a9fd8 25%, transparent); color: #6a9fd8; }
+.lme-step.step-col1   { background: color-mix(in srgb, #6a9fd8 8%, transparent);  border-color: color-mix(in srgb, #6a9fd8 20%, transparent); color: #6a9fd8; }
+.lme-step.step-col2   { background: color-mix(in srgb, #d4a06a 8%, transparent);  border-color: color-mix(in srgb, #d4a06a 20%, transparent); color: #d4a06a; }
+.lme-step.step-output { background: color-mix(in srgb, #5aba80 10%, transparent); border-color: color-mix(in srgb, #5aba80 25%, transparent); color: #5aba80; }
+.lme-step-icon { font-size: 16px; line-height: 1; margin-top: 1px; }
+.lme-anim-btn {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.lme-anim-btn button {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.lme-anim-btn button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.lme-anim-btn button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.basis-col-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+.basis-col-box {
+  padding: 8px 10px;
+  border-radius: 5px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.basis-col-box.col1 { border-color: color-mix(in srgb, #6a9fd8 40%, transparent); background: color-mix(in srgb, #6a9fd8 8%, transparent); color: #6a9fd8; }
+.basis-col-box.col2 { border-color: color-mix(in srgb, #d4a06a 40%, transparent); background: color-mix(in srgb, #d4a06a 8%, transparent); color: #d4a06a; }
+.basis-col-box .col-label { font-size: 10px; opacity: 0.8; margin-bottom: 2px; }
 </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta name="author" content="Rico Eriansyah">
@@ -205,6 +290,97 @@
         </span>
       </label>
 
+      <label class="toggle-row" for="tgl-lme">
+        <span style="display:flex;flex-direction:column;gap:2px">
+          <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
+            <span data-lang="en">Show Explored Vector</span><span data-lang="ja">探索ベクトルを表示</span><span data-lang="id">Tampilkan Vektor Eksplorasi</span>
+          </span>
+          <span style="font-size: 13px;font-family:'DM Sans',sans-serif;color:var(--ink3)">
+            <span data-lang="en">From Linear Map Explorer</span><span data-lang="ja">線形マップ探索から</span><span data-lang="id">Dari Linear Map Explorer</span>
+          </span>
+        </span>
+        <span class="toggle-switch">
+          <input type="checkbox" id="tgl-lme" checked onchange="showLME=this.checked;render()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </label>
+
+      <!-- ══════════════════════════════════════════════════════
+           LINEAR MAP EXPLORER – inspired by 3Blue1Brown Ep.3
+           Shows Av = x·col₁ + y·col₂ interactively
+           ══════════════════════════════════════════════════════ -->
+      <div class="panel">
+        <div class="panel-head" onclick="togglePanel('lme')">
+          <span class="ph-title">
+            <i class="fa-solid fa-wand-magic-sparkles" style="opacity:.7; font-size: 15px;"></i>
+            <span data-lang="en">Linear Map Explorer</span><span data-lang="ja">線形マップ探索</span><span data-lang="id">Penjelajah Peta Linear</span>
+          </span>
+          <span class="ph-icon">▾</span>
+        </div>
+        <div class="panel-body" id="pb-lme">
+
+          <!-- Insight callout -->
+          <div style="font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink3);background:var(--surface2);border-radius:5px;padding:8px 10px;margin-bottom:10px;border-left:3px solid var(--accent);line-height:1.5">
+            <span data-lang="en"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>A matrix column = where î or ĵ lands. Any vector output is just a <em>scaled sum</em> of those columns.</span>
+            <span data-lang="ja"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>行列の列 = î や ĵ の着地点。出力ベクトルはその列の <em>スカラー倍の和</em> です。</span>
+            <span data-lang="id"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>Kolom matriks = tempat landingnya î atau ĵ. Output vektor hanyalah <em>jumlah kolom yang diskalakan</em>.</span>
+          </div>
+
+          <!-- Input vector -->
+          <div class="lme-vec-inputs">
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">x (î scale)</span>
+                <span data-lang="ja">x（î の倍率）</span>
+                <span data-lang="id">x (skala î)</span>
+              </label>
+              <input type="number" id="lme-x" value="2" step="0.5" oninput="updateLME()">
+            </div>
+            <div>
+              <label class="fieldlabel">
+                <span data-lang="en">y (ĵ scale)</span>
+                <span data-lang="ja">y（ĵ の倍率）</span>
+                <span data-lang="id">y (skala ĵ)</span>
+              </label>
+              <input type="number" id="lme-y" value="1" step="0.5" oninput="updateLME()">
+            </div>
+          </div>
+
+          <!-- Where the basis vectors land -->
+          <div class="basis-col-display">
+            <div class="basis-col-box col1" id="lme-col1-box">
+              <div class="col-label">î → col₁</div>
+              <div id="lme-col1-val">[ 1, 0 ]</div>
+            </div>
+            <div class="basis-col-box col2" id="lme-col2-box">
+              <div class="col-label">ĵ → col₂</div>
+              <div id="lme-col2-val">[ 0, 1 ]</div>
+            </div>
+          </div>
+
+          <!-- Step breakdown equation -->
+          <div class="lme-equation" id="lme-equation" style="margin-top:10px"></div>
+
+          <!-- Step-by-step visual breakdown -->
+          <div id="lme-steps" style="margin-top:8px"></div>
+
+          <!-- Animate steps button -->
+          <div class="lme-anim-btn">
+            <button id="lme-btn-animate" onclick="animateLMESteps()">
+              <span data-lang="en"><i class="fa-solid fa-play" style="margin-right:5px"></i>Animate Steps</span>
+              <span data-lang="ja"><i class="fa-solid fa-play" style="margin-right:5px"></i>ステップをアニメーション</span>
+              <span data-lang="id"><i class="fa-solid fa-play" style="margin-right:5px"></i>Animasi Langkah</span>
+            </button>
+            <button onclick="resetLME()">
+              <span data-lang="en"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>Reset</span>
+              <span data-lang="ja"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>リセット</span>
+              <span data-lang="id"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>Reset</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
       
       <div class="panel">
         <div class="panel-head" onclick="togglePanel('info')">
@@ -284,6 +460,12 @@ let W, H, CX, CY;
 const UNIT = 50;
 let mat = [1, 0, 0, 1]; 
 let matBase = [1, 0, 0, 1];
+
+// ── Linear Map Explorer state ──────────────────────────────────
+let lmeVec = { x: 2, y: 1 };
+let showLME = true;
+let lmeAnimStep = -1;   // -1=all, 0=input only, 1=+col1, 2=+col2, 3=output
+let lmeAnimRaf = null;
 let animT = 1.0; 
 let animRaf = null;
 let showGrid = true, showEigen = true;
@@ -446,6 +628,89 @@ function computeEigenvalues(m) {
   return [{real:true,lambda:l1,vx:vx1,vy:vy1},{real:true,lambda:l2,vx:vx2,vy:vy2}];
 }
 
+// ── Linear Map Explorer canvas drawing ────────────────────────
+function drawLME(m) {
+  if (!showLME) return;
+  const dark = isDark();
+  const { x, y } = lmeVec;
+  const [a, b, c, d] = m;
+  // col1 = where î lands, scaled by x
+  const col1x = a, col1y = c;
+  const col2x = b, col2y = d;
+  const scaledCol1 = [x * col1x, x * col1y];
+  const scaledCol2 = [y * col2x, y * col2y];
+  const outX = scaledCol1[0] + scaledCol2[0];
+  const outY = scaledCol1[1] + scaledCol2[1];
+  const [ox, oy] = wc(0, 0);
+
+  const step = lmeAnimStep;
+  const showInput  = step === -1 || step >= 0;
+  const showCol1   = step === -1 || step >= 1;
+  const showCol2   = step === -1 || step >= 2;
+  const showOutput = step === -1 || step >= 3;
+
+  // draw x·col1 vector (from origin)
+  if (showCol1) {
+    const [e1x, e1y] = wc(scaledCol1[0], scaledCol1[1]);
+    ctx.globalAlpha = 0.75;
+    drawBasisArrow(ox, oy, e1x, e1y, dark ? '#6a9fd8' : '#2a5caa', null);
+    ctx.globalAlpha = 1;
+    // label
+    ctx.font = '11px "JetBrains Mono",monospace';
+    ctx.fillStyle = dark ? '#6a9fd8' : '#2a5caa';
+    ctx.textAlign = 'left';
+    ctx.fillText(`x·col₁ (${fmt(scaledCol1[0])}, ${fmt(scaledCol1[1])})`, e1x + 7, e1y - 4);
+  }
+
+  // draw y·col2 vector (from tip of x·col1)
+  if (showCol2) {
+    const startX = showCol1 ? scaledCol1[0] : 0;
+    const startY = showCol1 ? scaledCol1[1] : 0;
+    const [s2x, s2y] = wc(startX, startY);
+    const [e2x, e2y] = wc(startX + scaledCol2[0], startY + scaledCol2[1]);
+    ctx.globalAlpha = 0.75;
+    drawBasisArrow(s2x, s2y, e2x, e2y, dark ? '#d4a06a' : '#8b5a2b', null);
+    ctx.globalAlpha = 1;
+    ctx.font = '11px "JetBrains Mono",monospace';
+    ctx.fillStyle = dark ? '#d4a06a' : '#8b5a2b';
+    ctx.textAlign = 'left';
+    ctx.fillText(`y·col₂ (${fmt(scaledCol2[0])}, ${fmt(scaledCol2[1])})`, e2x + 7, e2y + 14);
+  }
+
+  // draw original input vector (before transform)
+  if (showInput) {
+    const [ivx, ivy] = wc(x, y);
+    ctx.globalAlpha = 0.45;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ivx, ivy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)';
+    ctx.beginPath(); ctx.arc(ivx, ivy, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.font = '11px "JetBrains Mono",monospace';
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'center';
+    ctx.fillText(`v=(${fmt(x)},${fmt(y)})`, ivx, ivy - 10);
+  }
+
+  // draw final output vector
+  if (showOutput) {
+    const [rx, ry] = wc(outX, outY);
+    ctx.globalAlpha = 1;
+    drawBasisArrow(ox, oy, rx, ry, dark ? '#5aba80' : '#2e7d52', null);
+    ctx.beginPath(); ctx.arc(rx, ry, 5.5, 0, Math.PI*2);
+    ctx.fillStyle = dark ? '#5aba80' : '#2e7d52'; ctx.fill();
+    ctx.font = 'bold 12px "JetBrains Mono",monospace';
+    ctx.fillStyle = dark ? '#5aba80' : '#2e7d52';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Av=(${fmt(outX)},${fmt(outY)})`, rx + 8, ry - 6);
+  }
+}
+
+function fmt(v) { return Number.isInteger(v) ? v.toString() : v.toFixed(2).replace(/\.?0+$/, ''); }
+
 function render() {
   ctx.clearRect(0,0,W,H);
   const dark=isDark();
@@ -459,6 +724,7 @@ function render() {
   if (animT >= 1) {
     const eig = computeEigenvalues(mat);
     drawEigenvectors(eig);
+    drawLME(mat);
   }
   updateInfo();
 }
@@ -501,7 +767,9 @@ function updateMatrix() {
     parseFloat(document.getElementById('m-c').value)||0,
     parseFloat(document.getElementById('m-d').value)||0,
   ];
-  animT = 1; render();
+  animT = 1;
+  if (typeof refreshLMEPanel === 'function') refreshLMEPanel();
+  render();
 }
 
 function setPreset(a,b,c,d) {
@@ -570,11 +838,112 @@ function animateSVD() {
   runAnimationSequence([step1, step2, step3], [1,0,0,1]);
 }
 
+// ── Linear Map Explorer logic ──────────────────────────────────
+function updateLME() {
+  lmeVec.x = parseFloat(document.getElementById('lme-x').value) || 0;
+  lmeVec.y = parseFloat(document.getElementById('lme-y').value) || 0;
+  refreshLMEPanel();
+  render();
+}
+
+function refreshLMEPanel() {
+  const lang = document.body.getAttribute('data-active-lang') || 'en';
+  const [a, b, c, d] = mat;
+  const { x, y } = lmeVec;
+  const col1x = a, col1y = c;
+  const col2x = b, col2y = d;
+  const sc1x = x * col1x, sc1y = x * col1y;
+  const sc2x = y * col2x, sc2y = y * col2y;
+  const outX = sc1x + sc2x, outY = sc1y + sc2y;
+
+  // Update column readouts
+  document.getElementById('lme-col1-val').textContent = `[ ${fmt(col1x)}, ${fmt(col1y)} ]`;
+  document.getElementById('lme-col2-val').textContent = `[ ${fmt(col2x)}, ${fmt(col2y)} ]`;
+
+  // Build equation HTML
+  const s = (v) => `<span class="lme-muted">${v}</span>`;
+  const eq = document.getElementById('lme-equation');
+  eq.innerHTML =
+    `<span class="lme-muted">A·v = </span>` +
+    `<span class="lme-x">${fmt(x)}</span>` +
+    `<span class="lme-muted"> · </span>` +
+    `<span class="lme-col1">[ ${fmt(col1x)}, ${fmt(col1y)} ]</span>` +
+    `<span class="lme-muted"> + </span>` +
+    `<span class="lme-y">${fmt(y)}</span>` +
+    `<span class="lme-muted"> · </span>` +
+    `<span class="lme-col2">[ ${fmt(col2x)}, ${fmt(col2y)} ]</span>` +
+    `<br>` +
+    `<span class="lme-muted">     = </span>` +
+    `<span class="lme-col1">[ ${fmt(sc1x)}, ${fmt(sc1y)} ]</span>` +
+    `<span class="lme-muted"> + </span>` +
+    `<span class="lme-col2">[ ${fmt(sc2x)}, ${fmt(sc2y)} ]</span>` +
+    `<br>` +
+    `<span class="lme-muted">     = </span>` +
+    `<span class="lme-out">[ ${fmt(outX)}, ${fmt(outY)} ]</span>`;
+
+  // Build step cards
+  const steps = document.getElementById('lme-steps');
+  const labels = {
+    en: ['Input vector', 'Scale col₁ by x', 'Scale col₂ by y', 'Output = col₁ + col₂'],
+    ja: ['入力ベクトル', 'col₁ を x 倍', 'col₂ を y 倍', '出力 = col₁ + col₂'],
+    id: ['Vektor input', 'Skalakan col₁ dengan x', 'Skalakan col₂ dengan y', 'Output = col₁ + col₂'],
+  };
+  const L = labels[lang] || labels.en;
+  steps.innerHTML = [
+    { cls: 'step-input',  icon: '<i class="fa-solid fa-arrow-right"></i>', text: `${L[0]}: v = (${fmt(x)}, ${fmt(y)})` },
+    { cls: 'step-col1',   icon: '<i class="fa-solid fa-xmark"></i>', text: `${L[1]}: (${fmt(sc1x)}, ${fmt(sc1y)})` },
+    { cls: 'step-col2',   icon: '<i class="fa-solid fa-xmark"></i>', text: `${L[2]}: (${fmt(sc2x)}, ${fmt(sc2y)})` },
+    { cls: 'step-output', icon: '<i class="fa-solid fa-equals"></i>', text: `${L[3]}: (${fmt(outX)}, ${fmt(outY)})` },
+  ].map(s => `<div class="lme-step ${s.cls}"><span class="lme-step-icon">${s.icon}</span><span>${s.text}</span></div>`).join('');
+}
+
+function animateLMESteps() {
+  if (lmeAnimRaf) cancelAnimationFrame(lmeAnimRaf);
+  const btn = document.getElementById('lme-btn-animate');
+  btn.classList.add('active');
+  lmeAnimStep = 0;
+  const steps = [-1, 0, 1, 2, 3];
+  let si = 0;
+  const dur = 700;
+  let start = performance.now();
+
+  function tick(now) {
+    if (now - start >= dur) {
+      si++;
+      if (si >= steps.length) {
+        lmeAnimStep = -1;
+        render();
+        btn.classList.remove('active');
+        lmeAnimRaf = null;
+        return;
+      }
+      lmeAnimStep = steps[si];
+      start = now;
+    }
+    render();
+    lmeAnimRaf = requestAnimationFrame(tick);
+  }
+  lmeAnimStep = steps[0];
+  render();
+  lmeAnimRaf = requestAnimationFrame(tick);
+}
+
+function resetLME() {
+  if (lmeAnimRaf) cancelAnimationFrame(lmeAnimRaf);
+  lmeAnimRaf = null;
+  lmeAnimStep = -1;
+  document.getElementById('lme-x').value = 2;
+  document.getElementById('lme-y').value = 1;
+  document.getElementById('lme-btn-animate').classList.remove('active');
+  updateLME();
+}
+
 window.addEventListener('resize', resize);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>render());
 resize();
 updateMatrix();
 updateTheoryNote();
+updateLME();
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
     Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>

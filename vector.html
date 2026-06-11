@@ -23,6 +23,49 @@
 body.mode3d #z-row, body.mode3d #scale-z-row { display: block; }
 body.mode3d #hint3d { display: flex; }
 #hint3d { display: none; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--ink3); margin-top: 6px; }
+/* ── Linear Combination Explorer ── */
+.lc-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--ink2);
+  transition: all 0.2s;
+}
+.lc-step-icon { font-size: 14px; line-height: 1; margin-top: 1px; }
+.lc-anim-btn {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.lc-anim-btn button {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.lc-anim-btn button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.lc-anim-btn button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta name="author" content="Rico Eriansyah">
@@ -249,7 +292,25 @@ body.mode3d #hint3d { display: flex; }
           <div id="lc-sliders"><p class="mono" style="font-size: 14px;color:var(--ink3)">
             <span data-lang="en">Add vectors first</span><span data-lang="ja">ベクトルを追加してください</span><span data-lang="id">Tambahkan vektor dulu</span>
           </p></div>
+          <div id="lc-insight" style="font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink3);background:var(--surface2);border-radius:5px;padding:8px 10px;margin-bottom:4px;border-left:3px solid var(--accent);line-height:1.5;display:none">
+            <span data-lang="en"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>A linear combination is formed by scaling vectors and placing them tip-to-tail.</span>
+            <span data-lang="ja"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>線形結合は、各ベクトルをスカラー倍し、それらを始点と終点を繋ぎ合わせる（tip-to-tail）ことで作られます。</span>
+            <span data-lang="id"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>Kombinasi linear dibentuk dengan mengalikan vektor dengan skalar dan menempatkannya ujung-ke-pangkal (tip-to-tail).</span>
+          </div>
           <div id="lc-result" class="lc-result-box" style="display:none"></div>
+          <div id="lc-steps" style="margin-top:4px"></div>
+          <div class="lc-anim-btn" id="lc-anim-controls" style="display:none">
+            <button id="lc-btn-animate" onclick="animateLCSteps()">
+              <span data-lang="en"><i class="fa-solid fa-play" style="margin-right:5px"></i>Animate Steps</span>
+              <span data-lang="ja"><i class="fa-solid fa-play" style="margin-right:5px"></i>ステップをアニメーション</span>
+              <span data-lang="id"><i class="fa-solid fa-play" style="margin-right:5px"></i>Animasi Langkah</span>
+            </button>
+            <button onclick="resetLC()">
+              <span data-lang="en"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>Reset</span>
+              <span data-lang="ja"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>リセット</span>
+              <span data-lang="id"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>Reset</span>
+            </button>
+          </div>
           <label class="toggle-row" for="toggle-lc" style="margin-top:2px">
             <span style="display:flex;flex-direction:column;gap:2px">
               <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
@@ -418,6 +479,7 @@ let showResultant = false, resultantAnimProgress = 0, resultantAnimRaf = null;
 let cam = { azimuth: 0.55, elevation: 0.42, scale: 1.0 };
 let drag = { active: false, startX: 0, startY: 0, startAz: 0, startEl: 0 };
 let lcCoeffs = [], lcShowOnCanvas = false, showSpan = false;
+let lcAnimStep = -1, lcAnimRaf = null;
 let showProjection = false, showCross = false, orbitRaf = null;
 
 function toggleOrbit(on) {
@@ -816,12 +878,49 @@ function drawSpan3d() {
 }
 function drawLinearCombination() {
   if (!lcShowOnCanvas||!vectors.length) return;
-  let rx=0,ry=0,rz=0;
-  vectors.forEach((v,i)=>{const c=lcCoeffs[i]!==undefined?lcCoeffs[i]:1;rx+=(v.ex-v.ox)*c;ry+=(v.ey-v.oy)*c;rz+=((v.ez||0)-(v.oz||0))*c;});
-  const dark=isDark(),lcColor=dark?'#c084fc':'#7c3aed';
-  ctx.save(); ctx.globalAlpha=0.88;
-  if (currentMode==='2d') drawArrow2d(0,0,rx,ry,lcColor,1,'LC');
-  else drawArrow3d(0,0,0,rx,ry,rz,lcColor,1,'LC');
+  
+  const dark = isDark(), lcColor = dark ? '#c084fc' : '#7c3aed';
+  const limitIndex = (lcAnimStep === -1) ? vectors.length - 1 : Math.min(lcAnimStep, vectors.length - 1);
+  let curX = 0, curY = 0, curZ = 0;
+  
+  ctx.save();
+  for (let i = 0; i <= limitIndex; i++) {
+    const v = vectors[i];
+    const c = lcCoeffs[i] !== undefined ? lcCoeffs[i] : 1;
+    const dx = (v.ex - v.ox) * c;
+    const dy = (v.ey - v.oy) * c;
+    const dz = ((v.ez || 0) - (v.oz || 0)) * c;
+    
+    const nextX = curX + dx;
+    const nextY = curY + dy;
+    const nextZ = curZ + dz;
+    
+    const segLen = currentMode === '3d' ? Math.sqrt(dx*dx+dy*dy+dz*dz) : Math.sqrt(dx*dx+dy*dy);
+    if (segLen > 0.01) {
+      ctx.globalAlpha = 0.8;
+      const label = `${c.toFixed(1)}${v.name}`;
+      if (currentMode === '2d') {
+        drawArrow2d(curX, curY, nextX, nextY, v.color, 1, label);
+      } else {
+        drawArrow3d(curX, curY, curZ, nextX, nextY, nextZ, v.color, 1, label);
+      }
+    }
+    
+    curX = nextX; curY = nextY; curZ = nextZ;
+  }
+  
+  const showResultantLC = (lcAnimStep === -1 || lcAnimStep === vectors.length);
+  if (showResultantLC) {
+    ctx.globalAlpha = 0.95;
+    const resLen = currentMode === '3d' ? Math.sqrt(curX*curX+curY*curY+curZ*curZ) : Math.sqrt(curX*curX+curY*curY);
+    if (resLen > 0.01) {
+      if (currentMode === '2d') {
+        drawArrow2d(0, 0, curX, curY, lcColor, 1, 'LC');
+      } else {
+        drawArrow3d(0, 0, 0, curX, curY, curZ, lcColor, 1, 'LC');
+      }
+    }
+  }
   ctx.restore();
 }
 function drawOperations2d() {
@@ -1054,10 +1153,24 @@ function computeRank() { return gramSchmidt(vectors.map(v=>[v.ex-v.ox,v.ey-v.oy,
 
 function updateLCPanel() {
   const slidersEl=document.getElementById('lc-sliders'), resultEl=document.getElementById('lc-result');
+  const insightEl=document.getElementById('lc-insight'), controlsEl=document.getElementById('lc-anim-controls'), stepsEl=document.getElementById('lc-steps');
   const lang=document.body.getAttribute('data-active-lang')||'en';
   const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
-  if (!vectors.length) { slidersEl.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`; resultEl.style.display='none'; lcCoeffs=[]; return; }
+  
+  if (!vectors.length) {
+    slidersEl.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`;
+    resultEl.style.display='none';
+    if (insightEl) insightEl.style.display='none';
+    if (controlsEl) controlsEl.style.display='none';
+    if (stepsEl) stepsEl.innerHTML='';
+    lcCoeffs=[];
+    return;
+  }
+  
+  if (insightEl) insightEl.style.display='block';
+  if (controlsEl) controlsEl.style.display='flex';
   while (lcCoeffs.length<vectors.length) lcCoeffs.push(1); lcCoeffs.length=vectors.length;
+  
   slidersEl.innerHTML=vectors.map((v,i)=>{
     const c=lcCoeffs[i];
     return `<div class="lc-row"><span class="lc-name" style="color:${v.color}">${v.name}</span>
@@ -1065,11 +1178,18 @@ function updateLCPanel() {
         oninput="lcCoeffs[${i}]=parseFloat(this.value);document.getElementById('lc-v-${i}').textContent=parseFloat(this.value).toFixed(1);updateLCResult();render()">
       <span class="lc-val" id="lc-v-${i}">${c.toFixed(1)}</span></div>`;
   }).join('');
+  
   updateLCResult();
 }
+
 function updateLCResult() {
-  const resultEl=document.getElementById('lc-result');
-  if (!vectors.length) { resultEl.style.display='none'; return; }
+  const resultEl=document.getElementById('lc-result'), stepsEl=document.getElementById('lc-steps');
+  if (!vectors.length) {
+    resultEl.style.display='none';
+    if (stepsEl) stepsEl.innerHTML='';
+    return;
+  }
+  const lang=document.body.getAttribute('data-active-lang')||'en';
   let rx=0,ry=0,rz=0;
   const terms=vectors.map((v,i)=>{
     const c=lcCoeffs[i]!==undefined?lcCoeffs[i]:1;
@@ -1085,6 +1205,126 @@ function updateLCResult() {
     <div style="margin-bottom:6px">${terms.join('')}</div>
     <div style="color:var(--ink);font-size:12px">= <strong>${dim}</strong></div>
     <div style="color:var(--ink3);font-size: 13px;margin-top:3px">|LC| = ${fmt(mag)}</div>`;
+
+  // Dynamically update step-by-step breakdown list
+  if (stepsEl) {
+    const L_steps = {
+      en: { scale: 'Scale', result: 'Resultant' },
+      ja: { scale: 'を', result: '結果' },
+      id: { scale: 'Skalakan', result: 'Hasil' }
+    };
+    const Ls = L_steps[lang] || L_steps.en;
+    
+    let cumX = 0, cumY = 0, cumZ = 0;
+    const stepItems = [];
+    
+    vectors.forEach((v, i) => {
+      const c = lcCoeffs[i] !== undefined ? lcCoeffs[i] : 1;
+      const dx = (v.ex - v.ox) * c;
+      const dy = (v.ey - v.oy) * c;
+      const dz = ((v.ez || 0) - (v.oz || 0)) * c;
+      cumX += dx; cumY += dy; cumZ += dz;
+      
+      let text = "";
+      const cxStr = fmt(cumX), cyStr = fmt(cumY), czStr = fmt(cumZ);
+      const coords = currentMode === '3d' ? `(${cxStr},&thinsp;${cyStr},&thinsp;${czStr})` : `(${cxStr},&thinsp;${cyStr})`;
+      
+      if (lang === 'ja') {
+        text = `${v.name} ${Ls.scale} ${c.toFixed(1)}倍: ${coords}`;
+      } else if (lang === 'id') {
+        text = `${Ls.scale} ${v.name} dengan ${c.toFixed(1)}: ${coords}`;
+      } else {
+        text = `${Ls.scale} ${v.name} by ${c.toFixed(1)}: ${coords}`;
+      }
+      
+      const icon = i === 0 ? '<i class="fa-solid fa-arrow-right"></i>' : '<i class="fa-solid fa-plus"></i>';
+      
+      const isStepShown = lcAnimStep === -1 || lcAnimStep >= i;
+      const opacity = isStepShown ? 1 : 0.35;
+      const borderStyle = isStepShown ? `border-color: color-mix(in srgb, ${v.color} 30%, transparent)` : 'border-color: var(--border)';
+      const bgStyle = isStepShown ? `background: color-mix(in srgb, ${v.color} 8%, transparent)` : 'background: transparent';
+      
+      stepItems.push(`<div class="lc-step" style="opacity: ${opacity}; color: ${v.color}; ${borderStyle}; ${bgStyle}">
+        <span class="lc-step-icon" style="color: ${v.color}">${icon}</span>
+        <span>${text}</span>
+      </div>`);
+    });
+    
+    const dark = isDark(), lcColor = dark ? '#c084fc' : '#7c3aed';
+    const rxStr = fmt(cumX), ryStr = fmt(cumY), rzStr = fmt(cumZ);
+    const rCoords = currentMode === '3d' ? `(${rxStr},&thinsp;${ryStr},&thinsp;${rzStr})` : `(${rxStr},&thinsp;${ryStr})`;
+    const isFinalShown = lcAnimStep === -1 || lcAnimStep === vectors.length;
+    const fOpacity = isFinalShown ? 1 : 0.35;
+    const fBorderStyle = isFinalShown ? `border-color: color-mix(in srgb, ${lcColor} 30%, transparent)` : 'border-color: var(--border)';
+    const fBgStyle = isFinalShown ? `background: color-mix(in srgb, ${lcColor} 8%, transparent)` : 'background: transparent';
+    
+    stepItems.push(`<div class="lc-step" style="opacity: ${fOpacity}; color: ${lcColor}; ${fBorderStyle}; ${fBgStyle}">
+      <span class="lc-step-icon" style="color: ${lcColor}"><i class="fa-solid fa-equals"></i></span>
+      <span>${Ls.result}: LC = ${rCoords}</span>
+    </div>`);
+    
+    stepsEl.innerHTML = stepItems.join('');
+  }
+}
+
+function animateLCSteps() {
+  if (!vectors.length) return;
+  if (lcAnimRaf) cancelAnimationFrame(lcAnimRaf);
+  const btn = document.getElementById('lc-btn-animate');
+  if (btn) btn.classList.add('active');
+  lcAnimStep = 0;
+  
+  const steps = [];
+  for (let i = 0; i <= vectors.length; i++) {
+    steps.push(i);
+  }
+  steps.push(-1);
+  
+  let si = 0;
+  const dur = 750;
+  let start = performance.now();
+  
+  function tick(now) {
+    if (now - start >= dur) {
+      si++;
+      if (si >= steps.length) {
+        lcAnimStep = -1;
+        updateLCPanel();
+        render();
+        if (btn) btn.classList.remove('active');
+        lcAnimRaf = null;
+        return;
+      }
+      lcAnimStep = steps[si];
+      updateLCPanel();
+      start = now;
+    }
+    render();
+    lcAnimRaf = requestAnimationFrame(tick);
+  }
+  
+  lcAnimStep = steps[0];
+  updateLCPanel();
+  render();
+  lcAnimRaf = requestAnimationFrame(tick);
+}
+
+function resetLC() {
+  if (lcAnimRaf) cancelAnimationFrame(lcAnimRaf);
+  lcAnimRaf = null;
+  lcAnimStep = -1;
+  const btn = document.getElementById('lc-btn-animate');
+  if (btn) btn.classList.remove('active');
+  
+  vectors.forEach((v, i) => {
+    lcCoeffs[i] = 1.0;
+    const slider = document.getElementById(`lc-s-${i}`);
+    if (slider) slider.value = 1.0;
+    const valSpan = document.getElementById(`lc-v-${i}`);
+    if (valSpan) valSpan.textContent = '1.0';
+  });
+  
+  updateLCPanel();
   render();
 }
 function updateSpanPanel() {
@@ -1123,7 +1363,7 @@ function updateBasisPanel() {
   const statusMsgs={
     over:{en:'Linearly Dependent (overcomplete)',ja:'線形従属（過剰）',id:'Bergantung Linear (berlebih)'},
     dep:{en:'Linearly Dependent',ja:'線形従属',id:'Bergantung Linear'},
-    basis:{en:`Basis for ℝ${dim} ✓`,ja:`ℝ${dim} の基底 ✓`,id:`Basis untuk ℝ${dim} ✓`},
+    basis:{en:`Basis for ℝ${dim} <i class="fa-solid fa-check" style="margin-left:4px"></i>`,ja:`ℝ${dim} の基底 <i class="fa-solid fa-check" style="margin-left:4px"></i>`,id:`Basis untuk ℝ${dim} <i class="fa-solid fa-check" style="margin-left:4px"></i>`},
     span:{en:'Basis for its span',ja:'スパンの基底',id:'Basis untuk spannya'},
   };
   let statusText,statusColor;
