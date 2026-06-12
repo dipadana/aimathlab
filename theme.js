@@ -201,7 +201,9 @@ function captureState() {
   const s = { _page: page, _ts: Date.now() };
 
   const activeTab = document.querySelector('.tab-btn.active');
-  if (activeTab && activeTab.id) s._activeTab = activeTab.id;
+  if (activeTab && activeTab.id) {
+    s._activeTab = activeTab.id.replace(/^tab-/, '');
+  }
 
   document.querySelectorAll('select[id]').forEach(el => {
     s[el.id] = el.value;
@@ -302,44 +304,52 @@ async function restoreState() {
 
 function applyState(s) {
   const page = getPageKey();
-
-  if (s._activeTab) {
-    const tabEl = document.getElementById(s._activeTab);
-    if (tabEl) tabEl.click();
-  }
-
   if (page === 'vector.html') {
     scheduleVectorRestore(s);
     return;
   }
-
   if (page === 'matrix.html') {
     scheduleMatrixRestore(s);
     return;
   }
-
   scheduleGenericRestore(s);
 }
 
 function scheduleGenericRestore(s) {
   function attempt(tries) {
     const ready = typeof window.render === 'function' &&
-                  typeof window.W !== 'undefined' && window.W > 0;
+                  typeof window.W !== 'undefined' && window.W > 0 &&
+                  typeof window.setTab === 'function';
     if (!ready) {
       if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
       return;
     }
+
+    if (s._activeTab && typeof window.setTab === 'function') {
+      window.setTab(s._activeTab);
+    }
+
     Object.keys(s).forEach(id => {
       if (id.startsWith('_')) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') el.value = s[id];
-      else if (el.type === 'checkbox') el.checked = !!s[id];
-      else el.value = s[id];
+
+      if (el.tagName === 'SELECT') {
+        el.value = s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (el.type === 'checkbox') {
+        el.checked = !!s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+
+        el.value = s[id];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
+
     window.render();
   }
-  setTimeout(() => attempt(20), 300);
+  setTimeout(() => attempt(25), 300);
 }
 
 function scheduleMatrixRestore(s) {
@@ -370,22 +380,30 @@ function scheduleMatrixRestore(s) {
       updateLME();
     }
 
+    const matSpecialIds = new Set(['m-a','m-b','m-c','m-d','lme-x','lme-y']);
     Object.keys(s).forEach(id => {
-      if (id.startsWith('_') || ['m-a','m-b','m-c','m-d','lme-x','lme-y'].includes(id)) return;
+      if (id.startsWith('_') || matSpecialIds.has(id)) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') el.value = s[id];
-      else if (el.type === 'checkbox') {
+      if (el.tagName === 'SELECT') {
+        el.value = s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (el.type === 'checkbox') {
         el.checked = !!s[id];
+
         if (id === 'tgl-grid') window.showGrid = el.checked;
         if (id === 'tgl-eigen') window.showEigen = el.checked;
         if (id === 'tgl-lme') window.showLME = el.checked;
-      } else el.value = s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        el.value = s[id];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
 
     window.render();
   }
-  setTimeout(() => attempt(20), 300);
+  setTimeout(() => attempt(25), 300);
 }
 
 function scheduleVectorRestore(s) {
@@ -431,9 +449,12 @@ function scheduleVectorRestore(s) {
       if (id.startsWith('_')) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') el.value = s[id];
-      else if (el.type === 'checkbox') {
+      if (el.tagName === 'SELECT') {
+        el.value = s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (el.type === 'checkbox') {
         el.checked = !!s[id];
+
         if (id === 'toggle-resultant') window.showResultant = el.checked;
         if (id === 'toggle-lc') window.lcShowOnCanvas = el.checked;
         if (id === 'toggle-span') window.showSpan = el.checked;
@@ -442,7 +463,11 @@ function scheduleVectorRestore(s) {
         if (id === 'auto-orbit') {
           if (typeof window.toggleOrbit === 'function') window.toggleOrbit(el.checked);
         }
-      } else el.value = s[id];
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else {
+        el.value = s[id];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
 
     if (window.vectors && window.vectors.length > 0) {
@@ -454,7 +479,7 @@ function scheduleVectorRestore(s) {
     }
     window.render();
   }
-  setTimeout(() => attempt(25), 350);
+  setTimeout(() => attempt(30), 350);
 }
 
 function wireAutoSave() {
@@ -481,39 +506,87 @@ function wireAutoSave() {
   }, true);
 
   if (page === 'vector.html') {
-    const _origAdd = window.addVector;
-    const _origClear = window.clearAll;
-    const _origRemove = window.removeVector;
-    const _origScale = window.applyScale;
+    _patchVectorFunctions();
+  }
+}
 
-    if (typeof _origAdd === 'function') {
+function _patchVectorFunctions() {
+
+  function tryPatch(tries) {
+    if (typeof addVector === 'undefined' && tries > 0) {
+      setTimeout(() => tryPatch(tries - 1), 150);
+      return;
+    }
+
+    if (typeof window.addVector !== 'function' && typeof addVector === 'function') {
+      const _orig = addVector;
       window.addVector = function() {
-        const r = _origAdd.apply(this, arguments);
+        const r = _orig.apply(this, arguments);
+        setTimeout(scheduleSave, 700);
+        return r;
+      };
+    } else if (typeof window.addVector === 'function') {
+      const _orig = window.addVector;
+      window.addVector = function() {
+        const r = _orig.apply(this, arguments);
         setTimeout(scheduleSave, 700);
         return r;
       };
     }
-    if (typeof _origClear === 'function') {
+
+    if (typeof window.clearAll !== 'function' && typeof clearAll === 'function') {
+      const _orig = clearAll;
       window.clearAll = function() {
-        const r = _origClear.apply(this, arguments);
+        const r = _orig.apply(this, arguments);
+        setTimeout(scheduleSave, 100);
+        return r;
+      };
+    } else if (typeof window.clearAll === 'function') {
+      const _orig = window.clearAll;
+      window.clearAll = function() {
+        const r = _orig.apply(this, arguments);
         setTimeout(scheduleSave, 100);
         return r;
       };
     }
-    if (typeof _origRemove === 'function') {
+
+    if (typeof window.removeVector !== 'function' && typeof removeVector === 'function') {
+      const _orig = removeVector;
       window.removeVector = function() {
-        const r = _origRemove.apply(this, arguments);
+        const r = _orig.apply(this, arguments);
+        setTimeout(scheduleSave, 400);
+        return r;
+      };
+    } else if (typeof window.removeVector === 'function') {
+      const _orig = window.removeVector;
+      window.removeVector = function() {
+        const r = _orig.apply(this, arguments);
         setTimeout(scheduleSave, 400);
         return r;
       };
     }
-    if (typeof _origScale === 'function') {
+
+    if (typeof window.applyScale !== 'function' && typeof applyScale === 'function') {
+      const _orig = applyScale;
       window.applyScale = function() {
-        const r = _origScale.apply(this, arguments);
+        const r = _orig.apply(this, arguments);
+        setTimeout(scheduleSave, 700);
+        return r;
+      };
+    } else if (typeof window.applyScale === 'function') {
+      const _orig = window.applyScale;
+      window.applyScale = function() {
+        const r = _orig.apply(this, arguments);
         setTimeout(scheduleSave, 700);
         return r;
       };
     }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(() => tryPatch(30), 100));
+  } else {
+    setTimeout(() => tryPatch(30), 100);
   }
 }
 
@@ -756,12 +829,6 @@ async function bootAuth() {
       if (r.ok) config = await r.json();
     } catch (_) {}
   }
-  if (!config) {
-    try {
-      await loadScript('config.json');
-      config = window.aimlConfig;
-    } catch (_) {}
-  }
   if (!config || !config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return;
 
   await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
@@ -771,11 +838,11 @@ async function bootAuth() {
   _user = session?.user ?? null;
   buildAuthBtn(_supabase);
 
+  wireAutoSave();
+
   if (_user) {
     await restoreState();
   }
-
-  wireAutoSave();
 
   _supabase.auth.onAuthStateChange(async (event, session) => {
     const prevUser = _user;
