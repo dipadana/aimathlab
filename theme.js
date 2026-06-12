@@ -407,21 +407,24 @@ function restoreVectorPageState(state) {
       }
 
       const lcToggle = document.getElementById('toggle-lc');
-      if (lcToggle && typeof state._lcShowOnCanvas !== 'undefined') {
-        window.lcShowOnCanvas = !!state._lcShowOnCanvas;
-        lcToggle.checked = window.lcShowOnCanvas;
+      if (lcToggle) {
+        const lcVal = typeof state['toggle-lc'] !== 'undefined' ? !!state['toggle-lc'] : (typeof state._lcShowOnCanvas !== 'undefined' ? !!state._lcShowOnCanvas : false);
+        window.lcShowOnCanvas = lcVal;
+        lcToggle.checked = lcVal;
       }
 
       const spanToggle = document.getElementById('toggle-span');
-      if (spanToggle && typeof state._showSpan !== 'undefined') {
-        window.showSpan = !!state._showSpan;
-        spanToggle.checked = window.showSpan;
+      if (spanToggle) {
+        const spanVal = typeof state['toggle-span'] !== 'undefined' ? !!state['toggle-span'] : (typeof state._showSpan !== 'undefined' ? !!state._showSpan : false);
+        window.showSpan = spanVal;
+        spanToggle.checked = spanVal;
       }
 
       const resToggle = document.getElementById('toggle-resultant');
-      if (resToggle && typeof state._showResultant !== 'undefined') {
-        window.showResultant = !!state._showResultant;
-        resToggle.checked = window.showResultant;
+      if (resToggle) {
+        const resVal = typeof state['toggle-resultant'] !== 'undefined' ? !!state['toggle-resultant'] : (typeof state._showResultant !== 'undefined' ? !!state._showResultant : false);
+        window.showResultant = resVal;
+        resToggle.checked = resVal;
       }
 
       window.recalculateVectors();
@@ -859,10 +862,22 @@ function setupStateAutoSync() {
 async function initSupabaseAnalytics() {
   injectStyles();
   try {
-    await loadScript('config.js');
-    if (!window.aimlConfig) return;
-    const config = window.aimlConfig;
-    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return;
+    let config = window.aimlConfig;
+    if (!config) {
+      try {
+        const resp = await fetch('config.json');
+        if (resp.ok) {
+          config = await resp.json();
+        }
+      } catch (_) {}
+    }
+    if (!config) {
+      try {
+        await loadScript('config.js');
+        config = window.aimlConfig;
+      } catch (_) {}
+    }
+    if (!config || !config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return;
     await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
     supabaseInstance = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
     const { data: { session } } = await supabaseInstance.auth.getSession();
