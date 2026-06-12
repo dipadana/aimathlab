@@ -758,7 +758,7 @@ async function bootAuth() {
   }
   if (!config) {
     try {
-      await loadScript('config.js');
+      await loadScript('config.json');
       config = window.aimlConfig;
     } catch (_) {}
   }
