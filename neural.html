@@ -301,7 +301,6 @@ function togglePanel(name){document.getElementById('ph-'+name)?.classList.toggle
 
 const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
 let W,H;
-function isDark(){return window.matchMedia('(prefers-color-scheme: dark)').matches;}
 
 
 let currentTab='mlp';
@@ -813,7 +812,7 @@ function resize(){
   W=cssW; H=cssH; render();
 }
 window.addEventListener('resize',resize);
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+window.addEventListener('themechange',()=>render());
 buildNetwork();
 resize();
 updateTheoryNote();

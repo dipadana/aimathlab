@@ -23,7 +23,6 @@
 body.mode3d #z-row, body.mode3d #scale-z-row { display: block; }
 body.mode3d #hint3d { display: flex; }
 #hint3d { display: none; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--ink3); margin-top: 6px; }
-/* ── Linear Combination Explorer ── */
 .lc-step {
   display: flex;
   align-items: flex-start;
@@ -67,7 +66,7 @@ body.mode3d #hint3d { display: flex; }
   border-color: var(--accent);
 }
 </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta name="author" content="Rico Eriansyah">
 <meta name="keywords" content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -76,7 +75,6 @@ body.mode3d #hint3d { display: flex; }
 
 <div class="page-shell">
 
-  
   <div class="sticky-header module-header">
     <a class="back-link" href="index.html">
       ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
@@ -101,7 +99,6 @@ body.mode3d #hint3d { display: flex; }
       <button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
         <i class="fa-solid fa-moon"></i>
       </button>
-
     </div>
   </div>
 
@@ -124,7 +121,7 @@ body.mode3d #hint3d { display: flex; }
     <p style="color:var(--ink2);font-size: 15px;font-family:'DM Sans',sans-serif">
       <span data-lang="en">Visualizing magnitude and direction from both physics and computer science perspectives.</span>
       <span data-lang="ja">物理学とコンピュータサイエンスの視点を組み合わせた、大きさ・方向の可視化。</span>
-      <span data-lang="id">Menggabungkan perspektif fisika &amp; ilmu komputer  visualisasikan besaran &amp; arah.</span>
+      <span data-lang="id">Menggabungkan perspektif fisika &amp; ilmu komputer — visualisasikan besaran &amp; arah.</span>
     </p>
   </div>
 
@@ -189,7 +186,7 @@ body.mode3d #hint3d { display: flex; }
               <span data-lang="en">Scalar</span><span data-lang="ja">スカラー</span><span data-lang="id">Skalar</span>
               <span style="font-style:italic;opacity:.7;color:red;"> **<span data-lang="en">scales the vector length</span><span data-lang="ja">ベクトルの長さを変えます</span><span data-lang="id">mengubah panjang vektor</span></span>
             </label>
-            <input type="number" id="inp-scalar" value="0" step="0.25">
+            <input type="number" id="inp-scalar" value="1" step="0.25">
           </div>
 
           <div>
@@ -328,7 +325,6 @@ body.mode3d #hint3d { display: flex; }
         </div>
       </div>
 
-      
       <div class="panel" id="panel-span">
         <div class="panel-head" id="ph-span" onclick="togglePanel('span')">
           <span class="ph-title">
@@ -358,7 +354,6 @@ body.mode3d #hint3d { display: flex; }
         </div>
       </div>
 
-      
       <div class="panel" id="panel-basis">
         <div class="panel-head" id="ph-basis" onclick="togglePanel('basis')">
           <span class="ph-title">
@@ -374,7 +369,6 @@ body.mode3d #hint3d { display: flex; }
         </div>
       </div>
 
-      
       <div class="panel" id="panel-ops">
         <div class="panel-head" id="ph-ops" onclick="togglePanel('ops')">
           <span class="ph-title">
@@ -412,7 +406,6 @@ body.mode3d #hint3d { display: flex; }
         </div>
       </div>
 
-      
       <div class="panel">
         <div class="panel-head" id="ph-theory" onclick="togglePanel('theory')">
           <span class="ph-title">
@@ -463,7 +456,6 @@ function setLang(lang) {
 const _savedLang = localStorage.getItem('aiml-lang');
 setTimeout(() => { if (_savedLang) setLang(_savedLang); else setLang('ja'); }, 0);
 
-
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 const badge  = document.getElementById('zoom-badge');
@@ -481,6 +473,7 @@ let drag = { active: false, startX: 0, startY: 0, startAz: 0, startEl: 0 };
 let lcCoeffs = [], lcShowOnCanvas = false, showSpan = false;
 let lcAnimStep = -1, lcAnimRaf = null;
 let showProjection = false, showCross = false, orbitRaf = null;
+let _removeLock = false;
 
 function toggleOrbit(on) {
   if (on) {
@@ -502,6 +495,7 @@ function togglePanel(name) {
   document.getElementById('ph-'+name).classList.toggle('collapsed');
   document.getElementById('pb-'+name).classList.toggle('collapsed');
 }
+
 function toggleResultant(on) {
   showResultant = on;
   if (on && vectors.length >= 2 && animState.every((p,i) => i >= vectors.length || p >= 0.99)) {
@@ -511,6 +505,7 @@ function toggleResultant(on) {
     resultantAnimProgress = 0; render();
   } else render();
 }
+
 function animateResultant(onDone) {
   if (resultantAnimRaf) cancelAnimationFrame(resultantAnimRaf);
   const start = performance.now(), dur = 560;
@@ -522,6 +517,7 @@ function animateResultant(onDone) {
   }
   resultantAnimRaf = requestAnimationFrame(step);
 }
+
 function palette() { return isDark() ? PALETTES.dark : PALETTES.light; }
 function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 function easeOutCubic(t) { return 1 - Math.pow(1-t,3); }
@@ -536,6 +532,7 @@ function setMode(m) {
 }
 
 function wc(x,y) { return [CX+x*unitPx, CY-y*unitPx]; }
+
 function project3d(x,y,z) {
   const az=cam.azimuth, el=cam.elevation;
   const cosA=Math.cos(az),sinA=Math.sin(az),cosE=Math.cos(el),sinE=Math.sin(el);
@@ -544,6 +541,7 @@ function project3d(x,y,z) {
   const s=unitPx*cam.scale;
   return [CX+x1*s, CY-y2*s, z2];
 }
+
 function resize() {
   const dpr=window.devicePixelRatio||1, cssW=canvas.offsetWidth, cssH=500;
   canvas.width=cssW*dpr; canvas.height=cssH*dpr;
@@ -551,15 +549,21 @@ function resize() {
   ctx.setTransform(dpr,0,0,dpr,0,0);
   W=cssW; H=cssH; CX=W/2; CY=H/2; render();
 }
+
 function computeTargetUnit() {
   if (!vectors.length) return BASE_UNIT;
   let mx=0,my=0;
-  vectors.forEach(v => { mx=Math.max(mx,Math.abs(v.ox),Math.abs(v.ex)); my=Math.max(my,Math.abs(v.oy),Math.abs(v.ey)); if(currentMode==='3d'){mx=Math.max(mx,Math.abs(v.oz||0),Math.abs(v.ez||0));} });
+  vectors.forEach(v => {
+    mx=Math.max(mx,Math.abs(v.ox),Math.abs(v.ex));
+    my=Math.max(my,Math.abs(v.oy),Math.abs(v.ey));
+    if(currentMode==='3d'){ mx=Math.max(mx,Math.abs(v.oz||0),Math.abs(v.ez||0)); }
+  });
   if (mx===0&&my===0) return BASE_UNIT;
   const cW=(W>0?W:600),cH=(H>0?H:500),MARGIN=0.72;
   const byX=mx>0?(cW/2*MARGIN)/mx:Infinity, byY=my>0?(cH/2*MARGIN)/my:Infinity;
   return Math.min(BASE_UNIT,Math.min(byX,byY));
 }
+
 function animateZoom(newTarget) {
   targetUnit=newTarget;
   if (zoomRaf) cancelAnimationFrame(zoomRaf);
@@ -575,22 +579,26 @@ function animateZoom(newTarget) {
   }
   zoomRaf=requestAnimationFrame(step);
 }
+
 function updateZoomBadge() {
   const ratio=unitPx/BASE_UNIT;
   if (Math.abs(ratio-1)<0.02) { badge.classList.remove('visible'); }
   else { badge.textContent=ratio<1?`1:${Math.round(1/ratio)}`:`${ratio.toFixed(1)}×`; badge.classList.add('visible'); }
 }
+
 function niceGridStep(u) {
   const candidates=[1,2,5,10,20,25,50,100,200,250,500,1000,2000,5000,10000];
   for (const c of candidates) if (c*u>=36) return c;
   return candidates[candidates.length-1];
 }
+
 function formatLabel(n) {
   const a=Math.abs(n);
   if (a>=1e6) return (n/1e6).toFixed(a%1e6===0?0:1)+"M";
   if (a>=1e3) return (n/1e3).toFixed(a%1e3===0?0:1)+"k";
   return n.toString();
 }
+
 function drawGrid2d() {
   ctx.clearRect(0,0,W,H);
   const dark=isDark();
@@ -626,6 +634,7 @@ function drawGrid2d() {
   ctx.fillStyle=dark?'rgba(255,255,255,0.25)':'rgba(0,0,0,0.25)';
   const [ox,oy]=wc(0,0); ctx.beginPath(); ctx.arc(ox,oy,2.5,0,Math.PI*2); ctx.fill();
 }
+
 function drawArrow2d(ox,oy,ex,ey,color,progress,label) {
   const [sx,sy]=wc(ox,oy);
   const tx2=ox+(ex-ox)*progress, ty2=oy+(ey-oy)*progress;
@@ -654,6 +663,7 @@ function drawArrow2d(ox,oy,ex,ey,color,progress,label) {
   }
   ctx.restore();
 }
+
 function drawGrid3d() {
   ctx.clearRect(0,0,W,H);
   const dark=isDark(), axisAlpha=dark?0.55:0.60, gridAlpha=dark?0.06:0.07;
@@ -689,7 +699,6 @@ function drawGrid3d() {
     const [lx,ly]=project3d(...a.lp);
     ctx.fillStyle=labelCol; ctx.font='14px "JetBrains Mono",monospace'; ctx.textAlign='center'; ctx.fillText(a.label,lx,ly+4);
   });
-
   for (let i=-range; i<=range; i+=step) {
     if (i===0) continue;
     const [xx, xy] = project3d(i, 0, 0);
@@ -709,6 +718,7 @@ function drawGrid3d() {
     }
   }
 }
+
 function drawArrow3d(ox,oy,oz,ex,ey,ez,color,progress,label) {
   const fx=ox+(ex-ox)*progress,fy=oy+(ey-oy)*progress,fz=oz+(ez-oz)*progress;
   const [sx,sy]=project3d(ox,oy,oz),[px,py]=project3d(fx,fy,fz);
@@ -741,6 +751,7 @@ function drawArrow3d(ox,oy,oz,ex,ey,ez,color,progress,label) {
   }
   ctx.restore();
 }
+
 function drawResultantArrow() {
   if (!showResultant||vectors.length<2) return;
   const progress=resultantAnimProgress; if (progress<=0) return;
@@ -796,6 +807,7 @@ function drawResultantArrow() {
   }
   ctx.restore();
 }
+
 function drawSpan2d() {
   if (!showSpan||!vectors.length) return;
   const dark=isDark();
@@ -815,6 +827,7 @@ function drawSpan2d() {
   }
   ctx.restore();
 }
+
 function drawSpan3d() {
   if (!showSpan||!vectors.length) return;
   const dark=isDark();
@@ -832,7 +845,7 @@ function drawSpan3d() {
   if (allCollinear) {
     const norm = Math.sqrt(ref.x*ref.x + ref.y*ref.y + ref.z*ref.z);
     const ux = ref.x/norm, uy = ref.y/norm, uz = ref.z/norm;
-    const far = 25; 
+    const far = 25;
     const [x1,y1] = project3d(ux*far, uy*far, uz*far);
     const [x2,y2] = project3d(-ux*far, -uy*far, -uz*far);
     ctx.strokeStyle=dark?'rgba(160,200,255,0.18)':'rgba(42,92,170,0.14)'; ctx.lineWidth=2; ctx.setLineDash([8,6]);
@@ -856,7 +869,7 @@ function drawSpan3d() {
       const e2_un = {x: v2.x - v2_dot_e1*e1.x, y: v2.y - v2_dot_e1*e1.y, z: v2.z - v2_dot_e1*e1.z};
       const e2_norm = Math.sqrt(e2_un.x*e2_un.x + e2_un.y*e2_un.y + e2_un.z*e2_un.z);
       const e2 = {x: e2_un.x/e2_norm, y: e2_un.y/e2_norm, z: e2_un.z/e2_norm};
-      const far = 15; 
+      const far = 15;
       const corners = [
         {x: e1.x*far + e2.x*far, y: e1.y*far + e2.y*far, z: e1.z*far + e2.z*far},
         {x: -e1.x*far + e2.x*far, y: -e1.y*far + e2.y*far, z: -e1.z*far + e2.z*far},
@@ -876,13 +889,12 @@ function drawSpan3d() {
   }
   ctx.restore();
 }
+
 function drawLinearCombination() {
   if (!lcShowOnCanvas||!vectors.length) return;
-  
   const dark = isDark(), lcColor = dark ? '#c084fc' : '#7c3aed';
   const limitIndex = (lcAnimStep === -1) ? vectors.length - 1 : Math.min(lcAnimStep, vectors.length - 1);
   let curX = 0, curY = 0, curZ = 0;
-  
   ctx.save();
   for (let i = 0; i <= limitIndex; i++) {
     const v = vectors[i];
@@ -890,11 +902,9 @@ function drawLinearCombination() {
     const dx = (v.ex - v.ox) * c;
     const dy = (v.ey - v.oy) * c;
     const dz = ((v.ez || 0) - (v.oz || 0)) * c;
-    
     const nextX = curX + dx;
     const nextY = curY + dy;
     const nextZ = curZ + dz;
-    
     const segLen = currentMode === '3d' ? Math.sqrt(dx*dx+dy*dy+dz*dz) : Math.sqrt(dx*dx+dy*dy);
     if (segLen > 0.01) {
       ctx.globalAlpha = 0.8;
@@ -905,10 +915,8 @@ function drawLinearCombination() {
         drawArrow3d(curX, curY, curZ, nextX, nextY, nextZ, v.color, 1, label);
       }
     }
-    
     curX = nextX; curY = nextY; curZ = nextZ;
   }
-  
   const showResultantLC = (lcAnimStep === -1 || lcAnimStep === vectors.length);
   if (showResultantLC) {
     ctx.globalAlpha = 0.95;
@@ -923,12 +931,15 @@ function drawLinearCombination() {
   }
   ctx.restore();
 }
+
 function drawOperations2d() {
   if (!showProjection || vectors.length < 2) return;
-  const v1 = vectors[0], v2 = vectors[1], u = [v1.ex-v1.ox, v1.ey-v1.oy], v = [v2.ex-v2.ox, v2.ey-v2.oy];
+  const v1 = vectors[0], v2 = vectors[1];
+  const u = [v1.ex-v1.ox, v1.ey-v1.oy], v = [v2.ex-v2.ox, v2.ey-v2.oy];
   const dot = u[0]*v[0] + u[1]*v[1], vMagSq = v[0]*v[0] + v[1]*v[1];
   if (vMagSq < 1e-9) return;
-  const p = [v[0]*dot/vMagSq, v[1]*dot/vMagSq], dark = isDark(), pColor = dark?'#c084fc':'#7c3aed';
+  const p = [v[0]*dot/vMagSq, v[1]*dot/vMagSq];
+  const dark = isDark(), pColor = dark?'#c084fc':'#7c3aed';
   drawArrow2d(0, 0, p[0], p[1], pColor, 1, 'proj');
   const [sx,sy] = wc(u[0], u[1]), [ex,ey] = wc(p[0], p[1]);
   ctx.save(); ctx.strokeStyle = dark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
@@ -939,7 +950,9 @@ function drawOperations2d() {
 function drawOperations3d() {
   if (vectors.length < 2) return;
   const dark = isDark(), pColor = dark?'#c084fc':'#7c3aed', cColor = dark?'#f0c040':'#9a6e00';
-  const v1 = vectors[0], v2 = vectors[1], u = [v1.ex-v1.ox, v1.ey-v1.oy, (v1.ez||0)-(v1.oz||0)], v = [v2.ex-v2.ox, v2.ey-v2.oy, (v2.ez||0)-(v2.oz||0)];
+  const v1 = vectors[0], v2 = vectors[1];
+  const u = [v1.ex-v1.ox, v1.ey-v1.oy, (v1.ez||0)-(v1.oz||0)];
+  const v = [v2.ex-v2.ox, v2.ey-v2.oy, (v2.ez||0)-(v2.oz||0)];
   if (showProjection) {
     const dot = u[0]*v[0] + u[1]*v[1] + u[2]*v[2], vMagSq = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (vMagSq > 1e-9) {
@@ -954,7 +967,8 @@ function drawOperations3d() {
   if (showCross) {
     const cx = u[1]*v[2] - u[2]*v[1], cy = u[2]*v[0] - u[0]*v[2], cz = u[0]*v[1] - u[1]*v[0];
     drawArrow3d(0,0,0, cx,cy,cz, cColor, 1, 'v₁×v₂');
-    const p1 = project3d(0,0,0), p2 = project3d(u[0],u[1],u[2]), p3 = project3d(u[0]+v[0], u[1]+v[1], u[2]+v[2]), p4 = project3d(v[0],v[1],v[2]);
+    const p1 = project3d(0,0,0), p2 = project3d(u[0],u[1],u[2]);
+    const p3 = project3d(u[0]+v[0], u[1]+v[1], u[2]+v[2]), p4 = project3d(v[0],v[1],v[2]);
     ctx.save(); ctx.fillStyle = dark?'rgba(240,192,64,0.1)':'rgba(154,110,0,0.1)';
     ctx.strokeStyle = dark?'rgba(240,192,64,0.4)':'rgba(154,110,0,0.4)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.lineTo(p4[0],p4[1]); ctx.closePath();
@@ -974,6 +988,7 @@ function render() {
   }
   updateStats();
 }
+
 function animateOne(idx, onDone) {
   const start=performance.now(), dur=480;
   function step(now) {
@@ -983,6 +998,7 @@ function animateOne(idx, onDone) {
   }
   requestAnimationFrame(step);
 }
+
 function replayAll() {
   if (!vectors.length) return;
   animState=vectors.map(()=>0); resultantAnimProgress=0;
@@ -991,19 +1007,31 @@ function replayAll() {
   let i=0;
   function next() {
     if (i>=vectors.length) { if (showResultant&&vectors.length>=2) setTimeout(()=>animateResultant(),120); return; }
-    animateOne(i,()=>{i++;setTimeout(next,60);}); 
+    animateOne(i,()=>{i++;setTimeout(next,60);});
   }
   setTimeout(next,80);
 }
+
+function getScalarInput() {
+  const raw = document.getElementById('inp-scalar').value.trim();
+  if (raw === '' || raw === null) return 1;
+  const parsed = parseFloat(raw);
+  return isNaN(parsed) ? 1 : parsed;
+}
+
 function addVector() {
-  const x=parseFloat(document.getElementById('inp-x').value)||0;
-  const y=parseFloat(document.getElementById('inp-y').value)||0;
-  const z=currentMode==='3d'?(parseFloat(document.getElementById('inp-z').value)||0):0;
-  const scalar=parseFloat(document.getElementById('inp-scalar').value)||1;
-  const op=document.getElementById('inp-op').value;
-  const rx=parseFloat((x*scalar).toFixed(8)),ry=parseFloat((y*scalar).toFixed(8)),rz=parseFloat((z*scalar).toFixed(8));
+  const x = parseFloat(document.getElementById('inp-x').value) || 0;
+  const y = parseFloat(document.getElementById('inp-y').value) || 0;
+  const z = currentMode==='3d' ? (parseFloat(document.getElementById('inp-z').value) || 0) : 0;
+  const scalar = getScalarInput();
+  const op = document.getElementById('inp-op').value;
+  const rx = parseFloat((x*scalar).toFixed(8));
+  const ry = parseFloat((y*scalar).toFixed(8));
+  const rz = parseFloat((z*scalar).toFixed(8));
   let ox=0,oy=0,oz=0;
-  if (op==='chain'&&vectors.length>0) { const last=vectors[vectors.length-1]; ox=last.ex; oy=last.ey; oz=last.ez||0; }
+  if (op==='chain'&&vectors.length>0) {
+    const last=vectors[vectors.length-1]; ox=last.ex; oy=last.ey; oz=last.ez||0;
+  }
   const pal=palette(), color=pal[vectors.length%pal.length], name=`v${vectors.length+1}`;
   vectors.push({ox,oy,oz,ex:ox+rx,ey:oy+ry,ez:oz+rz,color,name,raw:{x,y,z},scalar,op,selected:false});
   recalculateVectors();
@@ -1015,23 +1043,30 @@ function addVector() {
   if (needsZoom) { animateZoom(newTarget); setTimeout(()=>animateOne(vectors.length-1,afterAnim),150); }
   else animateOne(vectors.length-1,afterAnim);
 }
+
 function clearAll() {
   vectors=[]; animState=[]; lcCoeffs=[];
   if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
   resultantAnimProgress=0; animateZoom(BASE_UNIT); updateList(); updatePanels(); render();
 }
+
 function removeVector(idx) {
+  if (_removeLock) return;
   const el=document.getElementById(`vi-${idx}`); if (!el) return;
+  _removeLock = true;
   el.classList.add('removing');
   setTimeout(()=>{
     vectors.splice(idx,1); animState.splice(idx,1); lcCoeffs.splice(idx,1);
     recalculateVectors();
-    vectors.forEach((v,j)=>{ v.name=`v${j+1}`; v.color=palette()[j%palette().length]; });
+    const currentPal = palette();
+    vectors.forEach((v,j)=>{ v.name=`v${j+1}`; v.color=currentPal[j%currentPal.length]; });
     if (resultantAnimRaf) { cancelAnimationFrame(resultantAnimRaf); resultantAnimRaf=null; }
     resultantAnimProgress=(showResultant&&vectors.length>=2)?1:0;
+    _removeLock = false;
     updateList(); updatePanels(); animateZoom(vectors.length?computeTargetUnit():BASE_UNIT); render();
   },180);
 }
+
 function recalculateVectors() {
   let lastEx = 0, lastEy = 0, lastEz = 0;
   vectors.forEach((v, i) => {
@@ -1047,69 +1082,73 @@ function recalculateVectors() {
     lastEx = v.ex; lastEy = v.ey; lastEz = v.ez;
   });
 }
+
 function updateVecAxis(idx, axis, val) {
-  const v = parseFloat(val) || 0;
-  vectors[idx].raw[axis] = v;
+  const parsed = parseFloat(val);
+  vectors[idx].raw[axis] = isNaN(parsed) ? 0 : parsed;
   recalculateVectors();
-  updateList();
   render();
+  updatePanels();
 }
+
 function toggleSelect(idx, checked) {
   vectors[idx].selected = checked;
 }
+
 function applyScale() {
   const sx = parseFloat(document.getElementById('inp-scale-x').value) || 1;
   const sy = parseFloat(document.getElementById('inp-scale-y').value) || 1;
   const sz = parseFloat(document.getElementById('inp-scale-z').value) || 1;
-  
+
   const anims = [];
   vectors.forEach(v => {
     if (v.selected) {
       anims.push({
         v: v,
         startX: v.raw.x, startY: v.raw.y, startZ: v.raw.z,
-        targetX: v.raw.x * sx, targetY: v.raw.y * sy, targetZ: v.raw.z * sz
+        targetX: v.raw.x * sx, targetY: v.raw.y * sy, targetZ: v.raw.z * sz,
+        origScalar: v.scalar
       });
+      v.scalar = 1;
     }
   });
-  
+
   if (anims.length === 0) return;
-  
-  const start = performance.now();
-  const dur = 600;
-  
+
+  const start = performance.now(), dur = 600;
+
   function step(now) {
     const t = Math.min(1, (now - start) / dur);
     const ease = easeOutCubic(t);
-    
     anims.forEach(a => {
       a.v.raw.x = a.startX + (a.targetX - a.startX) * ease;
       a.v.raw.y = a.startY + (a.targetY - a.startY) * ease;
       a.v.raw.z = a.startZ + (a.targetZ - a.startZ) * ease;
     });
-    
     recalculateVectors();
     render();
-    
     if (t < 1) {
       requestAnimationFrame(step);
     } else {
       updateList();
+      updatePanels();
       const newTarget = computeTargetUnit();
       if (Math.abs(newTarget - unitPx) > unitPx * 0.005) {
         animateZoom(newTarget);
       }
     }
   }
-  
+
   requestAnimationFrame(step);
 }
+
 function fmt(n) {
   const abs=Math.abs(n);
   if (abs>=1e6) return parseFloat((n/1e6).toFixed(3))+'M';
   if (abs>=1e3) return parseFloat((n/1e3).toFixed(3))+'k';
   return parseFloat(n.toFixed(4)).toString();
 }
+
 function updateList() {
   const el=document.getElementById('vec-list');
   const lang=document.body.getAttribute('data-active-lang')||'en';
@@ -1117,7 +1156,6 @@ function updateList() {
   if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${emptyLabel}</p>`; return; }
   el.innerHTML=vectors.map((v,i)=>{
     const ex=fmt(v.ex-v.ox),ey=fmt(v.ey-v.oy),ez=fmt((v.ez||0)-(v.oz||0));
-    const compStr=currentMode==='3d'?`(${ex},&thinsp;${ey},&thinsp;${ez})`:`(${ex},&thinsp;${ey})`;
     const chainLabel=lang==='ja'?'チェーン':lang==='id'?'rantai':'chain';
     const chainTag=v.op==='chain'?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent2) 12%,transparent);color:var(--accent2)">${chainLabel}</span>`:'';
     const scalarTag=v.scalar!==1?`<span class="tag mono" style="background:color-mix(in srgb,var(--accent3) 12%,transparent);color:var(--accent3)">×${v.scalar}</span>`:'';
@@ -1139,6 +1177,7 @@ function updateList() {
     </div>`;
   }).join('');
 }
+
 function gramSchmidt(vecs) {
   const basis=[];
   for (const v of vecs) {
@@ -1149,6 +1188,7 @@ function gramSchmidt(vecs) {
   }
   return basis;
 }
+
 function computeRank() { return gramSchmidt(vectors.map(v=>[v.ex-v.ox,v.ey-v.oy,(v.ez||0)-(v.oz||0)])).length; }
 
 function updateLCPanel() {
@@ -1156,7 +1196,7 @@ function updateLCPanel() {
   const insightEl=document.getElementById('lc-insight'), controlsEl=document.getElementById('lc-anim-controls'), stepsEl=document.getElementById('lc-steps');
   const lang=document.body.getAttribute('data-active-lang')||'en';
   const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
-  
+
   if (!vectors.length) {
     slidersEl.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`;
     resultEl.style.display='none';
@@ -1166,11 +1206,12 @@ function updateLCPanel() {
     lcCoeffs=[];
     return;
   }
-  
+
   if (insightEl) insightEl.style.display='block';
   if (controlsEl) controlsEl.style.display='flex';
-  while (lcCoeffs.length<vectors.length) lcCoeffs.push(1); lcCoeffs.length=vectors.length;
-  
+  while (lcCoeffs.length<vectors.length) lcCoeffs.push(1);
+  lcCoeffs.length=vectors.length;
+
   slidersEl.innerHTML=vectors.map((v,i)=>{
     const c=lcCoeffs[i];
     return `<div class="lc-row"><span class="lc-name" style="color:${v.color}">${v.name}</span>
@@ -1178,7 +1219,7 @@ function updateLCPanel() {
         oninput="lcCoeffs[${i}]=parseFloat(this.value);document.getElementById('lc-v-${i}').textContent=parseFloat(this.value).toFixed(1);updateLCResult();render()">
       <span class="lc-val" id="lc-v-${i}">${c.toFixed(1)}</span></div>`;
   }).join('');
-  
+
   updateLCResult();
 }
 
@@ -1206,7 +1247,6 @@ function updateLCResult() {
     <div style="color:var(--ink);font-size:12px">= <strong>${dim}</strong></div>
     <div style="color:var(--ink3);font-size: 13px;margin-top:3px">|LC| = ${fmt(mag)}</div>`;
 
-  // Dynamically update step-by-step breakdown list
   if (stepsEl) {
     const L_steps = {
       en: { scale: 'Scale', result: 'Resultant' },
@@ -1214,21 +1254,18 @@ function updateLCResult() {
       id: { scale: 'Skalakan', result: 'Hasil' }
     };
     const Ls = L_steps[lang] || L_steps.en;
-    
     let cumX = 0, cumY = 0, cumZ = 0;
     const stepItems = [];
-    
+
     vectors.forEach((v, i) => {
       const c = lcCoeffs[i] !== undefined ? lcCoeffs[i] : 1;
       const dx = (v.ex - v.ox) * c;
       const dy = (v.ey - v.oy) * c;
       const dz = ((v.ez || 0) - (v.oz || 0)) * c;
       cumX += dx; cumY += dy; cumZ += dz;
-      
-      let text = "";
       const cxStr = fmt(cumX), cyStr = fmt(cumY), czStr = fmt(cumZ);
       const coords = currentMode === '3d' ? `(${cxStr},&thinsp;${cyStr},&thinsp;${czStr})` : `(${cxStr},&thinsp;${cyStr})`;
-      
+      let text = '';
       if (lang === 'ja') {
         text = `${v.name} ${Ls.scale} ${c.toFixed(1)}倍: ${coords}`;
       } else if (lang === 'id') {
@@ -1236,20 +1273,17 @@ function updateLCResult() {
       } else {
         text = `${Ls.scale} ${v.name} by ${c.toFixed(1)}: ${coords}`;
       }
-      
       const icon = i === 0 ? '<i class="fa-solid fa-arrow-right"></i>' : '<i class="fa-solid fa-plus"></i>';
-      
       const isStepShown = lcAnimStep === -1 || lcAnimStep >= i;
       const opacity = isStepShown ? 1 : 0.35;
       const borderStyle = isStepShown ? `border-color: color-mix(in srgb, ${v.color} 30%, transparent)` : 'border-color: var(--border)';
       const bgStyle = isStepShown ? `background: color-mix(in srgb, ${v.color} 8%, transparent)` : 'background: transparent';
-      
       stepItems.push(`<div class="lc-step" style="opacity: ${opacity}; color: ${v.color}; ${borderStyle}; ${bgStyle}">
         <span class="lc-step-icon" style="color: ${v.color}">${icon}</span>
         <span>${text}</span>
       </div>`);
     });
-    
+
     const dark = isDark(), lcColor = dark ? '#c084fc' : '#7c3aed';
     const rxStr = fmt(cumX), ryStr = fmt(cumY), rzStr = fmt(cumZ);
     const rCoords = currentMode === '3d' ? `(${rxStr},&thinsp;${ryStr},&thinsp;${rzStr})` : `(${rxStr},&thinsp;${ryStr})`;
@@ -1257,12 +1291,11 @@ function updateLCResult() {
     const fOpacity = isFinalShown ? 1 : 0.35;
     const fBorderStyle = isFinalShown ? `border-color: color-mix(in srgb, ${lcColor} 30%, transparent)` : 'border-color: var(--border)';
     const fBgStyle = isFinalShown ? `background: color-mix(in srgb, ${lcColor} 8%, transparent)` : 'background: transparent';
-    
     stepItems.push(`<div class="lc-step" style="opacity: ${fOpacity}; color: ${lcColor}; ${fBorderStyle}; ${fBgStyle}">
       <span class="lc-step-icon" style="color: ${lcColor}"><i class="fa-solid fa-equals"></i></span>
       <span>${Ls.result}: LC = ${rCoords}</span>
     </div>`);
-    
+
     stepsEl.innerHTML = stepItems.join('');
   }
 }
@@ -1273,38 +1306,34 @@ function animateLCSteps() {
   const btn = document.getElementById('lc-btn-animate');
   if (btn) btn.classList.add('active');
   lcAnimStep = 0;
-  
   const steps = [];
-  for (let i = 0; i <= vectors.length; i++) {
-    steps.push(i);
-  }
+  for (let i = 0; i <= vectors.length; i++) { steps.push(i); }
   steps.push(-1);
-  
   let si = 0;
   const dur = 750;
   let start = performance.now();
-  
+
   function tick(now) {
     if (now - start >= dur) {
       si++;
       if (si >= steps.length) {
         lcAnimStep = -1;
-        updateLCPanel();
+        updateLCResult();
         render();
         if (btn) btn.classList.remove('active');
         lcAnimRaf = null;
         return;
       }
       lcAnimStep = steps[si];
-      updateLCPanel();
+      updateLCResult();
       start = now;
     }
     render();
     lcAnimRaf = requestAnimationFrame(tick);
   }
-  
+
   lcAnimStep = steps[0];
-  updateLCPanel();
+  updateLCResult();
   render();
   lcAnimRaf = requestAnimationFrame(tick);
 }
@@ -1315,7 +1344,6 @@ function resetLC() {
   lcAnimStep = -1;
   const btn = document.getElementById('lc-btn-animate');
   if (btn) btn.classList.remove('active');
-  
   vectors.forEach((v, i) => {
     lcCoeffs[i] = 1.0;
     const slider = document.getElementById(`lc-s-${i}`);
@@ -1323,10 +1351,10 @@ function resetLC() {
     const valSpan = document.getElementById(`lc-v-${i}`);
     if (valSpan) valSpan.textContent = '1.0';
   });
-  
-  updateLCPanel();
+  updateLCResult();
   render();
 }
+
 function updateSpanPanel() {
   const el=document.getElementById('span-info');
   const lang=document.body.getAttribute('data-active-lang')||'en';
@@ -1341,25 +1369,26 @@ function updateSpanPanel() {
     plane:{en:'A 2D plane in 3D space.',ja:'3次元空間内の2次元平面にスパンします。',id:'Bidang 2D dalam ruang 3D.'},
     r3:   {en:'Spans the entire 3D space ℝ³.',ja:'全3次元空間 ℝ³ にスパンします。',id:'Mencakup seluruh ruang 3D ℝ³.'},
   };
-  if (rank===0)           { spanName='{0}';  color=dark?'#6b6b6b':'#999'; desc=msgs.zero[lang]; }
-  else if (rank===1)      { spanName='line'; color=dark?'#6a9fd8':'#2a5caa'; desc=msgs.line[lang]; }
-  else if (rank===2&&dim===2) { spanName='ℝ²'; color=dark?'#5aba80':'#2e7d52'; desc=msgs.r2[lang]; }
-  else if (rank===2&&dim===3) { spanName='plane'; color=dark?'#5aba80':'#2e7d52'; desc=msgs.plane[lang]; }
-  else if (rank===3)      { spanName='ℝ³'; color=dark?'#d4a06a':'#8b5a2b'; desc=msgs.r3[lang]; }
-  else                    { spanName=`rank ${rank}`; color=dark?'#9a88d8':'#5b4a9e'; desc=`rank = ${rank}`; }
+  if (rank===0)                { spanName='{0}';   color=dark?'#6b6b6b':'#999';     desc=msgs.zero[lang]; }
+  else if (rank===1)           { spanName='line';  color=dark?'#6a9fd8':'#2a5caa';  desc=msgs.line[lang]; }
+  else if (rank===2&&dim===2)  { spanName='ℝ²';    color=dark?'#5aba80':'#2e7d52';  desc=msgs.r2[lang]; }
+  else if (rank===2&&dim===3)  { spanName='plane'; color=dark?'#5aba80':'#2e7d52';  desc=msgs.plane[lang]; }
+  else if (rank===3)           { spanName='ℝ³';    color=dark?'#d4a06a':'#8b5a2b';  desc=msgs.r3[lang]; }
+  else                         { spanName=`rank ${rank}`; color=dark?'#9a88d8':'#5b4a9e'; desc=`rank = ${rank}`; }
   el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span class="span-badge" style="color:${color};border-color:color-mix(in srgb,${color} 40%,transparent);background:color-mix(in srgb,${color} 10%,transparent)">
       <span class="span-dot" style="background:${color}"></span>span = ${spanName}</span>
     <span class="mono" style="font-size: 13px;color:var(--ink3)">rank = ${rank} / ${dim}</span></div>
     <p style="font-size: 14px;font-family:'DM Sans',sans-serif;color:var(--ink2);line-height:1.6;margin-top:4px">${desc}</p>`;
 }
+
 function updateBasisPanel() {
   const el=document.getElementById('basis-info');
   const lang=document.body.getAttribute('data-active-lang')||'en';
   const addMsg=lang==='ja'?'ベクトルを追加してください':lang==='id'?'Tambahkan vektor dulu':'Add vectors first';
   if (!vectors.length) { el.innerHTML=`<p class="mono" style="font-size: 14px;color:var(--ink3)">${addMsg}</p>`; return; }
-  const dim=currentMode==='3d'?3:2,rank=computeRank(),n=vectors.length,dark=isDark();
-  const isLI=rank===n,isBasis=isLI&&rank===dim,isOver=n>dim;
+  const dim=currentMode==='3d'?3:2, rank=computeRank(), n=vectors.length, dark=isDark();
+  const isLI=rank===n, isBasis=isLI&&rank===dim, isOver=n>dim;
   const statusMsgs={
     over:{en:'Linearly Dependent (overcomplete)',ja:'線形従属（過剰）',id:'Bergantung Linear (berlebih)'},
     dep:{en:'Linearly Dependent',ja:'線形従属',id:'Bergantung Linear'},
@@ -1367,10 +1396,10 @@ function updateBasisPanel() {
     span:{en:'Basis for its span',ja:'スパンの基底',id:'Basis untuk spannya'},
   };
   let statusText,statusColor;
-  if (isOver) { statusText=statusMsgs.over[lang]; statusColor=dark?'#d47070':'#b84040'; }
-  else if (!isLI) { statusText=statusMsgs.dep[lang]; statusColor=dark?'#d47070':'#b84040'; }
+  if (isOver)       { statusText=statusMsgs.over[lang];  statusColor=dark?'#d47070':'#b84040'; }
+  else if (!isLI)   { statusText=statusMsgs.dep[lang];   statusColor=dark?'#d47070':'#b84040'; }
   else if (isBasis) { statusText=statusMsgs.basis[lang]; statusColor=dark?'#5aba80':'#2e7d52'; }
-  else { statusText=statusMsgs.span[lang]; statusColor=dark?'#d4a06a':'#8b5a2b'; }
+  else              { statusText=statusMsgs.span[lang];  statusColor=dark?'#d4a06a':'#8b5a2b'; }
   const vecs=vectors.map(v=>[v.ex-v.ox,v.ey-v.oy,(v.ez||0)-(v.oz||0)]);
   const onb=gramSchmidt(vecs);
   const onbStr=onb.map((u,i)=>{
@@ -1385,24 +1414,30 @@ function updateBasisPanel() {
     ${!isLI?`<p style="font-size: 14px;font-family:'DM Sans',sans-serif;color:var(--ink2);margin-bottom:6px">${liMsg}</p>`:''}
     ${onb.length?`<div class="basis-block"><div style="color:var(--ink3);font-size: 12px;margin-bottom:4px">${onbLabel}</div>${onbStr}</div>`:''}`;
 }
+
 function updateOpsPanel() {
-  const el = document.getElementById('ops-info'), dotRow = document.getElementById('row-dot'), crossRow = document.getElementById('row-cross');
+  const el = document.getElementById('ops-info');
+  const dotRow = document.getElementById('row-dot');
+  const crossRow = document.getElementById('row-cross');
   const lang = document.body.getAttribute('data-active-lang')||'en';
   if (vectors.length < 2) {
     el.innerHTML = `<p class="mono" style="font-size: 14px;color:var(--ink3)">${lang==='ja'?'ベクトルを2つ以上追加してください':lang==='id'?'Tambahkan minimal dua vektor':'Add at least two vectors'}</p>`;
-    dotRow.style.display = 'none'; crossRow.style.display = 'none'; showProjection = false; showCross = false;
-    document.getElementById('toggle-dot').checked = false; document.getElementById('toggle-cross').checked = false;
+    dotRow.style.display = 'none'; crossRow.style.display = 'none';
+    showProjection = false; showCross = false;
+    document.getElementById('toggle-dot').checked = false;
+    document.getElementById('toggle-cross').checked = false;
     return;
   }
   const v1 = vectors[0], v2 = vectors[1];
-  const dx1 = v1.ex-v1.ox, dy1 = v1.ey-v1.oy, dz1 = (v1.ez||0)-(v1.oz||0);
-  const dx2 = v2.ex-v2.ox, dy2 = v2.ey-v2.oy, dz2 = (v2.ez||0)-(v2.oz||0);
-  const dot = dx1*dx2 + dy1*dy2 + dz1*dz2, mag1 = Math.sqrt(dx1*dx1+dy1*dy1+dz1*dz1), mag2 = Math.sqrt(dx2*dx2+dy2*dy2+dz2*dz2);
+  const dx1=v1.ex-v1.ox, dy1=v1.ey-v1.oy, dz1=(v1.ez||0)-(v1.oz||0);
+  const dx2=v2.ex-v2.ox, dy2=v2.ey-v2.oy, dz2=(v2.ez||0)-(v2.oz||0);
+  const dot = dx1*dx2 + dy1*dy2 + dz1*dz2;
+  const mag1 = Math.sqrt(dx1*dx1+dy1*dy1+dz1*dz1);
+  const mag2 = Math.sqrt(dx2*dx2+dy2*dy2+dz2*dz2);
   const cosTheta = mag1*mag2 > 0 ? dot/(mag1*mag2) : 0;
   const theta = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
   const cx = dy1*dz2 - dz1*dy2, cy = dz1*dx2 - dx1*dz2, cz = dx1*dy2 - dy1*dx2;
   const crossMag = Math.sqrt(cx*cx+cy*cy+cz*cz);
-  
   el.innerHTML = `
     <div style="font-size: 14px;color:var(--ink3);margin-bottom:6px">Operations on <strong>${v1.name}</strong> and <strong>${v2.name}</strong>:</div>
     <div style="margin-bottom:4px"><span style="color:var(--ink3)">Dot Product (v₁·v₂) = </span><strong>${fmt(dot)}</strong></div>
@@ -1410,7 +1445,8 @@ function updateOpsPanel() {
     ${currentMode === '3d' ? `<div style="margin-top:4px"><span style="color:var(--ink3)">Cross Mag |v₁×v₂| = </span><strong>${fmt(crossMag)}</strong></div>
     <div style="color:var(--ink3);font-size: 13px;margin-top:2px">v₁×v₂ = (${fmt(cx)}, ${fmt(cy)}, ${fmt(cz)})</div>` : ''}
   `;
-  dotRow.style.display = 'flex'; crossRow.style.display = currentMode === '3d' ? 'flex' : 'none';
+  dotRow.style.display = 'flex';
+  crossRow.style.display = currentMode === '3d' ? 'flex' : 'none';
 }
 
 function updateTheoryNote() {
@@ -1426,6 +1462,7 @@ function updateTheoryNote() {
 }
 
 function updatePanels() { updateLCPanel(); updateSpanPanel(); updateBasisPanel(); updateOpsPanel(); }
+
 function updateStats() {
   const el=document.getElementById('stats');
   if (!vectors.length||animState[vectors.length-1]<0.99) { el.innerHTML=''; return; }
@@ -1453,10 +1490,18 @@ canvas.addEventListener('touchmove',e=>{if(currentMode!=='3d'||!drag.active||e.t
 canvas.addEventListener('touchend',()=>{drag.active=false;});
 canvas.addEventListener('dblclick',()=>{if(currentMode!=='3d')return;cam.azimuth=0.55;cam.elevation=0.42;cam.scale=1.0;render();});
 window.addEventListener('resize',resize);
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{vectors.forEach((v,i)=>{v.color=palette()[i%palette().length];});updateList();render();});
+window.addEventListener('themechange', () => {
+  const p = palette();
+  vectors.forEach((v, i) => {
+    v.color = p[i % p.length];
+  });
+  updateList();
+  render();
+});
 resize();
 updateTheoryNote();
 </script>
+
 <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">
   Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
 </div>

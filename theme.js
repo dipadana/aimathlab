@@ -27,6 +27,9 @@ function applyTheme() {
     document.documentElement.removeAttribute('data-theme');
   }
   updateThemeIcon();
+  
+  // Dispatch custom event to notify listeners (e.g. pages drawing on canvas) of a theme change
+  window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: window.isDark() ? 'dark' : 'light' } }));
 }
 
 function toggleTheme() {

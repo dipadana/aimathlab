@@ -308,7 +308,6 @@ function togglePanel(name) {
 const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
 let W,H,CX,CY;
 const UNIT=55;
-function isDark(){return window.matchMedia('(prefers-color-scheme: dark)').matches;}
 function wc(x,y){return [CX+x*UNIT,CY-y*UNIT];}
 
 
@@ -678,7 +677,7 @@ function resize(){
 }
 
 window.addEventListener('resize',resize);
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+window.addEventListener('themechange', () => render());
 resize();
 
 gdPath=[{x:gdX0,y:FNS.gd.f(gdX0)}];

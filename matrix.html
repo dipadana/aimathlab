@@ -910,7 +910,7 @@ function resetLME() {
 }
 
 window.addEventListener('resize', resize);
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>render());
+window.addEventListener('themechange', () => render());
 resize();
 updateMatrix();
 updateTheoryNote();
