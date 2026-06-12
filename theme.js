@@ -262,10 +262,25 @@ function getPageState() {
       state[el.id] = el.value;
     }
   });
+  if (window.vectors) {
+    state._vectors = window.vectors;
+  }
+  if (window.lcCoeffs) {
+    state._lcCoeffs = window.lcCoeffs;
+  }
   return state;
 }
 
 function applyPageState(state) {
+  if (state._vectors) {
+    window.vectors = state._vectors;
+    if (window.animState) {
+      window.animState = window.vectors.map(() => 1);
+    }
+  }
+  if (state._lcCoeffs) {
+    window.lcCoeffs = state._lcCoeffs;
+  }
   if (state._activeTab) {
     const tabEl = document.getElementById(state._activeTab);
     if (tabEl) {
@@ -290,6 +305,15 @@ function applyPageState(state) {
       }
     }
   });
+  if (window.vectors && typeof window.updateList === 'function') {
+    window.updateList();
+  }
+  if (window.vectors && typeof window.updatePanels === 'function') {
+    window.updatePanels();
+  }
+  if (window.vectors && typeof window.render === 'function') {
+    window.render();
+  }
 }
 
 async function saveStateToSupabase() {
