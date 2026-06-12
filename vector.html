@@ -472,7 +472,7 @@ let cam = { azimuth: 0.55, elevation: 0.42, scale: 1.0 };
 let drag = { active: false, startX: 0, startY: 0, startAz: 0, startEl: 0 };
 window.lcCoeffs = []; var lcShowOnCanvas = false, showSpan = false;
 let lcAnimStep = -1, lcAnimRaf = null;
-let showProjection = false, showCross = false, orbitRaf = null;
+var showProjection = false, showCross = false, orbitRaf = null;
 let _removeLock = false;
 
 function toggleOrbit(on) {

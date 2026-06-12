@@ -427,27 +427,23 @@ function scheduleVectorRestore(s) {
       window.lcCoeffs = window.vectors.map(() => 1);
     }
 
-    if (typeof s['toggle-resultant'] !== 'undefined') {
-      const el = document.getElementById('toggle-resultant');
-      if (el) {
-        el.checked = !!s['toggle-resultant'];
-        if (typeof window.showResultant !== 'undefined') window.showResultant = el.checked;
-      }
-    }
-    if (typeof s['toggle-lc'] !== 'undefined') {
-      const el = document.getElementById('toggle-lc');
-      if (el) {
-        el.checked = !!s['toggle-lc'];
-        if (typeof window.lcShowOnCanvas !== 'undefined') window.lcShowOnCanvas = el.checked;
-      }
-    }
-    if (typeof s['toggle-span'] !== 'undefined') {
-      const el = document.getElementById('toggle-span');
-      if (el) {
-        el.checked = !!s['toggle-span'];
-        if (typeof window.showSpan !== 'undefined') window.showSpan = el.checked;
-      }
-    }
+    Object.keys(s).forEach(id => {
+      if (id.startsWith('_')) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') el.value = s[id];
+      else if (el.type === 'checkbox') {
+        el.checked = !!s[id];
+        if (id === 'toggle-resultant') window.showResultant = el.checked;
+        if (id === 'toggle-lc') window.lcShowOnCanvas = el.checked;
+        if (id === 'toggle-span') window.showSpan = el.checked;
+        if (id === 'toggle-dot') window.showProjection = el.checked;
+        if (id === 'toggle-cross') window.showCross = el.checked;
+        if (id === 'auto-orbit') {
+          if (typeof window.toggleOrbit === 'function') window.toggleOrbit(el.checked);
+        }
+      } else el.value = s[id];
+    });
 
     if (window.vectors && window.vectors.length > 0) {
       recalculateVectors();
