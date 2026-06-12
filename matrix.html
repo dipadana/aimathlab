@@ -44,7 +44,6 @@
   font-family: 'JetBrains Mono', monospace; font-size: 14px;
   padding: 4px 10px; border-radius: 20px; border: 1px solid;
 }
-/* ── Linear Map Explorer ── */
 .lme-vec-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -130,7 +129,7 @@
 .basis-col-box.col2 { border-color: color-mix(in srgb, #d4a06a 40%, transparent); background: color-mix(in srgb, #d4a06a 8%, transparent); color: #d4a06a; }
 .basis-col-box .col-label { font-size: 10px; opacity: 0.8; margin-bottom: 2px; }
 </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta name="author" content="Rico Eriansyah">
 <meta name="keywords" content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -138,7 +137,6 @@
 <body data-active-lang="en">
 <div class="page-shell">
 
-  
   <div class="sticky-header module-header">
     <a class="back-link" href="index.html">
       ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span><span data-lang="id">Beranda</span>
@@ -163,7 +161,6 @@
       <button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
         <i class="fa-solid fa-moon"></i>
       </button>
-
     </div>
   </div>
 
@@ -182,7 +179,6 @@
 
   <div class="main-layout">
 
-    
     <div style="flex:1;min-width:300px">
       <div class="canvas-wrap">
         <canvas id="canvas" height="500"></canvas>
@@ -190,10 +186,8 @@
       <div id="stats" class="mono" style="margin-top:8px;font-size: 14px;color:var(--ink3);display:flex;gap:16px;flex-wrap:wrap"></div>
     </div>
 
-    
     <div class="controls-column">
 
-      
       <div class="panel">
         <div class="panel-head" onclick="togglePanel('matrix')">
           <span class="ph-title">
@@ -211,7 +205,6 @@
             <div><label class="fieldlabel">a₂₂</label><input type="number" id="m-d" value="1" step="0.1" oninput="updateMatrix()"></div>
             <div class="matrix-bracket right"></div>
           </div>
-          
           <div style="display:flex;gap:5px;flex-wrap:wrap">
             <button class="btn-mode" onclick="setPreset(1,0,0,1)">I</button>
             <button class="btn-mode" onclick="setPreset(2,0,0,2)">2I</button>
@@ -223,7 +216,6 @@
         </div>
       </div>
 
-      
       <div class="panel" id="panel-matb">
         <div class="panel-head" onclick="togglePanel('matb')">
           <span class="ph-title">
@@ -252,7 +244,6 @@
         <button class="btn-mode" onclick="animateSVD()">SVD (UΣVᵀ)</button>
       </div>
 
-      
       <div style="display:flex;gap:8px">
         <button class="btn btn-fill" style="flex:1" onclick="startAnimation()">
           <span data-lang="en">Animate</span><span data-lang="ja">アニメーション</span><span data-lang="id">Animasi</span>
@@ -262,7 +253,6 @@
         </button>
       </div>
 
-      
       <label class="toggle-row" for="tgl-grid">
         <span style="display:flex;flex-direction:column;gap:2px">
           <span class="mono" style="font-size: 14px;color:var(--ink2);font-weight:500">
@@ -305,10 +295,6 @@
         </span>
       </label>
 
-      <!-- ══════════════════════════════════════════════════════
-           LINEAR MAP EXPLORER – inspired by 3Blue1Brown Ep.3
-           Shows Av = x·col₁ + y·col₂ interactively
-           ══════════════════════════════════════════════════════ -->
       <div class="panel">
         <div class="panel-head" onclick="togglePanel('lme')">
           <span class="ph-title">
@@ -319,14 +305,12 @@
         </div>
         <div class="panel-body" id="pb-lme">
 
-          <!-- Insight callout -->
           <div style="font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink3);background:var(--surface2);border-radius:5px;padding:8px 10px;margin-bottom:10px;border-left:3px solid var(--accent);line-height:1.5">
             <span data-lang="en"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>A matrix column = where î or ĵ lands. Any vector output is just a <em>scaled sum</em> of those columns.</span>
             <span data-lang="ja"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>行列の列 = î や ĵ の着地点。出力ベクトルはその列の <em>スカラー倍の和</em> です。</span>
             <span data-lang="id"><i class="fa-solid fa-lightbulb" style="color:var(--accent);margin-right:6px"></i>Kolom matriks = tempat landingnya î atau ĵ. Output vektor hanyalah <em>jumlah kolom yang diskalakan</em>.</span>
           </div>
 
-          <!-- Input vector -->
           <div class="lme-vec-inputs">
             <div>
               <label class="fieldlabel">
@@ -346,7 +330,6 @@
             </div>
           </div>
 
-          <!-- Where the basis vectors land -->
           <div class="basis-col-display">
             <div class="basis-col-box col1" id="lme-col1-box">
               <div class="col-label">î → col₁</div>
@@ -358,13 +341,10 @@
             </div>
           </div>
 
-          <!-- Step breakdown equation -->
           <div class="lme-equation" id="lme-equation" style="margin-top:10px"></div>
 
-          <!-- Step-by-step visual breakdown -->
           <div id="lme-steps" style="margin-top:8px"></div>
 
-          <!-- Animate steps button -->
           <div class="lme-anim-btn">
             <button id="lme-btn-animate" onclick="animateLMESteps()">
               <span data-lang="en"><i class="fa-solid fa-play" style="margin-right:5px"></i>Animate Steps</span>
@@ -381,7 +361,6 @@
         </div>
       </div>
 
-      
       <div class="panel">
         <div class="panel-head" onclick="togglePanel('info')">
           <span class="ph-title">
@@ -453,20 +432,18 @@ function togglePanel(name) {
   body.classList.toggle('collapsed');
 }
 
-
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let W, H, CX, CY;
 const UNIT = 50;
-let mat = [1, 0, 0, 1]; 
+let mat = [1, 0, 0, 1];
 let matBase = [1, 0, 0, 1];
 
-// ── Linear Map Explorer state ──────────────────────────────────
 let lmeVec = { x: 2, y: 1 };
 let showLME = true;
-let lmeAnimStep = -1;   // -1=all, 0=input only, 1=+col1, 2=+col2, 3=output
+let lmeAnimStep = -1;
 let lmeAnimRaf = null;
-let animT = 1.0; 
+let animT = 1.0;
 let animRaf = null;
 let showGrid = true, showEigen = true;
 
@@ -476,12 +453,13 @@ function multiply2x2(A, B) {
     A[2]*B[0] + A[3]*B[2], A[2]*B[1] + A[3]*B[3]
   ];
 }
+
 function svd2x2(a, b, c, d) {
-  const E = (a+d)/2, F = (a-d)/2, G = (c+b)/2, H = (c-b)/2;
-  const Q = Math.sqrt(E*E + H*H), R = Math.sqrt(F*F + G*G);
+  const E = (a+d)/2, F = (a-d)/2, G = (c+b)/2, svdH = (c-b)/2;
+  const Q = Math.sqrt(E*E + svdH*svdH), R = Math.sqrt(F*F + G*G);
   const s1 = Q + R, s2 = Math.abs(Q - R);
-  const a1 = Math.atan2(G, F), a2 = Math.atan2(H, E);
-  let theta = (a2 - a1)/2, phi = (a2 + a1)/2;   
+  const a1 = Math.atan2(G, F), a2 = Math.atan2(svdH, E);
+  const theta = (a2 - a1)/2, phi = (a2 + a1)/2;
   const sgn = (Q - R < 0) ? -1 : 1;
   const V_T = [Math.cos(theta), -Math.sin(theta), Math.sin(theta), Math.cos(theta)];
   const U = [Math.cos(phi), -sgn*Math.sin(phi), Math.sin(phi), sgn*Math.cos(phi)];
@@ -504,7 +482,6 @@ function getM(t) {
   return mat.map((v,i) => matBase[i] + (v - matBase[i]) * t);
 }
 
-
 function wc(x, y) { return [CX + x * UNIT, CY - y * UNIT]; }
 
 function applyM(m, x, y) { return [m[0]*x + m[1]*y, m[2]*x + m[3]*y]; }
@@ -514,7 +491,6 @@ function drawGrid(m) {
   const dark = isDark();
   const range = Math.ceil(Math.max(W, H) / 2 / UNIT) + 2;
   ctx.lineWidth = 0.6;
-  
   for (let i = -range; i <= range; i++) {
     const drawLine = (p1x,p1y,p2x,p2y,alpha) => {
       const [tx1,ty1]=applyM(m,p1x,p1y),[tx2,ty2]=applyM(m,p2x,p2y);
@@ -528,7 +504,6 @@ function drawGrid(m) {
     drawLine(i,-range,i,range,alpha);
     drawLine(-range,i,range,i,alpha);
   }
-  
   ctx.setLineDash([4,4]); ctx.lineWidth = 0.4;
   ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
   for (let i = -range; i <= range; i++) {
@@ -569,12 +544,10 @@ function drawSquare(m, t) {
   ctx.beginPath(); ctx.moveTo(...tc[0]);
   tc.forEach(p=>ctx.lineTo(...p));
   ctx.closePath(); ctx.fill(); ctx.stroke();
-  
   ctx.setLineDash([5,4]); ctx.lineWidth=0.8;
   ctx.strokeStyle=dark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)';
   ctx.beginPath(); ctx.moveTo(...wc(0,0)); ctx.lineTo(...wc(1,0)); ctx.lineTo(...wc(1,1)); ctx.lineTo(...wc(0,1)); ctx.closePath(); ctx.stroke();
   ctx.setLineDash([]);
-  
   const [o1,o2]=wc(0,0);
   const [e1x,e1y]=applyM(m,1,0),[e2x,e2y]=applyM(m,0,1);
   const [p1x,p1y]=wc(e1x,e1y),[p2x,p2y]=wc(e2x,e2y);
@@ -608,13 +581,11 @@ function computeEigenvalues(m) {
   const tr = a+d, det2 = a*d-b*c;
   const disc = tr*tr - 4*det2;
   if (disc < 0) {
-    
     return [{real:false,lambda:0,vx:0,vy:0},{real:false,lambda:0,vx:0,vy:0}];
   }
   const sqrtD = Math.sqrt(disc);
   const l1 = (tr+sqrtD)/2, l2 = (tr-sqrtD)/2;
   function eigvec(l) {
-    
     const r1 = [a-l, b], r2 = [c, d-l];
     let vx,vy;
     if (Math.abs(r1[1])>1e-9) { vx=r1[1]; vy=-(r1[0]); }
@@ -628,13 +599,11 @@ function computeEigenvalues(m) {
   return [{real:true,lambda:l1,vx:vx1,vy:vy1},{real:true,lambda:l2,vx:vx2,vy:vy2}];
 }
 
-// ── Linear Map Explorer canvas drawing ────────────────────────
 function drawLME(m) {
   if (!showLME) return;
   const dark = isDark();
   const { x, y } = lmeVec;
   const [a, b, c, d] = m;
-  // col1 = where î lands, scaled by x
   const col1x = a, col1y = c;
   const col2x = b, col2y = d;
   const scaledCol1 = [x * col1x, x * col1y];
@@ -649,23 +618,20 @@ function drawLME(m) {
   const showCol2   = step === -1 || step >= 2;
   const showOutput = step === -1 || step >= 3;
 
-  // draw x·col1 vector (from origin)
   if (showCol1) {
     const [e1x, e1y] = wc(scaledCol1[0], scaledCol1[1]);
     ctx.globalAlpha = 0.75;
     drawBasisArrow(ox, oy, e1x, e1y, dark ? '#6a9fd8' : '#2a5caa', null);
     ctx.globalAlpha = 1;
-    // label
     ctx.font = '11px "JetBrains Mono",monospace';
     ctx.fillStyle = dark ? '#6a9fd8' : '#2a5caa';
     ctx.textAlign = 'left';
     ctx.fillText(`x·col₁ (${fmt(scaledCol1[0])}, ${fmt(scaledCol1[1])})`, e1x + 7, e1y - 4);
   }
 
-  // draw y·col2 vector (from tip of x·col1)
   if (showCol2) {
-    const startX = showCol1 ? scaledCol1[0] : 0;
-    const startY = showCol1 ? scaledCol1[1] : 0;
+    const startX = scaledCol1[0];
+    const startY = scaledCol1[1];
     const [s2x, s2y] = wc(startX, startY);
     const [e2x, e2y] = wc(startX + scaledCol2[0], startY + scaledCol2[1]);
     ctx.globalAlpha = 0.75;
@@ -677,7 +643,6 @@ function drawLME(m) {
     ctx.fillText(`y·col₂ (${fmt(scaledCol2[0])}, ${fmt(scaledCol2[1])})`, e2x + 7, e2y + 14);
   }
 
-  // draw original input vector (before transform)
   if (showInput) {
     const [ivx, ivy] = wc(x, y);
     ctx.globalAlpha = 0.45;
@@ -695,7 +660,6 @@ function drawLME(m) {
     ctx.fillText(`v=(${fmt(x)},${fmt(y)})`, ivx, ivy - 10);
   }
 
-  // draw final output vector
   if (showOutput) {
     const [rx, ry] = wc(outX, outY);
     ctx.globalAlpha = 1;
@@ -714,7 +678,6 @@ function fmt(v) { return Number.isInteger(v) ? v.toString() : v.toFixed(2).repla
 function render() {
   ctx.clearRect(0,0,W,H);
   const dark=isDark();
-  
   ctx.strokeStyle=dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.1)'; ctx.lineWidth=0.5;
   ctx.beginPath(); ctx.moveTo(0,CY); ctx.lineTo(W,CY); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(CX,0); ctx.lineTo(CX,H); ctx.stroke();
@@ -746,8 +709,11 @@ function updateInfo() {
   const rank = Math.abs(det) > 1e-9 ? 2 : (a===0&&b===0&&c===0&&d===0 ? 0 : 1);
   let eigStr;
   if (!eig[0].real) {
-    const re=(tr/2).toFixed(2), im=(Math.sqrt(-disc)/2).toFixed(2);
-    eigStr=`${cplxLabel}: ${re} ± ${im}i`;
+    const re = (tr/2).toFixed(2);
+    const im = (Math.sqrt(-disc)/2).toFixed(2);
+    const modulus = Math.sqrt((tr/2)**2 + (Math.sqrt(-disc)/2)**2).toFixed(3);
+    const angleDeg = (Math.atan2(Math.sqrt(-disc)/2, tr/2) * 180/Math.PI).toFixed(1);
+    eigStr=`${cplxLabel}: ${re} ± ${im}i  |λ|=${modulus}, ∠=${angleDeg}°`;
   } else {
     eigStr=`λ₁ = ${eig[0].lambda.toFixed(3)}, λ₂ = ${eig[1].lambda.toFixed(3)}`;
   }
@@ -780,7 +746,8 @@ function setPreset(a,b,c,d) {
   updateMatrix(); startAnimation();
 }
 
-function runAnimationSequence(matrices, startBase = [1,0,0,1]) {
+function runAnimationSequence(matrices, startBase) {
+  if (startBase === undefined) startBase = [1,0,0,1];
   if (animRaf) cancelAnimationFrame(animRaf);
   let stepIdx = 0;
   function nextStep() {
@@ -806,6 +773,7 @@ function runAnimationSequence(matrices, startBase = [1,0,0,1]) {
 }
 
 function startAnimation() { runAnimationSequence([mat], [1,0,0,1]); }
+
 function resetAnim() {
   if (animRaf) cancelAnimationFrame(animRaf);
   matBase = [1,0,0,1]; animT = 0; render();
@@ -818,27 +786,34 @@ function composeMatrices() {
   ];
   const BA = multiply2x2(B, mat);
   runAnimationSequence([mat, BA], [1,0,0,1]);
+  mat = BA;
   document.getElementById('m-a').value = BA[0].toFixed(2);
   document.getElementById('m-b').value = BA[1].toFixed(2);
   document.getElementById('m-c').value = BA[2].toFixed(2);
   document.getElementById('m-d').value = BA[3].toFixed(2);
+  refreshLMEPanel();
 }
 
 function applyInverse() {
   const [a,b,c,d] = mat, det = a*d - b*c;
   if (Math.abs(det) < 1e-9) { alert("Matrix is singular!"); return; }
-  runAnimationSequence([[1,0,0,1]], mat);
+  const prevMat = [...mat];
+  mat = [1,0,0,1];
+  runAnimationSequence([[1,0,0,1]], prevMat);
   document.getElementById('m-a').value = 1; document.getElementById('m-b').value = 0;
   document.getElementById('m-c').value = 0; document.getElementById('m-d').value = 1;
+  refreshLMEPanel();
 }
 
 function animateSVD() {
+  const originalMat = [...mat];
   const { U, Sigma, V_T } = svd2x2(mat[0], mat[1], mat[2], mat[3]);
-  const step1 = V_T, step2 = multiply2x2(Sigma, V_T), step3 = multiply2x2(U, step2);
+  const step1 = V_T;
+  const step2 = multiply2x2(Sigma, V_T);
+  const step3 = [...originalMat];
   runAnimationSequence([step1, step2, step3], [1,0,0,1]);
 }
 
-// ── Linear Map Explorer logic ──────────────────────────────────
 function updateLME() {
   lmeVec.x = parseFloat(document.getElementById('lme-x').value) || 0;
   lmeVec.y = parseFloat(document.getElementById('lme-y').value) || 0;
@@ -856,12 +831,9 @@ function refreshLMEPanel() {
   const sc2x = y * col2x, sc2y = y * col2y;
   const outX = sc1x + sc2x, outY = sc1y + sc2y;
 
-  // Update column readouts
   document.getElementById('lme-col1-val').textContent = `[ ${fmt(col1x)}, ${fmt(col1y)} ]`;
   document.getElementById('lme-col2-val').textContent = `[ ${fmt(col2x)}, ${fmt(col2y)} ]`;
 
-  // Build equation HTML
-  const s = (v) => `<span class="lme-muted">${v}</span>`;
   const eq = document.getElementById('lme-equation');
   eq.innerHTML =
     `<span class="lme-muted">A·v = </span>` +
@@ -881,7 +853,6 @@ function refreshLMEPanel() {
     `<span class="lme-muted">     = </span>` +
     `<span class="lme-out">[ ${fmt(outX)}, ${fmt(outY)} ]</span>`;
 
-  // Build step cards
   const steps = document.getElementById('lme-steps');
   const labels = {
     en: ['Input vector', 'Scale col₁ by x', 'Scale col₂ by y', 'Output = col₁ + col₂'],
