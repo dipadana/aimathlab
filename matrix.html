@@ -439,13 +439,13 @@ const UNIT = 50;
 let mat = [1, 0, 0, 1];
 let matBase = [1, 0, 0, 1];
 
-let lmeVec = { x: 2, y: 1 };
-let showLME = true;
-let lmeAnimStep = -1;
-let lmeAnimRaf = null;
-let animT = 1.0;
-let animRaf = null;
-let showGrid = true, showEigen = true;
+var lmeVec = { x: 2, y: 1 };
+var showLME = true;
+var lmeAnimStep = -1;
+var lmeAnimRaf = null;
+var animT = 1.0;
+var animRaf = null;
+var showGrid = true, showEigen = true;
 
 function multiply2x2(A, B) {
   return [

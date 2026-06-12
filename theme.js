@@ -375,8 +375,12 @@ function scheduleMatrixRestore(s) {
       const el = document.getElementById(id);
       if (!el) return;
       if (el.tagName === 'SELECT') el.value = s[id];
-      else if (el.type === 'checkbox') el.checked = !!s[id];
-      else el.value = s[id];
+      else if (el.type === 'checkbox') {
+        el.checked = !!s[id];
+        if (id === 'tgl-grid') window.showGrid = el.checked;
+        if (id === 'tgl-eigen') window.showEigen = el.checked;
+        if (id === 'tgl-lme') window.showLME = el.checked;
+      } else el.value = s[id];
     });
 
     window.render();
@@ -400,8 +404,8 @@ function scheduleVectorRestore(s) {
 
     if (s._mode) {
       const is3d = s._mode === '3d';
-      if (typeof currentMode !== 'undefined' && currentMode !== s._mode) {
-        currentMode = s._mode;
+      if (typeof window.currentMode !== 'undefined' && window.currentMode !== s._mode) {
+        window.currentMode = s._mode;
         document.body.classList.toggle('mode3d', is3d);
         const c = document.getElementById('canvas');
         const b2 = document.getElementById('btn2d');
@@ -427,21 +431,21 @@ function scheduleVectorRestore(s) {
       const el = document.getElementById('toggle-resultant');
       if (el) {
         el.checked = !!s['toggle-resultant'];
-        if (typeof showResultant !== 'undefined') showResultant = el.checked;
+        if (typeof window.showResultant !== 'undefined') window.showResultant = el.checked;
       }
     }
     if (typeof s['toggle-lc'] !== 'undefined') {
       const el = document.getElementById('toggle-lc');
       if (el) {
         el.checked = !!s['toggle-lc'];
-        if (typeof lcShowOnCanvas !== 'undefined') lcShowOnCanvas = el.checked;
+        if (typeof window.lcShowOnCanvas !== 'undefined') window.lcShowOnCanvas = el.checked;
       }
     }
     if (typeof s['toggle-span'] !== 'undefined') {
       const el = document.getElementById('toggle-span');
       if (el) {
         el.checked = !!s['toggle-span'];
-        if (typeof showSpan !== 'undefined') showSpan = el.checked;
+        if (typeof window.showSpan !== 'undefined') window.showSpan = el.checked;
       }
     }
 
