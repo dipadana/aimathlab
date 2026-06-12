@@ -318,50 +318,65 @@ function applyPageState(state) {
     }
   }
 
-  if (state._vectorMode && pageName === 'vector.html') {
-    if (typeof window.setMode === 'function') {
-      window.setMode(state._vectorMode);
-    }
-  }
-
-  Object.keys(state).forEach(id => {
-    if (id.startsWith('_')) return;
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.tagName === 'SELECT') {
-      el.value = state[id];
-      el.dispatchEvent(new Event('change'));
-    } else if (el.tagName === 'INPUT') {
-      if (el.type === 'checkbox') {
-        el.checked = !!state[id];
-        el.dispatchEvent(new Event('change'));
-      } else {
-        el.value = state[id];
-        el.dispatchEvent(new Event('input'));
-        el.dispatchEvent(new Event('change'));
-      }
-    }
-  });
-
   if (pageName === 'vector.html') {
     restoreVectorPageState(state);
+    return;
   }
 
   if (pageName === 'matrix.html') {
+    Object.keys(state).forEach(id => {
+      if (id.startsWith('_')) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'INPUT') {
+        if (el.type === 'checkbox') {
+          el.checked = !!state[id];
+        } else {
+          el.value = state[id];
+        }
+      }
+    });
     restoreMatrixPageState(state);
+    return;
   }
+
+  function doRestore(attemptsLeft) {
+    const canRestore = typeof window.render === 'function' &&
+                       typeof window.W !== 'undefined' && window.W > 0;
+    if (!canRestore) {
+      if (attemptsLeft > 0) setTimeout(() => doRestore(attemptsLeft - 1), 200);
+      return;
+    }
+    Object.keys(state).forEach(id => {
+      if (id.startsWith('_')) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') {
+        el.value = state[id];
+      } else if (el.tagName === 'INPUT') {
+        if (el.type === 'checkbox') {
+          el.checked = !!state[id];
+        } else {
+          el.value = state[id];
+        }
+      }
+    });
+    window.render();
+  }
+
+  setTimeout(() => doRestore(15), 300);
 }
 
 function restoreVectorPageState(state) {
-  if (!state._vectors || !state._vectors.length) return;
-
   function attemptRestore(attemptsLeft) {
     const canRestore = typeof window.updateList === 'function' &&
                        typeof window.updatePanels === 'function' &&
                        typeof window.render === 'function' &&
                        typeof window.recalculateVectors === 'function' &&
                        typeof window.animateZoom === 'function' &&
-                       typeof window.computeTargetUnit === 'function';
+                       typeof window.computeTargetUnit === 'function' &&
+                       typeof window.setMode === 'function' &&
+                       typeof window.W !== 'undefined' && window.W > 0;
 
     if (!canRestore) {
       if (attemptsLeft > 0) {
@@ -370,42 +385,55 @@ function restoreVectorPageState(state) {
       return;
     }
 
-    window.vectors = JSON.parse(JSON.stringify(state._vectors));
-    window.animState = window.vectors.map(() => 1);
-
-    if (state._lcCoeffs) {
-      window.lcCoeffs = JSON.parse(JSON.stringify(state._lcCoeffs));
-    } else {
-      window.lcCoeffs = window.vectors.map(() => 1);
+    if (state._vectorMode && state._vectorMode !== window.currentMode) {
+      window.currentMode = state._vectorMode;
+      document.body.classList.toggle('mode3d', state._vectorMode === '3d');
+      const btn2d = document.getElementById('btn2d');
+      const btn3d = document.getElementById('btn3d');
+      const canvas = document.getElementById('canvas');
+      if (btn2d) btn2d.classList.toggle('active', state._vectorMode === '2d');
+      if (btn3d) btn3d.classList.toggle('active', state._vectorMode === '3d');
+      if (canvas) canvas.classList.toggle('mode3d', state._vectorMode === '3d');
     }
 
-    if (typeof state._lcShowOnCanvas !== 'undefined') {
-      window.lcShowOnCanvas = state._lcShowOnCanvas;
-      const toggleEl = document.getElementById('toggle-lc');
-      if (toggleEl) toggleEl.checked = state._lcShowOnCanvas;
-    }
+    if (state._vectors && state._vectors.length > 0) {
+      window.vectors = JSON.parse(JSON.stringify(state._vectors));
+      window.animState = window.vectors.map(() => 1);
 
-    if (typeof state._showSpan !== 'undefined') {
-      window.showSpan = state._showSpan;
-      const toggleEl = document.getElementById('toggle-span');
-      if (toggleEl) toggleEl.checked = state._showSpan;
-    }
+      if (state._lcCoeffs && state._lcCoeffs.length > 0) {
+        window.lcCoeffs = JSON.parse(JSON.stringify(state._lcCoeffs));
+      } else {
+        window.lcCoeffs = window.vectors.map(() => 1);
+      }
 
-    if (typeof state._showResultant !== 'undefined') {
-      window.showResultant = state._showResultant;
-      const toggleEl = document.getElementById('toggle-resultant');
-      if (toggleEl) toggleEl.checked = state._showResultant;
-    }
+      const lcToggle = document.getElementById('toggle-lc');
+      if (lcToggle && typeof state._lcShowOnCanvas !== 'undefined') {
+        window.lcShowOnCanvas = !!state._lcShowOnCanvas;
+        lcToggle.checked = window.lcShowOnCanvas;
+      }
 
-    window.recalculateVectors();
-    window.updateList();
-    window.updatePanels();
-    const target = window.computeTargetUnit();
-    window.animateZoom(target);
-    window.render();
+      const spanToggle = document.getElementById('toggle-span');
+      if (spanToggle && typeof state._showSpan !== 'undefined') {
+        window.showSpan = !!state._showSpan;
+        spanToggle.checked = window.showSpan;
+      }
+
+      const resToggle = document.getElementById('toggle-resultant');
+      if (resToggle && typeof state._showResultant !== 'undefined') {
+        window.showResultant = !!state._showResultant;
+        resToggle.checked = window.showResultant;
+      }
+
+      window.recalculateVectors();
+      window.updateList();
+      window.updatePanels();
+      const target = window.computeTargetUnit();
+      window.animateZoom(target);
+      window.render();
+    }
   }
 
-  setTimeout(() => attemptRestore(15), 300);
+  setTimeout(() => attemptRestore(20), 400);
 }
 
 function restoreMatrixPageState(state) {
