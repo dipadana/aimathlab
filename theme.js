@@ -164,6 +164,7 @@ function injectStyles() {
       font-family: inherit;
       font-size: 14px;
       outline: none;
+      box-sizing: border-box;
     }
     .auth-input-group input:focus {
       border-color: var(--accent);
@@ -245,15 +246,29 @@ let currentUser = null;
 let supabaseInstance = null;
 let saveDebounceTimer = null;
 
+function getPageName() {
+  return window.location.pathname.split('/').pop() || 'index.html';
+}
+
 function getPageState() {
   const state = {};
+  const pageName = getPageName();
+
   const activeTab = document.querySelector('.tab-btn.active');
   if (activeTab) {
     state._activeTab = activeTab.id;
   }
+
+  const mode2d = document.getElementById('btn2d');
+  const mode3d = document.getElementById('btn3d');
+  if (mode2d && mode3d) {
+    state._vectorMode = mode3d.classList.contains('active') ? '3d' : '2d';
+  }
+
   document.querySelectorAll('select').forEach(el => {
     if (el.id) state[el.id] = el.value;
   });
+
   document.querySelectorAll('input').forEach(el => {
     if (!el.id) return;
     if (el.type === 'checkbox') {
@@ -262,31 +277,53 @@ function getPageState() {
       state[el.id] = el.value;
     }
   });
-  if (window.vectors) {
-    state._vectors = window.vectors;
+
+  if (pageName === 'vector.html') {
+    if (window.vectors && window.vectors.length > 0) {
+      state._vectors = JSON.parse(JSON.stringify(window.vectors));
+    }
+    if (window.lcCoeffs && window.lcCoeffs.length > 0) {
+      state._lcCoeffs = JSON.parse(JSON.stringify(window.lcCoeffs));
+    }
+    if (typeof window.lcShowOnCanvas !== 'undefined') {
+      state._lcShowOnCanvas = window.lcShowOnCanvas;
+    }
+    if (typeof window.showSpan !== 'undefined') {
+      state._showSpan = window.showSpan;
+    }
+    if (typeof window.showResultant !== 'undefined') {
+      state._showResultant = window.showResultant;
+    }
   }
-  if (window.lcCoeffs) {
-    state._lcCoeffs = window.lcCoeffs;
+
+  if (pageName === 'matrix.html') {
+    if (window.mat) {
+      state._mat = window.mat;
+    }
+    if (window.lmeVec) {
+      state._lmeVec = window.lmeVec;
+    }
   }
+
   return state;
 }
 
 function applyPageState(state) {
-  if (state._vectors) {
-    window.vectors = state._vectors;
-    if (window.animState) {
-      window.animState = window.vectors.map(() => 1);
-    }
-  }
-  if (state._lcCoeffs) {
-    window.lcCoeffs = state._lcCoeffs;
-  }
+  const pageName = getPageName();
+
   if (state._activeTab) {
     const tabEl = document.getElementById(state._activeTab);
     if (tabEl) {
       tabEl.click();
     }
   }
+
+  if (state._vectorMode && pageName === 'vector.html') {
+    if (typeof window.setMode === 'function') {
+      window.setMode(state._vectorMode);
+    }
+  }
+
   Object.keys(state).forEach(id => {
     if (id.startsWith('_')) return;
     const el = document.getElementById(id);
@@ -296,7 +333,7 @@ function applyPageState(state) {
       el.dispatchEvent(new Event('change'));
     } else if (el.tagName === 'INPUT') {
       if (el.type === 'checkbox') {
-        el.checked = state[id];
+        el.checked = !!state[id];
         el.dispatchEvent(new Event('change'));
       } else {
         el.value = state[id];
@@ -305,21 +342,113 @@ function applyPageState(state) {
       }
     }
   });
-  if (window.vectors && typeof window.updateList === 'function') {
+
+  if (pageName === 'vector.html') {
+    restoreVectorPageState(state);
+  }
+
+  if (pageName === 'matrix.html') {
+    restoreMatrixPageState(state);
+  }
+}
+
+function restoreVectorPageState(state) {
+  if (!state._vectors || !state._vectors.length) return;
+
+  function attemptRestore(attemptsLeft) {
+    const canRestore = typeof window.updateList === 'function' &&
+                       typeof window.updatePanels === 'function' &&
+                       typeof window.render === 'function' &&
+                       typeof window.recalculateVectors === 'function' &&
+                       typeof window.animateZoom === 'function' &&
+                       typeof window.computeTargetUnit === 'function';
+
+    if (!canRestore) {
+      if (attemptsLeft > 0) {
+        setTimeout(() => attemptRestore(attemptsLeft - 1), 200);
+      }
+      return;
+    }
+
+    window.vectors = JSON.parse(JSON.stringify(state._vectors));
+    window.animState = window.vectors.map(() => 1);
+
+    if (state._lcCoeffs) {
+      window.lcCoeffs = JSON.parse(JSON.stringify(state._lcCoeffs));
+    } else {
+      window.lcCoeffs = window.vectors.map(() => 1);
+    }
+
+    if (typeof state._lcShowOnCanvas !== 'undefined') {
+      window.lcShowOnCanvas = state._lcShowOnCanvas;
+      const toggleEl = document.getElementById('toggle-lc');
+      if (toggleEl) toggleEl.checked = state._lcShowOnCanvas;
+    }
+
+    if (typeof state._showSpan !== 'undefined') {
+      window.showSpan = state._showSpan;
+      const toggleEl = document.getElementById('toggle-span');
+      if (toggleEl) toggleEl.checked = state._showSpan;
+    }
+
+    if (typeof state._showResultant !== 'undefined') {
+      window.showResultant = state._showResultant;
+      const toggleEl = document.getElementById('toggle-resultant');
+      if (toggleEl) toggleEl.checked = state._showResultant;
+    }
+
+    window.recalculateVectors();
     window.updateList();
-  }
-  if (window.vectors && typeof window.updatePanels === 'function') {
     window.updatePanels();
-  }
-  if (window.vectors && typeof window.render === 'function') {
+    const target = window.computeTargetUnit();
+    window.animateZoom(target);
     window.render();
   }
+
+  setTimeout(() => attemptRestore(15), 300);
+}
+
+function restoreMatrixPageState(state) {
+  function attemptRestore(attemptsLeft) {
+    const canRestore = typeof window.updateMatrix === 'function' &&
+                       typeof window.updateLME === 'function';
+
+    if (!canRestore) {
+      if (attemptsLeft > 0) {
+        setTimeout(() => attemptRestore(attemptsLeft - 1), 200);
+      }
+      return;
+    }
+
+    if (state._mat && window.mat) {
+      window.mat = state._mat;
+      const ids = ['m-a', 'm-b', 'm-c', 'm-d'];
+      ids.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) el.value = state._mat[i];
+      });
+      window.animT = 1;
+    }
+
+    if (state._lmeVec && window.lmeVec) {
+      window.lmeVec = state._lmeVec;
+      const lmeX = document.getElementById('lme-x');
+      const lmeY = document.getElementById('lme-y');
+      if (lmeX) lmeX.value = state._lmeVec.x;
+      if (lmeY) lmeY.value = state._lmeVec.y;
+    }
+
+    if (typeof window.refreshLMEPanel === 'function') window.refreshLMEPanel();
+    if (typeof window.render === 'function') window.render();
+  }
+
+  setTimeout(() => attemptRestore(15), 300);
 }
 
 async function saveStateToSupabase() {
   if (!currentUser || !supabaseInstance) return;
-  const pageName = window.location.pathname.split('/').pop() || 'index.html';
-  if (pageName === 'index.html' || pageName === 'references.html') return;
+  const pageName = getPageName();
+  if (pageName === 'index.html' || pageName === 'references.html' || pageName === '') return;
   const state = getPageState();
   try {
     await supabaseInstance
@@ -331,19 +460,19 @@ async function saveStateToSupabase() {
         updated_at: new Date().toISOString()
       });
   } catch (err) {
-    console.error(err);
+    console.error('State save error:', err);
   }
 }
 
 function triggerDebouncedSave() {
   clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(saveStateToSupabase, 1000);
+  saveDebounceTimer = setTimeout(saveStateToSupabase, 1500);
 }
 
 async function loadStateFromSupabase() {
   if (!currentUser || !supabaseInstance) return;
-  const pageName = window.location.pathname.split('/').pop() || 'index.html';
-  if (pageName === 'index.html' || pageName === 'references.html') return;
+  const pageName = getPageName();
+  if (pageName === 'index.html' || pageName === 'references.html' || pageName === '') return;
   try {
     const { data, error } = await supabaseInstance
       .from('user_states')
@@ -355,7 +484,7 @@ async function loadStateFromSupabase() {
       applyPageState(data.state);
     }
   } catch (err) {
-    console.error(err);
+    console.error('State load error:', err);
   }
 }
 
@@ -371,7 +500,17 @@ function toggleUserDropdown(supabase) {
   dropdown.className = 'auth-user-dropdown';
   const info = document.createElement('div');
   info.className = 'auth-user-info';
-  info.textContent = currentUser.email;
+  const meta = currentUser.user_metadata || {};
+  const displayName = (meta.first_name || meta.last_name)
+    ? `${meta.first_name || ''} ${meta.last_name || ''}`.trim()
+    : currentUser.email;
+  info.textContent = displayName;
+  const emailLine = document.createElement('div');
+  emailLine.style.cssText = 'font-size:11px;color:var(--ink3);margin-top:2px;word-break:break-all';
+  if (meta.first_name || meta.last_name) {
+    emailLine.textContent = currentUser.email;
+    info.appendChild(emailLine);
+  }
   dropdown.appendChild(info);
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'auth-dropdown-item';
@@ -384,7 +523,7 @@ function toggleUserDropdown(supabase) {
   btn.parentElement.style.position = 'relative';
   btn.parentElement.appendChild(dropdown);
   const closeDropdown = () => {
-    dropdown.remove();
+    if (dropdown.parentElement) dropdown.remove();
     document.removeEventListener('click', closeDropdown);
   };
   setTimeout(() => {
@@ -437,22 +576,22 @@ function showLoginModal(supabase) {
   form.appendChild(passGroup);
   const msg = document.createElement('div');
   msg.className = 'auth-msg';
-  const submitBtn = document.createElement('button');
-  submitBtn.className = 'btn btn-fill';
-  submitBtn.type = 'submit';
-  submitBtn.textContent = 'Log In';
-  const toggleLink = document.createElement('a');
-  toggleLink.className = 'auth-toggle-link';
-  toggleLink.textContent = 'Need an account? Sign Up';
   const forgotLink = document.createElement('a');
   forgotLink.className = 'auth-toggle-link';
   forgotLink.textContent = 'Forgot Password?';
   forgotLink.style.fontSize = '12px';
   forgotLink.style.textAlign = 'right';
-  forgotLink.style.marginTop = '-8px';
+  forgotLink.style.marginTop = '-4px';
   form.appendChild(forgotLink);
   form.appendChild(msg);
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'btn btn-fill';
+  submitBtn.type = 'submit';
+  submitBtn.textContent = 'Log In';
   form.appendChild(submitBtn);
+  const toggleLink = document.createElement('a');
+  toggleLink.className = 'auth-toggle-link';
+  toggleLink.textContent = 'Need an account? Sign Up';
   form.appendChild(toggleLink);
   let mode = 'signin';
   const updateMode = (newMode) => {
@@ -503,7 +642,7 @@ function showLoginModal(supabase) {
   };
   form.onsubmit = async (e) => {
     e.preventDefault();
-    const email = emailGroup.querySelector('input').value;
+    const email = emailGroup.querySelector('input').value.trim();
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     msg.className = 'auth-msg';
@@ -511,8 +650,8 @@ function showLoginModal(supabase) {
     try {
       if (mode === 'signup') {
         const password = passGroup.querySelector('input').value;
-        const firstName = firstNameGroup.querySelector('input').value;
-        const lastName = lastNameGroup.querySelector('input').value;
+        const firstName = firstNameGroup.querySelector('input').value.trim();
+        const lastName = lastNameGroup.querySelector('input').value.trim();
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -525,7 +664,7 @@ function showLoginModal(supabase) {
         });
         if (error) throw error;
         msg.className = 'auth-msg success';
-        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Check your email!';
+        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Check your email to confirm!';
       } else if (mode === 'signin') {
         const password = passGroup.querySelector('input').value;
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -537,7 +676,7 @@ function showLoginModal(supabase) {
         });
         if (error) throw error;
         msg.className = 'auth-msg success';
-        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Reset link sent!';
+        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Reset link sent to your email!';
       }
     } catch (err) {
       msg.className = 'auth-msg error';
@@ -562,7 +701,7 @@ function showUpdatePasswordModal(supabase) {
   modal.appendChild(card);
   const title = document.createElement('h2');
   title.className = 'auth-modal-title';
-  title.textContent = 'Update Password';
+  title.textContent = 'Set New Password';
   card.appendChild(title);
   const form = document.createElement('form');
   form.style.display = 'flex';
@@ -619,6 +758,7 @@ function renderAuthUI(supabase) {
   if (currentUser) {
     btn.className = 'auth-btn-icon active-user';
     btn.innerHTML = '<i class="fa-solid fa-user"></i>';
+    btn.title = currentUser.email;
     btn.onclick = (e) => {
       e.stopPropagation();
       toggleUserDropdown(supabase);
@@ -626,6 +766,7 @@ function renderAuthUI(supabase) {
   } else {
     btn.className = 'auth-btn-icon';
     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i>';
+    btn.title = 'Sign In';
     btn.onclick = () => {
       showLoginModal(supabase);
     };
@@ -633,21 +774,58 @@ function renderAuthUI(supabase) {
 }
 
 function setupStateAutoSync() {
+  const pageName = getPageName();
+  if (pageName === 'index.html' || pageName === 'references.html') return;
+
   document.addEventListener('input', (e) => {
-    if (e.target.matches('input')) {
+    if (e.target.matches('input, select, textarea')) {
       triggerDebouncedSave();
     }
   });
+
   document.addEventListener('change', (e) => {
     if (e.target.matches('select, input')) {
       triggerDebouncedSave();
     }
   });
+
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.tab-btn')) {
-      triggerDebouncedSave();
+    if (e.target.closest('.tab-btn') || e.target.closest('.btn-mode')) {
+      setTimeout(triggerDebouncedSave, 50);
     }
   });
+
+  if (pageName === 'vector.html') {
+    const originalAddVector = window.addVector;
+    const originalClearAll = window.clearAll;
+    const originalRemoveVector = window.removeVector;
+    const originalApplyScale = window.applyScale;
+
+    if (typeof originalAddVector === 'function') {
+      window.addVector = function() {
+        originalAddVector.apply(this, arguments);
+        setTimeout(triggerDebouncedSave, 600);
+      };
+    }
+    if (typeof originalClearAll === 'function') {
+      window.clearAll = function() {
+        originalClearAll.apply(this, arguments);
+        setTimeout(triggerDebouncedSave, 100);
+      };
+    }
+    if (typeof originalRemoveVector === 'function') {
+      window.removeVector = function() {
+        originalRemoveVector.apply(this, arguments);
+        setTimeout(triggerDebouncedSave, 300);
+      };
+    }
+    if (typeof originalApplyScale === 'function') {
+      window.applyScale = function() {
+        originalApplyScale.apply(this, arguments);
+        setTimeout(triggerDebouncedSave, 700);
+      };
+    }
+  }
 }
 
 async function initSupabaseAnalytics() {
@@ -677,7 +855,7 @@ async function initSupabaseAnalytics() {
       }
     });
   } catch (e) {
-    console.error(e);
+    console.error('Supabase init error:', e);
   }
 }
 
