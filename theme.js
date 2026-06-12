@@ -196,6 +196,11 @@ function getPageKey() {
 
 const SKIP_PAGES = new Set(['index.html', 'references.html', '']);
 
+function isCanvasReady() {
+  const c = document.getElementById('canvas');
+  return c ? c.offsetWidth > 0 : true; 
+}
+
 function captureState() {
   const page = getPageKey();
   const s = { _page: page, _ts: Date.now() };
@@ -211,7 +216,7 @@ function captureState() {
 
   document.querySelectorAll('input[id]').forEach(el => {
     if (el.type === 'checkbox') s[el.id] = el.checked;
-    else if (el.type === 'range' || el.type === 'number' || el.type === 'text') s[el.id] = el.value;
+    else if (['range', 'number', 'text'].includes(el.type)) s[el.id] = el.value;
   });
 
   if (page === 'vector.html') {
@@ -226,23 +231,14 @@ function captureState() {
   }
 
   if (page === 'matrix.html') {
-    const mA = document.getElementById('m-a');
-    const mB = document.getElementById('m-b');
-    const mC = document.getElementById('m-c');
-    const mD = document.getElementById('m-d');
-    if (mA && mB && mC && mD) {
-      s._mat = [
-        parseFloat(mA.value) || 0,
-        parseFloat(mB.value) || 0,
-        parseFloat(mC.value) || 0,
-        parseFloat(mD.value) || 0
-      ];
-    }
-    const lmeX = document.getElementById('lme-x');
-    const lmeY = document.getElementById('lme-y');
-    if (lmeX && lmeY) {
-      s._lmeVec = { x: parseFloat(lmeX.value) || 0, y: parseFloat(lmeY.value) || 0 };
-    }
+    ['m-a','m-b','m-c','m-d'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) s[id] = el.value;
+    });
+    ['lme-x','lme-y'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) s[id] = el.value;
+    });
   }
 
   return s;
@@ -304,96 +300,94 @@ async function restoreState() {
 
 function applyState(s) {
   const page = getPageKey();
-  if (page === 'vector.html') {
-    scheduleVectorRestore(s);
-    return;
-  }
-  if (page === 'matrix.html') {
-    scheduleMatrixRestore(s);
-    return;
-  }
+  if (page === 'vector.html')  { scheduleVectorRestore(s);  return; }
+  if (page === 'matrix.html')  { scheduleMatrixRestore(s);  return; }
   scheduleGenericRestore(s);
+}
+
+function restoreInputs(s, skipIds) {
+  const skip = new Set(skipIds || []);
+  Object.keys(s).forEach(id => {
+    if (id.startsWith('_') || skip.has(id)) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') {
+      el.value = s[id];
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (el.type === 'checkbox') {
+      el.checked = !!s[id];
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+
+      el.value = s[id];
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
 }
 
 function scheduleGenericRestore(s) {
   function attempt(tries) {
-    const ready = typeof window.render === 'function' &&
-                  typeof window.W !== 'undefined' && window.W > 0 &&
-                  typeof window.setTab === 'function';
+
+    const ready = typeof render === 'function' && isCanvasReady();
     if (!ready) {
-      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 150);
+      else console.warn('[state] generic restore timed out');
       return;
     }
 
-    if (s._activeTab && typeof window.setTab === 'function') {
-      window.setTab(s._activeTab);
+    if (s._activeTab && typeof setTab === 'function') {
+      setTab(s._activeTab);
     }
 
-    Object.keys(s).forEach(id => {
-      if (id.startsWith('_')) return;
-      const el = document.getElementById(id);
-      if (!el) return;
+    restoreInputs(s);
 
-      if (el.tagName === 'SELECT') {
-        el.value = s[id];
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      } else if (el.type === 'checkbox') {
-        el.checked = !!s[id];
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      } else {
-
-        el.value = s[id];
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    });
-
-    window.render();
+    render();
   }
-  setTimeout(() => attempt(25), 300);
+  setTimeout(() => attempt(40), 300);
 }
 
 function scheduleMatrixRestore(s) {
   function attempt(tries) {
-    const ready = typeof window.render === 'function' &&
-                  typeof window.W !== 'undefined' && window.W > 0 &&
+    const ready = typeof render === 'function' &&
                   typeof updateMatrix === 'function' &&
-                  typeof updateLME === 'function';
+                  typeof updateLME === 'function' &&
+                  isCanvasReady();
     if (!ready) {
-      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 150);
+      else console.warn('[state] matrix restore timed out');
       return;
     }
 
-    if (s._mat && Array.isArray(s._mat)) {
-      const ids = ['m-a', 'm-b', 'm-c', 'm-d'];
-      ids.forEach((id, i) => {
-        const el = document.getElementById(id);
-        if (el) el.value = s._mat[i];
-      });
-      updateMatrix();
-    }
+    const matIds = ['m-a','m-b','m-c','m-d'];
+    const lmeIds = ['lme-x','lme-y'];
+    const specialIds = new Set([...matIds, ...lmeIds]);
 
-    if (s._lmeVec) {
-      const lx = document.getElementById('lme-x');
-      const ly = document.getElementById('lme-y');
-      if (lx) lx.value = s._lmeVec.x;
-      if (ly) ly.value = s._lmeVec.y;
-      updateLME();
-    }
+    let matChanged = false;
+    matIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && s[id] != null) { el.value = s[id]; matChanged = true; }
+    });
+    if (matChanged) updateMatrix();
 
-    const matSpecialIds = new Set(['m-a','m-b','m-c','m-d','lme-x','lme-y']);
+    let lmeChanged = false;
+    lmeIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && s[id] != null) { el.value = s[id]; lmeChanged = true; }
+    });
+    if (lmeChanged) updateLME();
+
     Object.keys(s).forEach(id => {
-      if (id.startsWith('_') || matSpecialIds.has(id)) return;
+      if (id.startsWith('_') || specialIds.has(id)) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') {
-        el.value = s[id];
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      } else if (el.type === 'checkbox') {
+      if (el.type === 'checkbox') {
         el.checked = !!s[id];
-
-        if (id === 'tgl-grid') window.showGrid = el.checked;
+        if (id === 'tgl-grid')  window.showGrid  = el.checked;
         if (id === 'tgl-eigen') window.showEigen = el.checked;
-        if (id === 'tgl-lme') window.showLME = el.checked;
+        if (id === 'tgl-lme')   window.showLME   = el.checked;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (el.tagName === 'SELECT') {
+        el.value = s[id];
         el.dispatchEvent(new Event('change', { bubbles: true }));
       } else {
         el.value = s[id];
@@ -401,9 +395,9 @@ function scheduleMatrixRestore(s) {
       }
     });
 
-    window.render();
+    render();
   }
-  setTimeout(() => attempt(25), 300);
+  setTimeout(() => attempt(40), 300);
 }
 
 function scheduleVectorRestore(s) {
@@ -411,37 +405,41 @@ function scheduleVectorRestore(s) {
     const ready = typeof recalculateVectors === 'function' &&
                   typeof updateList === 'function' &&
                   typeof updatePanels === 'function' &&
-                  typeof window.render === 'function' &&
+                  typeof render === 'function' &&
                   typeof animateZoom === 'function' &&
                   typeof computeTargetUnit === 'function' &&
-                  typeof window.W !== 'undefined' && window.W > 0;
+                  isCanvasReady();
     if (!ready) {
-      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 150);
+      else console.warn('[state] vector restore timed out');
       return;
     }
 
-    if (s._mode) {
+    if (s._mode && typeof currentMode !== 'undefined' && currentMode !== s._mode) {
       const is3d = s._mode === '3d';
-      if (typeof window.currentMode !== 'undefined' && window.currentMode !== s._mode) {
+
+      if (typeof setMode === 'function') {
+        setMode(s._mode);
+      } else {
         window.currentMode = s._mode;
         document.body.classList.toggle('mode3d', is3d);
-        const c = document.getElementById('canvas');
+        const c  = document.getElementById('canvas');
         const b2 = document.getElementById('btn2d');
         const b3 = document.getElementById('btn3d');
-        if (c) c.classList.toggle('mode3d', is3d);
+        if (c)  c.classList.toggle('mode3d', is3d);
         if (b2) b2.classList.toggle('active', !is3d);
         if (b3) b3.classList.toggle('active', is3d);
       }
     }
 
     if (s._vectors && s._vectors.length > 0) {
-      window.vectors = JSON.parse(JSON.stringify(s._vectors));
+      window.vectors   = JSON.parse(JSON.stringify(s._vectors));
       window.animState = window.vectors.map(() => 1);
     }
 
     if (s._lcCoeffs && s._lcCoeffs.length > 0) {
       window.lcCoeffs = JSON.parse(JSON.stringify(s._lcCoeffs));
-    } else if (window.vectors) {
+    } else if (window.vectors && window.vectors.length > 0) {
       window.lcCoeffs = window.vectors.map(() => 1);
     }
 
@@ -449,20 +447,19 @@ function scheduleVectorRestore(s) {
       if (id.startsWith('_')) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') {
-        el.value = s[id];
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      } else if (el.type === 'checkbox') {
+      if (el.type === 'checkbox') {
         el.checked = !!s[id];
-
-        if (id === 'toggle-resultant') window.showResultant = el.checked;
-        if (id === 'toggle-lc') window.lcShowOnCanvas = el.checked;
-        if (id === 'toggle-span') window.showSpan = el.checked;
-        if (id === 'toggle-dot') window.showProjection = el.checked;
-        if (id === 'toggle-cross') window.showCross = el.checked;
-        if (id === 'auto-orbit') {
-          if (typeof window.toggleOrbit === 'function') window.toggleOrbit(el.checked);
+        if (id === 'toggle-resultant') window.showResultant  = el.checked;
+        if (id === 'toggle-lc')        window.lcShowOnCanvas = el.checked;
+        if (id === 'toggle-span')      window.showSpan       = el.checked;
+        if (id === 'toggle-dot')       window.showProjection = el.checked;
+        if (id === 'toggle-cross')     window.showCross      = el.checked;
+        if (id === 'auto-orbit' && typeof window.toggleOrbit === 'function') {
+          window.toggleOrbit(el.checked);
         }
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (el.tagName === 'SELECT') {
+        el.value = s[id];
         el.dispatchEvent(new Event('change', { bubbles: true }));
       } else {
         el.value = s[id];
@@ -474,12 +471,11 @@ function scheduleVectorRestore(s) {
       recalculateVectors();
       updateList();
       updatePanels();
-      const target = computeTargetUnit();
-      animateZoom(target);
+      animateZoom(computeTargetUnit());
     }
-    window.render();
+    render();
   }
-  setTimeout(() => attempt(30), 350);
+  setTimeout(() => attempt(40), 350);
 }
 
 function wireAutoSave() {
@@ -511,76 +507,27 @@ function wireAutoSave() {
 }
 
 function _patchVectorFunctions() {
-
   function tryPatch(tries) {
-    if (typeof addVector === 'undefined' && tries > 0) {
-      setTimeout(() => tryPatch(tries - 1), 150);
+
+    if (typeof addVector === 'undefined') {
+      if (tries > 0) setTimeout(() => tryPatch(tries - 1), 150);
       return;
     }
 
-    if (typeof window.addVector !== 'function' && typeof addVector === 'function') {
-      const _orig = addVector;
-      window.addVector = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 700);
-        return r;
-      };
-    } else if (typeof window.addVector === 'function') {
-      const _orig = window.addVector;
-      window.addVector = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 700);
+    function wrap(fnName, delay) {
+      const orig = window[fnName];
+      if (typeof orig !== 'function') return;
+      window[fnName] = function() {
+        const r = orig.apply(this, arguments);
+        setTimeout(scheduleSave, delay);
         return r;
       };
     }
 
-    if (typeof window.clearAll !== 'function' && typeof clearAll === 'function') {
-      const _orig = clearAll;
-      window.clearAll = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 100);
-        return r;
-      };
-    } else if (typeof window.clearAll === 'function') {
-      const _orig = window.clearAll;
-      window.clearAll = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 100);
-        return r;
-      };
-    }
-
-    if (typeof window.removeVector !== 'function' && typeof removeVector === 'function') {
-      const _orig = removeVector;
-      window.removeVector = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 400);
-        return r;
-      };
-    } else if (typeof window.removeVector === 'function') {
-      const _orig = window.removeVector;
-      window.removeVector = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 400);
-        return r;
-      };
-    }
-
-    if (typeof window.applyScale !== 'function' && typeof applyScale === 'function') {
-      const _orig = applyScale;
-      window.applyScale = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 700);
-        return r;
-      };
-    } else if (typeof window.applyScale === 'function') {
-      const _orig = window.applyScale;
-      window.applyScale = function() {
-        const r = _orig.apply(this, arguments);
-        setTimeout(scheduleSave, 700);
-        return r;
-      };
-    }
+    wrap('addVector',    700);
+    wrap('clearAll',     100);
+    wrap('removeVector', 400);
+    wrap('applyScale',   700);
   }
 
   if (document.readyState === 'loading') {
@@ -658,7 +605,7 @@ function openAuthModal(supabase) {
 
   let mode = 'signin';
 
-  function render() {
+  function renderModal() {
     card.innerHTML = '';
 
     const closeBtn = document.createElement('button');
@@ -702,7 +649,7 @@ function openAuthModal(supabase) {
       const forgotLink = document.createElement('a');
       forgotLink.className = 'auth-small-link';
       forgotLink.textContent = 'Forgot password?';
-      forgotLink.onclick = () => { mode = 'forgot'; render(); };
+      forgotLink.onclick = () => { mode = 'forgot'; renderModal(); };
       form.appendChild(forgotLink);
     }
 
@@ -720,20 +667,20 @@ function openAuthModal(supabase) {
     toggleLink.className = 'auth-link';
     if (mode === 'signin') {
       toggleLink.textContent = 'Need an account? Sign Up';
-      toggleLink.onclick = () => { mode = 'signup'; render(); };
+      toggleLink.onclick = () => { mode = 'signup'; renderModal(); };
     } else if (mode === 'signup') {
       toggleLink.textContent = 'Already have an account? Sign In';
-      toggleLink.onclick = () => { mode = 'signin'; render(); };
+      toggleLink.onclick = () => { mode = 'signin'; renderModal(); };
     } else {
       toggleLink.textContent = 'Back to Sign In';
-      toggleLink.onclick = () => { mode = 'signin'; render(); };
+      toggleLink.onclick = () => { mode = 'signin'; renderModal(); };
     }
     form.appendChild(toggleLink);
 
     form.onsubmit = async e => {
       e.preventDefault();
       const email = card.querySelector('#af-email')?.value.trim();
-      const pass = card.querySelector('#af-pass')?.value;
+      const pass  = card.querySelector('#af-pass')?.value;
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
       msgEl.className = 'auth-msg';
@@ -741,7 +688,7 @@ function openAuthModal(supabase) {
       try {
         if (mode === 'signup') {
           const first = card.querySelector('#af-first')?.value.trim();
-          const last = card.querySelector('#af-last')?.value.trim();
+          const last  = card.querySelector('#af-last')?.value.trim();
           const { error } = await supabase.auth.signUp({
             email, password: pass,
             options: { data: { first_name: first, last_name: last } }
@@ -771,7 +718,7 @@ function openAuthModal(supabase) {
     };
   }
 
-  render();
+  renderModal();
   document.body.appendChild(overlay);
   setTimeout(() => card.querySelector('#af-email')?.focus(), 50);
 }
@@ -822,6 +769,7 @@ function openUpdatePasswordModal(supabase) {
 
 async function bootAuth() {
   injectAuthStyles();
+
   let config = window.aimlConfig;
   if (!config) {
     try {
