@@ -33,53 +33,46 @@ function applyTheme() {
 function toggleTheme() {
   const current = getSavedTheme();
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let newTheme;
+  let next;
   if (!current) {
-    newTheme = prefersDark ? 'light' : 'dark';
+    next = prefersDark ? 'light' : 'dark';
   } else if (current === 'dark') {
-    newTheme = 'light';
+    next = 'light';
   } else {
-    newTheme = 'dark';
+    next = 'dark';
   }
-  saveTheme(newTheme);
+  saveTheme(next);
   applyTheme();
 }
 
 function updateThemeIcon() {
   const btn = document.getElementById('theme-btn');
   if (!btn) return;
-  const isCurrentlyDark = window.isDark();
   const icon = btn.querySelector('i');
-  if (isCurrentlyDark) {
-    icon.className = 'fa-solid fa-moon';
-  } else {
-    icon.className = 'fa-solid fa-sun';
-  }
+  if (!icon) return;
+  icon.className = window.isDark() ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
 }
 
 applyTheme();
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (!getSavedTheme()) {
-    applyTheme();
-  }
+  if (!getSavedTheme()) applyTheme();
 });
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(src));
-    document.head.appendChild(script);
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error(src));
+    document.head.appendChild(s);
   });
 }
 
-function injectStyles() {
+function injectAuthStyles() {
+  if (document.getElementById('auth-style')) return;
   const style = document.createElement('style');
+  style.id = 'auth-style';
   style.textContent = `
     .auth-btn-icon {
       background: var(--surface2);
@@ -93,688 +86,438 @@ function injectStyles() {
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      transition: all 0.15s;
       padding: 0;
+      flex-shrink: 0;
     }
-    .auth-btn-icon:hover {
-      color: var(--ink);
-      background: var(--surface);
-      border-color: var(--border2);
-    }
-    .auth-btn-icon.active-user {
-      color: var(--accent);
-      border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 8%, transparent);
-    }
-    .auth-modal-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.4);
+    .auth-btn-icon:hover { color: var(--ink); background: var(--surface); }
+    .auth-btn-icon.logged-in { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .auth-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
       backdrop-filter: blur(4px);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
     }
-    .auth-modal-card {
+    .auth-card {
       background: var(--surface);
       border: 1px solid var(--border2);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      width: 340px;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: min(360px, 92vw);
+      padding: 28px;
+      display: flex; flex-direction: column; gap: 14px;
       position: relative;
     }
-    .auth-modal-close {
-      position: absolute;
-      top: 12px; right: 12px;
-      background: none;
-      border: none;
-      color: var(--ink3);
-      font-size: 16px;
-      cursor: pointer;
+    .auth-card-close {
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none;
+      color: var(--ink3); font-size: 16px; cursor: pointer;
     }
-    .auth-modal-title {
-      font-size: 18px;
-      font-weight: 500;
-      color: var(--ink);
-      margin-bottom: 4px;
-    }
-    .auth-input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .auth-input-group label {
-      font-size: 12px;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--ink3);
-    }
-    .auth-input-group input {
-      width: 100%;
+    .auth-card-title { font-size: 18px; font-weight: 600; color: var(--ink); }
+    .auth-field { display: flex; flex-direction: column; gap: 5px; }
+    .auth-field label { font-size: 12px; color: var(--ink3); font-family: 'JetBrains Mono', monospace; }
+    .auth-field input {
       background: var(--surface2);
       border: 1px solid var(--border2);
       color: var(--ink);
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-family: inherit;
+      border-radius: 5px;
+      padding: 9px 12px;
       font-size: 14px;
-      outline: none;
+      font-family: inherit;
+      width: 100%;
       box-sizing: border-box;
+      outline: none;
     }
-    .auth-input-group input:focus {
-      border-color: var(--accent);
-    }
-    .auth-msg {
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .auth-msg.error {
-      color: var(--accent2);
-    }
-    .auth-msg.success {
-      color: var(--accent3);
-    }
-    .auth-toggle-link {
-      font-size: 13px;
-      color: var(--accent);
-      text-decoration: none;
-      cursor: pointer;
-      text-align: center;
-    }
-    .auth-toggle-link:hover {
-      text-decoration: underline;
-    }
-    .auth-user-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 6px;
+    .auth-field input:focus { border-color: var(--accent); }
+    .auth-name-row { display: flex; gap: 10px; }
+    .auth-name-row .auth-field { flex: 1; }
+    .auth-msg { font-size: 13px; display: flex; align-items: center; gap: 6px; min-height: 16px; }
+    .auth-msg.err { color: var(--accent2, #b84040); }
+    .auth-msg.ok { color: var(--accent3, #2e7d52); }
+    .auth-link { font-size: 13px; color: var(--accent); cursor: pointer; text-align: center; text-decoration: none; }
+    .auth-link:hover { text-decoration: underline; }
+    .auth-small-link { font-size: 12px; color: var(--accent); cursor: pointer; text-align: right; text-decoration: none; }
+    .auth-small-link:hover { text-decoration: underline; }
+    .auth-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
       background: var(--surface);
       border: 1px solid var(--border2);
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      padding: 8px 0;
-      min-width: 180px;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      min-width: 200px;
       z-index: 1000;
-      display: flex;
-      flex-direction: column;
+      overflow: hidden;
     }
-    .auth-user-info {
-      padding: 8px 16px;
+    .auth-dropdown-header {
+      padding: 10px 16px;
       font-size: 13px;
       color: var(--ink3);
       border-bottom: 1px solid var(--border);
       word-break: break-all;
     }
-    .auth-dropdown-item {
-      padding: 8px 16px;
+    .auth-dropdown-header strong { display: block; color: var(--ink); margin-bottom: 2px; }
+    .auth-dropdown-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
       font-size: 14px;
       color: var(--ink2);
-      background: none;
-      border: none;
-      text-align: left;
-      cursor: pointer;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      background: none; border: none;
+      width: 100%; text-align: left; cursor: pointer;
     }
-    .auth-dropdown-item:hover {
-      background: var(--surface2);
-      color: var(--ink);
+    .auth-dropdown-btn:hover { background: var(--surface2); color: var(--ink); }
+    .save-indicator {
+      position: fixed; bottom: 16px; right: 16px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink3);
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 5px 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 5000;
     }
-    .auth-name-row {
-      display: flex;
-      gap: 12px;
-      width: 100%;
-    }
-    .auth-name-row .auth-input-group {
-      flex: 1;
-    }
+    .save-indicator.visible { opacity: 1; }
   `;
   document.head.appendChild(style);
 }
 
-let currentUser = null;
-let supabaseInstance = null;
-let saveDebounceTimer = null;
+let _supabase = null;
+let _user = null;
+let _saveTimer = null;
+let _saveIndicator = null;
 
-function getPageName() {
+function getPageKey() {
   return window.location.pathname.split('/').pop() || 'index.html';
 }
 
-function getPageState() {
-  const state = {};
-  const pageName = getPageName();
+const SKIP_PAGES = new Set(['index.html', 'references.html', '']);
+
+function captureState() {
+  const page = getPageKey();
+  const s = { _page: page, _ts: Date.now() };
 
   const activeTab = document.querySelector('.tab-btn.active');
-  if (activeTab) {
-    state._activeTab = activeTab.id;
-  }
+  if (activeTab && activeTab.id) s._activeTab = activeTab.id;
 
-  const mode2d = document.getElementById('btn2d');
-  const mode3d = document.getElementById('btn3d');
-  if (mode2d && mode3d) {
-    state._vectorMode = mode3d.classList.contains('active') ? '3d' : '2d';
-  }
-
-  document.querySelectorAll('select').forEach(el => {
-    if (el.id) state[el.id] = el.value;
+  document.querySelectorAll('select[id]').forEach(el => {
+    s[el.id] = el.value;
   });
 
-  document.querySelectorAll('input').forEach(el => {
-    if (!el.id) return;
-    if (el.type === 'checkbox') {
-      state[el.id] = el.checked;
-    } else if (el.type === 'range' || el.type === 'number' || el.type === 'text') {
-      state[el.id] = el.value;
-    }
+  document.querySelectorAll('input[id]').forEach(el => {
+    if (el.type === 'checkbox') s[el.id] = el.checked;
+    else if (el.type === 'range' || el.type === 'number' || el.type === 'text') s[el.id] = el.value;
   });
 
-  if (pageName === 'vector.html') {
+  if (page === 'vector.html') {
+    const btn3d = document.getElementById('btn3d');
+    s._mode = btn3d && btn3d.classList.contains('active') ? '3d' : '2d';
     if (window.vectors && window.vectors.length > 0) {
-      state._vectors = JSON.parse(JSON.stringify(window.vectors));
+      s._vectors = JSON.parse(JSON.stringify(window.vectors));
     }
     if (window.lcCoeffs && window.lcCoeffs.length > 0) {
-      state._lcCoeffs = JSON.parse(JSON.stringify(window.lcCoeffs));
-    }
-    if (typeof window.lcShowOnCanvas !== 'undefined') {
-      state._lcShowOnCanvas = window.lcShowOnCanvas;
-    }
-    if (typeof window.showSpan !== 'undefined') {
-      state._showSpan = window.showSpan;
-    }
-    if (typeof window.showResultant !== 'undefined') {
-      state._showResultant = window.showResultant;
+      s._lcCoeffs = JSON.parse(JSON.stringify(window.lcCoeffs));
     }
   }
 
-  if (pageName === 'matrix.html') {
-    if (window.mat) {
-      state._mat = window.mat;
+  if (page === 'matrix.html') {
+    const mA = document.getElementById('m-a');
+    const mB = document.getElementById('m-b');
+    const mC = document.getElementById('m-c');
+    const mD = document.getElementById('m-d');
+    if (mA && mB && mC && mD) {
+      s._mat = [
+        parseFloat(mA.value) || 0,
+        parseFloat(mB.value) || 0,
+        parseFloat(mC.value) || 0,
+        parseFloat(mD.value) || 0
+      ];
     }
-    if (window.lmeVec) {
-      state._lmeVec = window.lmeVec;
+    const lmeX = document.getElementById('lme-x');
+    const lmeY = document.getElementById('lme-y');
+    if (lmeX && lmeY) {
+      s._lmeVec = { x: parseFloat(lmeX.value) || 0, y: parseFloat(lmeY.value) || 0 };
     }
   }
 
-  return state;
+  return s;
 }
 
-function applyPageState(state) {
-  const pageName = getPageName();
+async function persistState() {
+  if (!_supabase || !_user) return;
+  const page = getPageKey();
+  if (SKIP_PAGES.has(page)) return;
+  const state = captureState();
+  try {
+    await _supabase.from('user_states').upsert({
+      user_id: _user.id,
+      page_name: page,
+      state: state,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,page_name' });
+    flashSaveIndicator();
+  } catch (e) {
+    console.warn('State save failed:', e.message);
+  }
+}
 
-  if (state._activeTab) {
-    const tabEl = document.getElementById(state._activeTab);
-    if (tabEl) {
-      tabEl.click();
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(persistState, 1200);
+}
+
+function flashSaveIndicator() {
+  if (!_saveIndicator) {
+    _saveIndicator = document.createElement('div');
+    _saveIndicator.className = 'save-indicator';
+    _saveIndicator.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" style="margin-right:5px"></i>Saved';
+    document.body.appendChild(_saveIndicator);
+  }
+  _saveIndicator.classList.add('visible');
+  clearTimeout(_saveIndicator._timer);
+  _saveIndicator._timer = setTimeout(() => _saveIndicator.classList.remove('visible'), 1800);
+}
+
+async function restoreState() {
+  if (!_supabase || !_user) return;
+  const page = getPageKey();
+  if (SKIP_PAGES.has(page)) return;
+  try {
+    const { data } = await _supabase
+      .from('user_states')
+      .select('state')
+      .eq('user_id', _user.id)
+      .eq('page_name', page)
+      .maybeSingle();
+    if (data && data.state) {
+      applyState(data.state);
     }
+  } catch (e) {
+    console.warn('State load failed:', e.message);
+  }
+}
+
+function applyState(s) {
+  const page = getPageKey();
+
+  if (s._activeTab) {
+    const tabEl = document.getElementById(s._activeTab);
+    if (tabEl) tabEl.click();
   }
 
-  if (pageName === 'vector.html') {
-    restoreVectorPageState(state);
+  if (page === 'vector.html') {
+    scheduleVectorRestore(s);
     return;
   }
 
-  if (pageName === 'matrix.html') {
-    Object.keys(state).forEach(id => {
-      if (id.startsWith('_')) return;
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (el.tagName === 'INPUT') {
-        if (el.type === 'checkbox') {
-          el.checked = !!state[id];
-        } else {
-          el.value = state[id];
-        }
-      }
-    });
-    restoreMatrixPageState(state);
+  if (page === 'matrix.html') {
+    scheduleMatrixRestore(s);
     return;
   }
 
-  function doRestore(attemptsLeft) {
-    const canRestore = typeof window.render === 'function' &&
-                       typeof window.W !== 'undefined' && window.W > 0;
-    if (!canRestore) {
-      if (attemptsLeft > 0) setTimeout(() => doRestore(attemptsLeft - 1), 200);
+  scheduleGenericRestore(s);
+}
+
+function scheduleGenericRestore(s) {
+  function attempt(tries) {
+    const ready = typeof window.render === 'function' &&
+                  typeof window.W !== 'undefined' && window.W > 0;
+    if (!ready) {
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
       return;
     }
-    Object.keys(state).forEach(id => {
+    Object.keys(s).forEach(id => {
       if (id.startsWith('_')) return;
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.tagName === 'SELECT') {
-        el.value = state[id];
-      } else if (el.tagName === 'INPUT') {
-        if (el.type === 'checkbox') {
-          el.checked = !!state[id];
-        } else {
-          el.value = state[id];
-        }
-      }
+      if (el.tagName === 'SELECT') el.value = s[id];
+      else if (el.type === 'checkbox') el.checked = !!s[id];
+      else el.value = s[id];
     });
     window.render();
   }
-
-  setTimeout(() => doRestore(15), 300);
+  setTimeout(() => attempt(20), 300);
 }
 
-function restoreVectorPageState(state) {
-  function attemptRestore(attemptsLeft) {
-    const canRestore = typeof window.updateList === 'function' &&
-                       typeof window.updatePanels === 'function' &&
-                       typeof window.render === 'function' &&
-                       typeof window.recalculateVectors === 'function' &&
-                       typeof window.animateZoom === 'function' &&
-                       typeof window.computeTargetUnit === 'function' &&
-                       typeof window.setMode === 'function' &&
-                       typeof window.W !== 'undefined' && window.W > 0;
-
-    if (!canRestore) {
-      if (attemptsLeft > 0) {
-        setTimeout(() => attemptRestore(attemptsLeft - 1), 200);
-      }
+function scheduleMatrixRestore(s) {
+  function attempt(tries) {
+    const ready = typeof window.render === 'function' &&
+                  typeof window.W !== 'undefined' && window.W > 0 &&
+                  typeof updateMatrix === 'function' &&
+                  typeof updateLME === 'function';
+    if (!ready) {
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
       return;
     }
 
-    if (state._vectorMode && state._vectorMode !== window.currentMode) {
-      window.currentMode = state._vectorMode;
-      document.body.classList.toggle('mode3d', state._vectorMode === '3d');
-      const btn2d = document.getElementById('btn2d');
-      const btn3d = document.getElementById('btn3d');
-      const canvas = document.getElementById('canvas');
-      if (btn2d) btn2d.classList.toggle('active', state._vectorMode === '2d');
-      if (btn3d) btn3d.classList.toggle('active', state._vectorMode === '3d');
-      if (canvas) canvas.classList.toggle('mode3d', state._vectorMode === '3d');
-    }
-
-    if (state._vectors && state._vectors.length > 0) {
-      window.vectors = JSON.parse(JSON.stringify(state._vectors));
-      window.animState = window.vectors.map(() => 1);
-
-      if (state._lcCoeffs && state._lcCoeffs.length > 0) {
-        window.lcCoeffs = JSON.parse(JSON.stringify(state._lcCoeffs));
-      } else {
-        window.lcCoeffs = window.vectors.map(() => 1);
-      }
-
-      const lcToggle = document.getElementById('toggle-lc');
-      if (lcToggle) {
-        const lcVal = typeof state['toggle-lc'] !== 'undefined' ? !!state['toggle-lc'] : (typeof state._lcShowOnCanvas !== 'undefined' ? !!state._lcShowOnCanvas : false);
-        window.lcShowOnCanvas = lcVal;
-        lcToggle.checked = lcVal;
-      }
-
-      const spanToggle = document.getElementById('toggle-span');
-      if (spanToggle) {
-        const spanVal = typeof state['toggle-span'] !== 'undefined' ? !!state['toggle-span'] : (typeof state._showSpan !== 'undefined' ? !!state._showSpan : false);
-        window.showSpan = spanVal;
-        spanToggle.checked = spanVal;
-      }
-
-      const resToggle = document.getElementById('toggle-resultant');
-      if (resToggle) {
-        const resVal = typeof state['toggle-resultant'] !== 'undefined' ? !!state['toggle-resultant'] : (typeof state._showResultant !== 'undefined' ? !!state._showResultant : false);
-        window.showResultant = resVal;
-        resToggle.checked = resVal;
-      }
-
-      window.recalculateVectors();
-      window.updateList();
-      window.updatePanels();
-      const target = window.computeTargetUnit();
-      window.animateZoom(target);
-      window.render();
-    }
-  }
-
-  setTimeout(() => attemptRestore(20), 400);
-}
-
-function restoreMatrixPageState(state) {
-  function attemptRestore(attemptsLeft) {
-    const canRestore = typeof window.updateMatrix === 'function' &&
-                       typeof window.updateLME === 'function';
-
-    if (!canRestore) {
-      if (attemptsLeft > 0) {
-        setTimeout(() => attemptRestore(attemptsLeft - 1), 200);
-      }
-      return;
-    }
-
-    if (state._mat && window.mat) {
-      window.mat = state._mat;
+    if (s._mat && Array.isArray(s._mat)) {
       const ids = ['m-a', 'm-b', 'm-c', 'm-d'];
       ids.forEach((id, i) => {
         const el = document.getElementById(id);
-        if (el) el.value = state._mat[i];
+        if (el) el.value = s._mat[i];
       });
-      window.animT = 1;
+      updateMatrix();
     }
 
-    if (state._lmeVec && window.lmeVec) {
-      window.lmeVec = state._lmeVec;
-      const lmeX = document.getElementById('lme-x');
-      const lmeY = document.getElementById('lme-y');
-      if (lmeX) lmeX.value = state._lmeVec.x;
-      if (lmeY) lmeY.value = state._lmeVec.y;
+    if (s._lmeVec) {
+      const lx = document.getElementById('lme-x');
+      const ly = document.getElementById('lme-y');
+      if (lx) lx.value = s._lmeVec.x;
+      if (ly) ly.value = s._lmeVec.y;
+      updateLME();
     }
 
-    if (typeof window.refreshLMEPanel === 'function') window.refreshLMEPanel();
-    if (typeof window.render === 'function') window.render();
+    Object.keys(s).forEach(id => {
+      if (id.startsWith('_') || ['m-a','m-b','m-c','m-d','lme-x','lme-y'].includes(id)) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') el.value = s[id];
+      else if (el.type === 'checkbox') el.checked = !!s[id];
+      else el.value = s[id];
+    });
+
+    window.render();
   }
-
-  setTimeout(() => attemptRestore(15), 300);
+  setTimeout(() => attempt(20), 300);
 }
 
-async function saveStateToSupabase() {
-  if (!currentUser || !supabaseInstance) return;
-  const pageName = getPageName();
-  if (pageName === 'index.html' || pageName === 'references.html' || pageName === '') return;
-  const state = getPageState();
-  try {
-    await supabaseInstance
-      .from('user_states')
-      .upsert({
-        user_id: currentUser.id,
-        page_name: pageName,
-        state: state,
-        updated_at: new Date().toISOString()
-      });
-  } catch (err) {
-    console.error('State save error:', err);
-  }
-}
-
-function triggerDebouncedSave() {
-  clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(saveStateToSupabase, 1500);
-}
-
-async function loadStateFromSupabase() {
-  if (!currentUser || !supabaseInstance) return;
-  const pageName = getPageName();
-  if (pageName === 'index.html' || pageName === 'references.html' || pageName === '') return;
-  try {
-    const { data, error } = await supabaseInstance
-      .from('user_states')
-      .select('state')
-      .eq('user_id', currentUser.id)
-      .eq('page_name', pageName)
-      .maybeSingle();
-    if (data && data.state) {
-      applyPageState(data.state);
+function scheduleVectorRestore(s) {
+  function attempt(tries) {
+    const ready = typeof recalculateVectors === 'function' &&
+                  typeof updateList === 'function' &&
+                  typeof updatePanels === 'function' &&
+                  typeof window.render === 'function' &&
+                  typeof animateZoom === 'function' &&
+                  typeof computeTargetUnit === 'function' &&
+                  typeof window.W !== 'undefined' && window.W > 0;
+    if (!ready) {
+      if (tries > 0) setTimeout(() => attempt(tries - 1), 200);
+      return;
     }
-  } catch (err) {
-    console.error('State load error:', err);
-  }
-}
 
-function toggleUserDropdown(supabase) {
-  let dropdown = document.querySelector('.auth-user-dropdown');
-  if (dropdown) {
-    dropdown.remove();
-    return;
-  }
-  const btn = document.getElementById('auth-btn');
-  if (!btn) return;
-  dropdown = document.createElement('div');
-  dropdown.className = 'auth-user-dropdown';
-  const info = document.createElement('div');
-  info.className = 'auth-user-info';
-  const meta = currentUser.user_metadata || {};
-  const displayName = (meta.first_name || meta.last_name)
-    ? `${meta.first_name || ''} ${meta.last_name || ''}`.trim()
-    : currentUser.email;
-  info.textContent = displayName;
-  const emailLine = document.createElement('div');
-  emailLine.style.cssText = 'font-size:11px;color:var(--ink3);margin-top:2px;word-break:break-all';
-  if (meta.first_name || meta.last_name) {
-    emailLine.textContent = currentUser.email;
-    info.appendChild(emailLine);
-  }
-  dropdown.appendChild(info);
-  const logoutBtn = document.createElement('button');
-  logoutBtn.className = 'auth-dropdown-item';
-  logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Log Out';
-  logoutBtn.onclick = async () => {
-    await supabase.auth.signOut();
-    dropdown.remove();
-  };
-  dropdown.appendChild(logoutBtn);
-  btn.parentElement.style.position = 'relative';
-  btn.parentElement.appendChild(dropdown);
-  const closeDropdown = () => {
-    if (dropdown.parentElement) dropdown.remove();
-    document.removeEventListener('click', closeDropdown);
-  };
-  setTimeout(() => {
-    document.addEventListener('click', closeDropdown);
-  }, 0);
-  dropdown.onclick = (e) => e.stopPropagation();
-}
-
-function showLoginModal(supabase) {
-  let modal = document.querySelector('.auth-modal-overlay');
-  if (modal) return;
-  modal = document.createElement('div');
-  modal.className = 'auth-modal-overlay';
-  const card = document.createElement('div');
-  card.className = 'auth-modal-card';
-  modal.appendChild(card);
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'auth-modal-close';
-  closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-  closeBtn.onclick = () => modal.remove();
-  card.appendChild(closeBtn);
-  const title = document.createElement('h2');
-  title.className = 'auth-modal-title';
-  title.textContent = 'Sign In';
-  card.appendChild(title);
-  const form = document.createElement('form');
-  form.style.display = 'flex';
-  form.style.flexDirection = 'column';
-  form.style.gap = '12px';
-  card.appendChild(form);
-  const nameRow = document.createElement('div');
-  nameRow.className = 'auth-name-row';
-  nameRow.style.display = 'none';
-  form.appendChild(nameRow);
-  const firstNameGroup = document.createElement('div');
-  firstNameGroup.className = 'auth-input-group';
-  firstNameGroup.innerHTML = '<label>First Name</label><input type="text">';
-  nameRow.appendChild(firstNameGroup);
-  const lastNameGroup = document.createElement('div');
-  lastNameGroup.className = 'auth-input-group';
-  lastNameGroup.innerHTML = '<label>Last Name</label><input type="text">';
-  nameRow.appendChild(lastNameGroup);
-  const emailGroup = document.createElement('div');
-  emailGroup.className = 'auth-input-group';
-  emailGroup.innerHTML = '<label>Email</label><input type="email" required>';
-  form.appendChild(emailGroup);
-  const passGroup = document.createElement('div');
-  passGroup.className = 'auth-input-group';
-  passGroup.innerHTML = '<label>Password</label><input type="password" required minlength="6">';
-  form.appendChild(passGroup);
-  const msg = document.createElement('div');
-  msg.className = 'auth-msg';
-  const forgotLink = document.createElement('a');
-  forgotLink.className = 'auth-toggle-link';
-  forgotLink.textContent = 'Forgot Password?';
-  forgotLink.style.fontSize = '12px';
-  forgotLink.style.textAlign = 'right';
-  forgotLink.style.marginTop = '-4px';
-  form.appendChild(forgotLink);
-  form.appendChild(msg);
-  const submitBtn = document.createElement('button');
-  submitBtn.className = 'btn btn-fill';
-  submitBtn.type = 'submit';
-  submitBtn.textContent = 'Log In';
-  form.appendChild(submitBtn);
-  const toggleLink = document.createElement('a');
-  toggleLink.className = 'auth-toggle-link';
-  toggleLink.textContent = 'Need an account? Sign Up';
-  form.appendChild(toggleLink);
-  let mode = 'signin';
-  const updateMode = (newMode) => {
-    mode = newMode;
-    msg.className = 'auth-msg';
-    msg.innerHTML = '';
-    if (mode === 'signin') {
-      title.textContent = 'Sign In';
-      nameRow.style.display = 'none';
-      passGroup.style.display = 'flex';
-      submitBtn.textContent = 'Log In';
-      toggleLink.textContent = 'Need an account? Sign Up';
-      toggleLink.style.display = 'block';
-      forgotLink.style.display = 'block';
-      firstNameGroup.querySelector('input').required = false;
-      lastNameGroup.querySelector('input').required = false;
-      passGroup.querySelector('input').required = true;
-    } else if (mode === 'signup') {
-      title.textContent = 'Sign Up';
-      nameRow.style.display = 'flex';
-      passGroup.style.display = 'flex';
-      submitBtn.textContent = 'Sign Up';
-      toggleLink.textContent = 'Already have an account? Log In';
-      toggleLink.style.display = 'block';
-      forgotLink.style.display = 'none';
-      firstNameGroup.querySelector('input').required = true;
-      lastNameGroup.querySelector('input').required = true;
-      passGroup.querySelector('input').required = true;
-    } else if (mode === 'forgot') {
-      title.textContent = 'Reset Password';
-      nameRow.style.display = 'none';
-      passGroup.style.display = 'none';
-      submitBtn.textContent = 'Send Reset Link';
-      toggleLink.textContent = 'Back to Sign In';
-      toggleLink.style.display = 'block';
-      forgotLink.style.display = 'none';
-      firstNameGroup.querySelector('input').required = false;
-      lastNameGroup.querySelector('input').required = false;
-      passGroup.querySelector('input').required = false;
-    }
-  };
-  toggleLink.onclick = () => {
-    if (mode === 'signin') updateMode('signup');
-    else updateMode('signin');
-  };
-  forgotLink.onclick = () => {
-    updateMode('forgot');
-  };
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const email = emailGroup.querySelector('input').value.trim();
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    msg.className = 'auth-msg';
-    msg.innerHTML = '';
-    try {
-      if (mode === 'signup') {
-        const password = passGroup.querySelector('input').value;
-        const firstName = firstNameGroup.querySelector('input').value.trim();
-        const lastName = lastNameGroup.querySelector('input').value.trim();
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName
-            }
-          }
-        });
-        if (error) throw error;
-        msg.className = 'auth-msg success';
-        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Check your email to confirm!';
-      } else if (mode === 'signin') {
-        const password = passGroup.querySelector('input').value;
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        modal.remove();
-      } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.href
-        });
-        if (error) throw error;
-        msg.className = 'auth-msg success';
-        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Reset link sent to your email!';
+    if (s._mode) {
+      const is3d = s._mode === '3d';
+      if (typeof currentMode !== 'undefined' && currentMode !== s._mode) {
+        currentMode = s._mode;
+        document.body.classList.toggle('mode3d', is3d);
+        const c = document.getElementById('canvas');
+        const b2 = document.getElementById('btn2d');
+        const b3 = document.getElementById('btn3d');
+        if (c) c.classList.toggle('mode3d', is3d);
+        if (b2) b2.classList.toggle('active', !is3d);
+        if (b3) b3.classList.toggle('active', is3d);
       }
-    } catch (err) {
-      msg.className = 'auth-msg error';
-      msg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${err.message}`;
-    } finally {
-      submitBtn.disabled = false;
-      if (mode === 'signup') submitBtn.textContent = 'Sign Up';
-      else if (mode === 'signin') submitBtn.textContent = 'Log In';
-      else if (mode === 'forgot') submitBtn.textContent = 'Send Reset Link';
     }
-  };
-  document.body.appendChild(modal);
+
+    if (s._vectors && s._vectors.length > 0) {
+      window.vectors = JSON.parse(JSON.stringify(s._vectors));
+      window.animState = window.vectors.map(() => 1);
+    }
+
+    if (s._lcCoeffs && s._lcCoeffs.length > 0) {
+      window.lcCoeffs = JSON.parse(JSON.stringify(s._lcCoeffs));
+    } else if (window.vectors) {
+      window.lcCoeffs = window.vectors.map(() => 1);
+    }
+
+    if (typeof s['toggle-resultant'] !== 'undefined') {
+      const el = document.getElementById('toggle-resultant');
+      if (el) {
+        el.checked = !!s['toggle-resultant'];
+        if (typeof showResultant !== 'undefined') showResultant = el.checked;
+      }
+    }
+    if (typeof s['toggle-lc'] !== 'undefined') {
+      const el = document.getElementById('toggle-lc');
+      if (el) {
+        el.checked = !!s['toggle-lc'];
+        if (typeof lcShowOnCanvas !== 'undefined') lcShowOnCanvas = el.checked;
+      }
+    }
+    if (typeof s['toggle-span'] !== 'undefined') {
+      const el = document.getElementById('toggle-span');
+      if (el) {
+        el.checked = !!s['toggle-span'];
+        if (typeof showSpan !== 'undefined') showSpan = el.checked;
+      }
+    }
+
+    if (window.vectors && window.vectors.length > 0) {
+      recalculateVectors();
+      updateList();
+      updatePanels();
+      const target = computeTargetUnit();
+      animateZoom(target);
+    }
+    window.render();
+  }
+  setTimeout(() => attempt(25), 350);
 }
 
-function showUpdatePasswordModal(supabase) {
-  let modal = document.querySelector('.auth-modal-overlay');
-  if (modal) modal.remove();
-  modal = document.createElement('div');
-  modal.className = 'auth-modal-overlay';
-  const card = document.createElement('div');
-  card.className = 'auth-modal-card';
-  modal.appendChild(card);
-  const title = document.createElement('h2');
-  title.className = 'auth-modal-title';
-  title.textContent = 'Set New Password';
-  card.appendChild(title);
-  const form = document.createElement('form');
-  form.style.display = 'flex';
-  form.style.flexDirection = 'column';
-  form.style.gap = '12px';
-  card.appendChild(form);
-  const passGroup = document.createElement('div');
-  passGroup.className = 'auth-input-group';
-  passGroup.innerHTML = '<label>New Password</label><input type="password" required minlength="6">';
-  form.appendChild(passGroup);
-  const msg = document.createElement('div');
-  msg.className = 'auth-msg';
-  form.appendChild(msg);
-  const submitBtn = document.createElement('button');
-  submitBtn.className = 'btn btn-fill';
-  submitBtn.type = 'submit';
-  submitBtn.textContent = 'Update Password';
-  form.appendChild(submitBtn);
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const password = passGroup.querySelector('input').value;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    msg.className = 'auth-msg';
-    msg.innerHTML = '';
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      msg.className = 'auth-msg success';
-      msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Password updated!';
-      setTimeout(() => modal.remove(), 1500);
-    } catch (err) {
-      msg.className = 'auth-msg error';
-      msg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${err.message}`;
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Update Password';
+function wireAutoSave() {
+  const page = getPageKey();
+  if (SKIP_PAGES.has(page)) return;
+
+  document.addEventListener('input', e => {
+    if (e.target.closest && e.target.closest('.auth-card')) return;
+    scheduleSave();
+  }, true);
+
+  document.addEventListener('change', e => {
+    if (e.target.closest && e.target.closest('.auth-card')) return;
+    scheduleSave();
+  }, true);
+
+  document.addEventListener('click', e => {
+    if (e.target.matches('.tab-btn') || e.target.closest('.tab-btn')) {
+      setTimeout(scheduleSave, 80);
     }
-  };
-  document.body.appendChild(modal);
+    if (e.target.matches('.btn-mode') || e.target.closest('.btn-mode')) {
+      setTimeout(scheduleSave, 80);
+    }
+  }, true);
+
+  if (page === 'vector.html') {
+    const _origAdd = window.addVector;
+    const _origClear = window.clearAll;
+    const _origRemove = window.removeVector;
+    const _origScale = window.applyScale;
+
+    if (typeof _origAdd === 'function') {
+      window.addVector = function() {
+        const r = _origAdd.apply(this, arguments);
+        setTimeout(scheduleSave, 700);
+        return r;
+      };
+    }
+    if (typeof _origClear === 'function') {
+      window.clearAll = function() {
+        const r = _origClear.apply(this, arguments);
+        setTimeout(scheduleSave, 100);
+        return r;
+      };
+    }
+    if (typeof _origRemove === 'function') {
+      window.removeVector = function() {
+        const r = _origRemove.apply(this, arguments);
+        setTimeout(scheduleSave, 400);
+        return r;
+      };
+    }
+    if (typeof _origScale === 'function') {
+      window.applyScale = function() {
+        const r = _origScale.apply(this, arguments);
+        setTimeout(scheduleSave, 700);
+        return r;
+      };
+    }
+  }
 }
 
-function renderAuthUI(supabase) {
+function buildAuthBtn(supabase) {
   const container = document.querySelector('.header-actions');
   if (!container) return;
   let btn = document.getElementById('auth-btn');
@@ -784,126 +527,270 @@ function renderAuthUI(supabase) {
     btn.className = 'auth-btn-icon';
     container.insertBefore(btn, container.firstChild);
   }
-  const existingDropdown = document.querySelector('.auth-user-dropdown');
-  if (existingDropdown) existingDropdown.remove();
-  if (currentUser) {
-    btn.className = 'auth-btn-icon active-user';
+  document.querySelector('.auth-dropdown')?.remove();
+
+  if (_user) {
+    btn.className = 'auth-btn-icon logged-in';
     btn.innerHTML = '<i class="fa-solid fa-user"></i>';
-    btn.title = currentUser.email;
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      toggleUserDropdown(supabase);
-    };
+    btn.title = _user.email;
+    btn.onclick = e => { e.stopPropagation(); openUserDropdown(supabase, btn); };
   } else {
     btn.className = 'auth-btn-icon';
     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i>';
     btn.title = 'Sign In';
-    btn.onclick = () => {
-      showLoginModal(supabase);
+    btn.onclick = () => openAuthModal(supabase);
+  }
+}
+
+function openUserDropdown(supabase, anchor) {
+  document.querySelector('.auth-dropdown')?.remove();
+  const drop = document.createElement('div');
+  drop.className = 'auth-dropdown';
+  const meta = _user.user_metadata || {};
+  const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || '';
+  drop.innerHTML = `
+    <div class="auth-dropdown-header">
+      ${name ? `<strong>${name}</strong>` : ''}
+      ${_user.email}
+    </div>
+    <button class="auth-dropdown-btn" id="auth-signout-btn">
+      <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+    </button>
+  `;
+  anchor.parentElement.style.position = 'relative';
+  anchor.parentElement.appendChild(drop);
+  drop.querySelector('#auth-signout-btn').onclick = async () => {
+    drop.remove();
+    await supabase.auth.signOut();
+  };
+  const dismiss = e => {
+    if (!drop.contains(e.target) && e.target !== anchor) {
+      drop.remove();
+      document.removeEventListener('click', dismiss);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', dismiss), 0);
+}
+
+function openAuthModal(supabase) {
+  document.querySelector('.auth-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+  const card = document.createElement('div');
+  card.className = 'auth-card';
+  overlay.appendChild(card);
+
+  let mode = 'signin';
+
+  function render() {
+    card.innerHTML = '';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'auth-card-close';
+    closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    closeBtn.onclick = () => overlay.remove();
+    card.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'auth-card-title';
+    title.textContent = mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Sign Up' : 'Reset Password';
+    card.appendChild(title);
+
+    const form = document.createElement('form');
+    form.style.display = 'contents';
+    card.appendChild(form);
+
+    if (mode === 'signup') {
+      const nameRow = document.createElement('div');
+      nameRow.className = 'auth-name-row';
+      nameRow.innerHTML = `
+        <div class="auth-field"><label>First Name</label><input id="af-first" type="text" required></div>
+        <div class="auth-field"><label>Last Name</label><input id="af-last" type="text"></div>
+      `;
+      form.appendChild(nameRow);
+    }
+
+    const emailField = document.createElement('div');
+    emailField.className = 'auth-field';
+    emailField.innerHTML = '<label>Email</label><input id="af-email" type="email" required autocomplete="email">';
+    form.appendChild(emailField);
+
+    if (mode !== 'forgot') {
+      const passField = document.createElement('div');
+      passField.className = 'auth-field';
+      passField.innerHTML = `<label>Password</label><input id="af-pass" type="password" required minlength="6" autocomplete="${mode === 'signin' ? 'current-password' : 'new-password'}">`;
+      form.appendChild(passField);
+    }
+
+    if (mode === 'signin') {
+      const forgotLink = document.createElement('a');
+      forgotLink.className = 'auth-small-link';
+      forgotLink.textContent = 'Forgot password?';
+      forgotLink.onclick = () => { mode = 'forgot'; render(); };
+      form.appendChild(forgotLink);
+    }
+
+    const msgEl = document.createElement('div');
+    msgEl.className = 'auth-msg';
+    form.appendChild(msgEl);
+
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'btn btn-fill';
+    submitBtn.type = 'submit';
+    submitBtn.textContent = mode === 'signin' ? 'Log In' : mode === 'signup' ? 'Sign Up' : 'Send Reset Link';
+    form.appendChild(submitBtn);
+
+    const toggleLink = document.createElement('a');
+    toggleLink.className = 'auth-link';
+    if (mode === 'signin') {
+      toggleLink.textContent = 'Need an account? Sign Up';
+      toggleLink.onclick = () => { mode = 'signup'; render(); };
+    } else if (mode === 'signup') {
+      toggleLink.textContent = 'Already have an account? Sign In';
+      toggleLink.onclick = () => { mode = 'signin'; render(); };
+    } else {
+      toggleLink.textContent = 'Back to Sign In';
+      toggleLink.onclick = () => { mode = 'signin'; render(); };
+    }
+    form.appendChild(toggleLink);
+
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const email = card.querySelector('#af-email')?.value.trim();
+      const pass = card.querySelector('#af-pass')?.value;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      msgEl.className = 'auth-msg';
+      msgEl.innerHTML = '';
+      try {
+        if (mode === 'signup') {
+          const first = card.querySelector('#af-first')?.value.trim();
+          const last = card.querySelector('#af-last')?.value.trim();
+          const { error } = await supabase.auth.signUp({
+            email, password: pass,
+            options: { data: { first_name: first, last_name: last } }
+          });
+          if (error) throw error;
+          msgEl.className = 'auth-msg ok';
+          msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Check your email to confirm your account.';
+        } else if (mode === 'signin') {
+          const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+          if (error) throw error;
+          overlay.remove();
+        } else {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href
+          });
+          if (error) throw error;
+          msgEl.className = 'auth-msg ok';
+          msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Reset link sent. Check your inbox.';
+        }
+      } catch (err) {
+        msgEl.className = 'auth-msg err';
+        msgEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${err.message}`;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = mode === 'signin' ? 'Log In' : mode === 'signup' ? 'Sign Up' : 'Send Reset Link';
+      }
     };
   }
+
+  render();
+  document.body.appendChild(overlay);
+  setTimeout(() => card.querySelector('#af-email')?.focus(), 50);
 }
 
-function setupStateAutoSync() {
-  const pageName = getPageName();
-  if (pageName === 'index.html' || pageName === 'references.html') return;
-
-  document.addEventListener('input', (e) => {
-    if (e.target.matches('input, select, textarea')) {
-      triggerDebouncedSave();
+function openUpdatePasswordModal(supabase) {
+  document.querySelector('.auth-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-overlay';
+  const card = document.createElement('div');
+  card.className = 'auth-card';
+  card.innerHTML = '<div class="auth-card-title">Set New Password</div>';
+  const form = document.createElement('form');
+  form.style.display = 'contents';
+  card.appendChild(form);
+  const field = document.createElement('div');
+  field.className = 'auth-field';
+  field.innerHTML = '<label>New Password</label><input id="af-newpass" type="password" required minlength="6" autocomplete="new-password">';
+  form.appendChild(field);
+  const msgEl = document.createElement('div');
+  msgEl.className = 'auth-msg';
+  form.appendChild(msgEl);
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-fill';
+  btn.type = 'submit';
+  btn.textContent = 'Update Password';
+  form.appendChild(btn);
+  form.onsubmit = async e => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    try {
+      const { error } = await supabase.auth.updateUser({ password: card.querySelector('#af-newpass').value });
+      if (error) throw error;
+      msgEl.className = 'auth-msg ok';
+      msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Password updated!';
+      setTimeout(() => overlay.remove(), 1500);
+    } catch (err) {
+      msgEl.className = 'auth-msg err';
+      msgEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${err.message}`;
+      btn.disabled = false;
+      btn.textContent = 'Update Password';
     }
-  });
-
-  document.addEventListener('change', (e) => {
-    if (e.target.matches('select, input')) {
-      triggerDebouncedSave();
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.tab-btn') || e.target.closest('.btn-mode')) {
-      setTimeout(triggerDebouncedSave, 50);
-    }
-  });
-
-  if (pageName === 'vector.html') {
-    const originalAddVector = window.addVector;
-    const originalClearAll = window.clearAll;
-    const originalRemoveVector = window.removeVector;
-    const originalApplyScale = window.applyScale;
-
-    if (typeof originalAddVector === 'function') {
-      window.addVector = function() {
-        originalAddVector.apply(this, arguments);
-        setTimeout(triggerDebouncedSave, 600);
-      };
-    }
-    if (typeof originalClearAll === 'function') {
-      window.clearAll = function() {
-        originalClearAll.apply(this, arguments);
-        setTimeout(triggerDebouncedSave, 100);
-      };
-    }
-    if (typeof originalRemoveVector === 'function') {
-      window.removeVector = function() {
-        originalRemoveVector.apply(this, arguments);
-        setTimeout(triggerDebouncedSave, 300);
-      };
-    }
-    if (typeof originalApplyScale === 'function') {
-      window.applyScale = function() {
-        originalApplyScale.apply(this, arguments);
-        setTimeout(triggerDebouncedSave, 700);
-      };
-    }
-  }
+  };
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  setTimeout(() => card.querySelector('#af-newpass')?.focus(), 50);
 }
 
-async function initSupabaseAnalytics() {
-  injectStyles();
-  try {
-    let config = window.aimlConfig;
-    if (!config) {
-      try {
-        const resp = await fetch('config.json');
-        if (resp.ok) {
-          config = await resp.json();
-        }
-      } catch (_) {}
-    }
-    if (!config) {
-      try {
-        await loadScript('config.js');
-        config = window.aimlConfig;
-      } catch (_) {}
-    }
-    if (!config || !config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return;
-    await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-    supabaseInstance = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-    const { data: { session } } = await supabaseInstance.auth.getSession();
-    currentUser = session ? session.user : null;
-    renderAuthUI(supabaseInstance);
-    if (currentUser) {
-      await loadStateFromSupabase();
-    }
-    setupStateAutoSync();
-    supabaseInstance.auth.onAuthStateChange(async (event, session) => {
-      const oldUser = currentUser;
-      currentUser = session ? session.user : null;
-      renderAuthUI(supabaseInstance);
-      if (event === 'PASSWORD_RECOVERY') {
-        showUpdatePasswordModal(supabaseInstance);
-      } else if (currentUser && !oldUser) {
-        await loadStateFromSupabase();
-      }
-    });
-  } catch (e) {
-    console.error('Supabase init error:', e);
+async function bootAuth() {
+  injectAuthStyles();
+  let config = window.aimlConfig;
+  if (!config) {
+    try {
+      const r = await fetch('config.json');
+      if (r.ok) config = await r.json();
+    } catch (_) {}
   }
+  if (!config) {
+    try {
+      await loadScript('config.js');
+      config = window.aimlConfig;
+    } catch (_) {}
+  }
+  if (!config || !config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return;
+
+  await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+  _supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+
+  const { data: { session } } = await _supabase.auth.getSession();
+  _user = session?.user ?? null;
+  buildAuthBtn(_supabase);
+
+  if (_user) {
+    await restoreState();
+  }
+
+  wireAutoSave();
+
+  _supabase.auth.onAuthStateChange(async (event, session) => {
+    const prevUser = _user;
+    _user = session?.user ?? null;
+    buildAuthBtn(_supabase);
+    if (event === 'PASSWORD_RECOVERY') {
+      openUpdatePasswordModal(_supabase);
+    } else if (_user && !prevUser) {
+      await restoreState();
+    }
+  });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSupabaseAnalytics);
+  document.addEventListener('DOMContentLoaded', bootAuth);
 } else {
-  initSupabaseAnalytics();
+  bootAuth();
 }
