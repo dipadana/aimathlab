@@ -1,5 +1,0 @@
-{
-  "outputDirectory": ".",
-  "buildCommand": "mkdir -p public && cp *.html *.css *.js *.png public/ && echo 'window.aimlConfig = { SUPABASE_URL: \"$SUPABASE_URL\", SUPABASE_ANON_KEY: \"$SUPABASE_ANON_KEY\" };' > public/config.js",
-  "installCommand": ""
-}
