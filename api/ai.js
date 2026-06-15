@@ -1,7 +1,7 @@
 export const config = { runtime: 'edge' };
 
 const GATEWAY_URL = 'https://gateway.dahono.com/v1/chat/completions';
-const MODEL = 'dahono/ai-chat';
+const MODEL = 'dahono/claude-opus-4.7-thinking-free';
 
 async function callGateway(apiKey, messages, stream) {
   return fetch(GATEWAY_URL, {
