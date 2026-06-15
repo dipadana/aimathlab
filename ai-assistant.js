@@ -191,7 +191,7 @@
 
       cursor.remove();
       const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
-      textEl.textContent = finalDisplayableText;
+      textEl.innerHTML = parseMarkdown(finalDisplayableText);
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
@@ -259,6 +259,37 @@
     }
   }
 
+  function parseMarkdown(text) {
+    // 1. Extract math blocks to protect them
+    const mathBlocks = [];
+    let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g, (match) => {
+      mathBlocks.push(match);
+      return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
+    });
+
+    // 2. Simple markdown replacements
+    // Bold
+    processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Lists
+    processedText = processedText.replace(/^[ \t]*[-*][ \t]+(.*)$/gm, '<li>$1</li>');
+    processedText = processedText.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
+    // Newlines to breaks (for non-list text)
+    // First, remove newlines around <ul> blocks to avoid messy spacing
+    processedText = processedText.replace(/<\/ul>\n+/g, '</ul>');
+    processedText = processedText.replace(/\n+<ul>/g, '<ul>');
+    // Then convert remaining newlines to <br>
+    processedText = processedText.replace(/\n/g, '<br>');
+
+    // 3. Restore math blocks
+    processedText = processedText.replace(/__MATH_BLOCK_(\d+)__/g, (match, index) => {
+      return mathBlocks[parseInt(index, 10)];
+    });
+
+    return processedText;
+  }
+
   function appendMessageUI(role, text) {
     const body = document.getElementById('ai-card-body');
     if (!body) return;
@@ -266,7 +297,7 @@
     msg.className = 'ai-msg ai-msg-' + role;
     msg.innerHTML = `<p class="${role === 'error' ? 'ai-error' : 'ai-stream-text'}">${
       role === 'error' ? '<i class="fa-solid fa-circle-exclamation"></i> ' : ''
-    }${text}</p>`;
+    }${role === 'assistant' ? parseMarkdown(text) : text}</p>`;
     body.appendChild(msg);
     body.scrollTop = body.scrollHeight;
   }
