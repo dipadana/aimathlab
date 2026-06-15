@@ -1165,7 +1165,7 @@ function updateList() {
       <div style="display:flex;align-items:center;gap:6px;width:100%">
         <input type="checkbox" ${v.selected ? 'checked' : ''} onchange="toggleSelect(${i}, this.checked)">
         <span class="dot" style="background:${v.color}"></span>
-        <span class="mono" style="font-size: 14px;font-weight:500;color:${v.color};min-width:22px">${v.name}</span>
+        <span class="mono" style="font-size: 14px;font-weight:500;color:${v.color};min-width:22px">v<sub>${i+1}</sub></span>
         ${chainTag}${scalarTag}
         <button class="remove-btn" onclick="removeVector(${i})" style="margin-left:auto">×</button>
       </div>
