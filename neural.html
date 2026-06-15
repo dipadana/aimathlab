@@ -821,9 +821,10 @@ updateTheoryNote();
 
 AIMathTutor.renderCard('canvas-column-neural');
 
-window.buildAIContext = function () {
+window.buildAIContext = function (userMessage = null) {
   const actFnName = document.getElementById('act-select')?.value || currentActFn;
   const context = [`Active tab: ${currentTab}`];
+  let params = [];
 
   if (currentTab === 'mlp') {
     context.push(`Network architecture: [${arch.join(', ')}] neurons per layer`);
@@ -838,25 +839,33 @@ window.buildAIContext = function () {
     const fn = ACTS[currentActFn];
     context.push(`Viewing activation function: ${fn.label}`);
     context.push(`At x = ${actX.toFixed(3)}: f(x) = ${fn.f(actX).toFixed(4)}, f'(x) = ${fn.df(actX).toFixed(4)}`);
+    params = ['act-select', 'act-x'];
   } else if (currentTab === 'perceptron') {
     const z = pX1*pW1 + pX2*pW2 + pBias;
     const out = ACTS.sigmoid.f(z);
     context.push(`Single neuron: x1=${pX1.toFixed(1)}, x2=${pX2.toFixed(1)}, w1=${pW1.toFixed(1)}, w2=${pW2.toFixed(1)}, b=${pBias.toFixed(1)}`);
     context.push(`z = ${z.toFixed(4)}, σ(z) = ${out.toFixed(4)}`);
+    params = ['p-x1', 'p-x2', 'p-w1', 'p-w2', 'p-b'];
   } else if (currentTab === 'dboundary') {
     let loss = 0;
     dbData.forEach(d => { let {out} = dbForward(d.x); loss += -(d.y*Math.log(out+1e-8)+(1-d.y)*Math.log(1-out+1e-8)); });
     loss /= dbData.length;
     context.push(`XOR decision boundary training: epoch=${dbEpoch}, BCE loss=${loss.toFixed(4)}`);
+    params = ['db-lr'];
   } else if (currentTab === 'backprop') {
     const a1 = ACTS.sigmoid.f(bpW1 * bpX);
     const a2 = ACTS.sigmoid.f(bpW2 * a1);
     const L = 0.5*(a2 - bpY)**2;
     context.push(`Backprop chain: w1=${bpW1.toFixed(3)}, w2=${bpW2.toFixed(3)}, target y=${bpY.toFixed(1)}, output=${a2.toFixed(4)}, loss=${L.toFixed(4)}`);
+    params = ['bp-y'];
+  }
+
+  if (params.length > 0) {
+    context.push(`Controllable Parameter DOM IDs: ${params.join(', ')}`);
   }
 
   const msgs = window.buildAIMessages('Neural Network Visualizer', context);
-  AIMathTutor.ask(msgs, 'ai-card-body');
+  AIMathTutor.ask(msgs, 'ai-card-body', userMessage);
 };
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">

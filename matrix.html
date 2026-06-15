@@ -918,7 +918,7 @@ updateTheoryNote();
 
 AIMathTutor.renderCard('canvas-column-mat');
 
-window.buildAIContext = function () {
+window.buildAIContext = function (userMessage = null) {
   const [a,b,c,d] = mat;
   const det = a*d - b*c;
   const tr  = a+d;
@@ -935,9 +935,10 @@ window.buildAIContext = function () {
     `trace(A) = ${tr.toFixed(4)}`,
     `Eigenvalues: ${eigStr}`,
     `LME input vector: (${lmeVec.x}, ${lmeVec.y}) → output Av = (${(a*lmeVec.x+b*lmeVec.y).toFixed(3)}, ${(c*lmeVec.x+d*lmeVec.y).toFixed(3)})`,
+    `Controllable Parameter DOM IDs: mat-a, mat-b, mat-c, mat-d, lme-x, lme-y`
   ];
   const msgs = window.buildAIMessages('Matrix Transformations', context);
-  AIMathTutor.ask(msgs, 'ai-card-body');
+  AIMathTutor.ask(msgs, 'ai-card-body', userMessage);
 };
 updateMatrix();
 updateLME();

@@ -714,31 +714,42 @@ updateTheoryNote();
 
 AIMathTutor.renderCard('canvas-column-prob');
 
-window.buildAIContext = function () {
+window.buildAIContext = function (userMessage = null) {
   const context = [`Active tab: ${currentTab}`];
+  let params = [];
 
   if (currentTab === 'normal') {
     const prob = normalCDF(normalMu + normalK*normalSigma, normalMu, normalSigma) - normalCDF(normalMu - normalK*normalSigma, normalMu, normalSigma);
     context.push(`Normal distribution N(μ=${normalMu.toFixed(1)}, σ=${normalSigma.toFixed(2)})`);
     context.push(`Shaded area ±${normalK.toFixed(1)}σ = ${(prob*100).toFixed(2)}%`);
+    params = ['normal-mu', 'normal-sigma', 'normal-k'];
   } else if (currentTab === 'bayes') {
     const PB = bayesPA*bayesPBA + (1-bayesPA)*bayesPBNA;
     const PAB = bayesPA*bayesPBA / PB;
     context.push(`P(A)=${bayesPA.toFixed(2)}, P(B|A)=${bayesPBA.toFixed(2)}, P(B|¬A)=${bayesPBNA.toFixed(2)}`);
     context.push(`P(B)=${PB.toFixed(4)}, posterior P(A|B)=${PAB.toFixed(4)}`);
+    params = ['bayes-pa', 'bayes-pba', 'bayes-pbna'];
   } else if (currentTab === 'binom') {
     context.push(`Binomial B(n=${binomN}, p=${binomP.toFixed(2)}), mean=${(binomN*binomP).toFixed(2)}, variance=${(binomN*binomP*(1-binomP)).toFixed(3)}`);
+    params = ['binom-n', 'binom-p'];
   } else if (currentTab === 'clt') {
     context.push(`CLT with n=${cltN} samples per group, source = ${document.getElementById('clt-src').value}`);
+    params = ['clt-n'];
   } else if (currentTab === 'multivar') {
     context.push(`Multivariate Normal: σ_x=${mvSx.toFixed(1)}, σ_y=${mvSy.toFixed(1)}, correlation ρ=${mvRho.toFixed(2)}`);
+    params = ['mv-sx', 'mv-sy', 'mv-rho'];
   } else if (currentTab === 'markov') {
     context.push(`Markov chain: P(A|A)=${mkPaa.toFixed(2)}, P(B|B)=${mkPbb.toFixed(2)}, steps=${mkSteps}`);
     context.push(`Current state: P(A)=${mkState[0].toFixed(3)}, P(B)=${mkState[1].toFixed(3)}`);
+    params = ['mk-paa', 'mk-pbb'];
+  }
+
+  if (params.length > 0) {
+    context.push(`Controllable Parameter DOM IDs: ${params.join(', ')}`);
   }
 
   const msgs = window.buildAIMessages('Probability & Statistics', context);
-  AIMathTutor.ask(msgs, 'ai-card-body');
+  AIMathTutor.ask(msgs, 'ai-card-body', userMessage);
 };
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">

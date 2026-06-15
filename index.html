@@ -1,1003 +1,1502 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-active-lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Math Lab</title>
-<meta name="description" content="Interactive math visualizers for AI. Play around with vectors, matrices, calculus, probability, and neural networks.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css">
-<style>
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden; 
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-}
-
-#bg-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.top-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  backdrop-filter: blur(8px);
-}
-
-.page-shell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; 
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.hub-hero {
-  text-align: center;
-  padding: 3rem 1rem 1.5rem;
-  flex-shrink: 0;
-}
-.hub-hero .title-serif {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  font-weight: 400;
-  color: var(--ink);
-  line-height: 1.25;
-  margin-bottom: 0.6rem;
-}
-.hub-hero .title-serif em {
-  font-style: italic;
-  color: var(--accent);
-}
-.hub-hero .subtitle {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  color: var(--ink2);
-  max-width: 38ch;
-  margin: 0 auto 1.5rem;
-  line-height: 1.6;
-}
-
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.8rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-.top-bar-logo {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
-  color: var(--ink3);
-  letter-spacing: 0.06em;
-}
-.top-bar-logo span { color: var(--accent); }
-
-.card-grid {
-  display: flex;
-  flex-direction: row;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  gap: 18px;
-  padding: 1rem 2rem 2rem 2rem;
-  margin-top: 0;
-  flex: 1;
-  align-items: center; 
-}
-
-.carousel-wrapper {
-  position: relative;
-  display: flex;
-  flex: 1;
-  width: 100%;
-  align-items: stretch;
-}
-
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  border: 1px solid var(--border2);
-  color: var(--ink);
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: var(--shadow);
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
-}
-.carousel-btn:hover {
-  background: var(--surface);
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateY(-50%) scale(1.05);
-}
-.carousel-btn.left { left: 1rem; }
-.carousel-btn.right { right: 1rem; }
-.carousel-btn.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) scale(0.9);
-}
-
-
-.card-grid::-webkit-scrollbar {
-  display: none;
-}
-.card-grid::-webkit-scrollbar-track {
-  background: transparent; 
-  margin: 0 2rem;
-}
-.card-grid::-webkit-scrollbar-thumb {
-  background: var(--surface2);
-  border-radius: 4px;
-}
-.card-grid::-webkit-scrollbar-thumb:hover {
-  background: var(--border);
-}
-
-.module-card {
-  min-width: 340px;
-  max-width: 400px;
-  height: max-content; 
-  flex-shrink: 0;
-  scroll-snap-align: center;
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-}
-.module-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow);
-  border-color: var(--accent);
-}
-
-.card-preview {
-  position: relative;
-  height: 140px;
-  background: var(--canvas-bg);
-  border-bottom: 1px solid var(--border2);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.card-preview canvas {
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
-  border: none;
-}
-
-.card-body {
-  padding: 14px 16px 16px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.card-accent-bar {
-  height: 2px;
-  border-radius: 2px;
-  margin-bottom: 10px;
-}
-.card-title {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-subtitle {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--ink3);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-.card-desc {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 15px;
-  color: var(--ink2);
-  line-height: 1.55;
-  flex: 1;
-}
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-}
-.card-tags {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.card-tag {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--ink3);
-  border: 1px solid var(--border2);
-  border-radius: 3px;
-  padding: 1px 5px;
-}
-.card-open-btn {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  padding: 5px 12px;
-  border-radius: 4px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-  text-decoration: none;
-}
-.card-open-btn:hover { opacity: 0.85; }
-
-.hub-footer {
-  text-align: center;
-  padding: 1.25rem 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  color: var(--ink3);
-  flex-shrink: 0;
-}
-.hub-footer a { color: var(--ink3); text-decoration: underline; text-underline-offset: 2px; }
-
-
-@media (max-width: 768px) {
-  html, body {
-    height: auto;
-    overflow: visible; 
-  }
-  .page-shell {
-    height: auto;
-    overflow: visible;
-  }
-  
-  .hub-hero { padding: 1.5rem 1rem 0.5rem; }
-  .hub-hero .title-serif { font-size: 1.8rem; }
-  .hub-hero .subtitle { font-size: 14px; margin-bottom: 0; }
-  .module-card { min-width: 280px; max-width: 85vw; }
-  .card-grid { padding: 1rem 1rem 1.5rem 1rem; gap: 12px; align-items: stretch; }
-  .card-grid::-webkit-scrollbar-track { margin: 0 1rem; }
-  .hub-footer { padding: 1rem; font-size: 12px; }
-  .card-preview { height: 120px; }
-  .card-body { padding: 12px 14px 14px; }
-  .card-title { font-size: 1.1rem; }
-  .card-desc { font-size: 14px; }
-}
-
-@media (max-height: 700px) and (min-width: 769px) {
-   .hub-hero { padding: 1rem 1rem 0; }
-   .card-grid { padding-top: 0.5rem; }
-   .card-preview { height: 110px; }
-   .card-desc { font-size: 13px; line-height: 1.4; }
-   .hub-footer { padding: 0.5rem; border-top: none; }
-}
-</style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<meta name="author" content="Rico Eriansyah">
-<meta name="keywords" content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab">
-<link rel="icon" type="image/png" href="favicon.png">
-</head>
-<body data-active-lang="en">
-<canvas id="bg-canvas"></canvas>
-
-<header class="top-bar module-header">
-  <span class="top-bar-logo"><span>ai</span> math lab &times; <span style="color: #e02020;">Dahono AI</span></span>
-  <div class="header-actions">
-<a href="references.html" class="docs-btn">
-      <i class="fa-solid fa-book"></i>
-      <span class="docs-text" data-lang="en">Docs</span>
-      <span class="docs-text" data-lang="ja">文書</span>
-      <span class="docs-text" data-lang="id">Dokumen</span>
-    </a>
-<div class="custom-lang-dropdown">
-      <button class="lang-btn-icon" onclick="toggleLangMenu(event)" id="lang-menu-btn" aria-label="Select Language">
-        <i class="fa-solid fa-globe"></i>
-      </button>
-      <ul class="lang-menu" id="lang-menu">
-        <li><button id="lb-en" onclick="setLang('en')">English</button></li>
-        <li><button id="lb-ja" onclick="setLang('ja')">日本語</button></li>
-        <li><button id="lb-id" onclick="setLang('id')">Indonesia</button></li>
-      </ul>
-    </div>
-<button class="theme-btn-icon" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle Theme">
-      <i class="fa-solid fa-moon"></i>
-    </button>
-  </div>
-</header>
-
-
-<div class="page-shell">
-  <div class="hub-hero">
-    <h1 class="title-serif">
-      <span data-lang="en">The Mathematics of<br><em>Artificial Intelligence</em></span>
-      <span data-lang="ja">人工知能の<br><em>数学を学ぶ</em></span>
-      <span data-lang="id">Matematika untuk<br><em>Kecerdasan Buatan</em></span>
-    </h1>
-    <p class="subtitle">
-      <span data-lang="en">Interactive visualizers for the core math behind modern AI. Explore, experiment, and build intuition.</span>
-      <span data-lang="ja">現代AIの核心にある数学をインタラクティブに学ぼう。探索して直感を養う。</span>
-      <span data-lang="id">Visualisasi interaktif untuk matematika inti di balik AI modern. Eksplorasi dan bangun intuisi.</span>
-    </p>
-  </div>
-
-  <div class="carousel-wrapper">
-    <button class="carousel-btn left" onclick="scrollCarousel(-1)">
-      <i class="fa-solid fa-chevron-left"></i>
-    </button>
-    <div class="card-grid" id="main-carousel">    
-    <a class="module-card" href="vector.html" id="card-vector">
-      <div class="card-preview">
-        <canvas id="prev-vector"></canvas>
-      </div>
-      <div class="card-body">
-        <div class="card-accent-bar" style="background:var(--accent)"></div>
-        <div class="card-subtitle">Module 01</div>
-        <div class="card-title">
-          <i class="fa-solid fa-arrow-up-right-dots" style="color: var(--accent); font-size: 15px;"></i>
-          <span data-lang="en">Vectors</span>
-          <span data-lang="ja">ベクトル</span>
-          <span data-lang="id">Vektor</span>
-        </div>
-        <p class="card-desc">
-          <span data-lang="en">Understand vectors by seeing them in action. We cover magnitude, direction, linear combinations, span, and basis.</span>
-          <span data-lang="ja">大きさ・方向・線形結合・スパン・基底  AI特徴空間の言語。</span>
-          <span data-lang="id">Besar, arah, kombinasi linear, span, dan basis  bahasa ruang fitur AI.</span>
-        </p>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="card-tag">2D / 3D</span>
-            <span class="card-tag">Span</span>
-            <span class="card-tag">Basis</span>
-          </div>
-          <span class="card-open-btn">
-            <span data-lang="en">Open</span><span data-lang="ja">開く</span><span data-lang="id">Buka</span>
-            →
-          </span>
-        </div>
-      </div>
-    </a>
-
-    
-    <a class="module-card" href="matrix.html" id="card-matrix">
-      <div class="card-preview">
-        <canvas id="prev-matrix"></canvas>
-      </div>
-      <div class="card-body">
-        <div class="card-accent-bar" style="background:var(--accent3)"></div>
-        <div class="card-subtitle">Module 02</div>
-        <div class="card-title">
-          <i class="fa-solid fa-table-cells" style="color: var(--accent3); font-size: 15px;"></i>
-          <span data-lang="en">Matrices</span>
-          <span data-lang="ja">行列</span>
-          <span data-lang="id">Matriks</span>
-        </div>
-        <p class="card-desc">
-          <span data-lang="en">See how matrices transform space. You can visualize linear transformations, determinants, eigenvalues, and eigenvectors.</span>
-          <span data-lang="ja">線形変換・行列式・固有値・固有ベクトル  ニューラルネットが空間を変換する仕組み。</span>
-          <span data-lang="id">Transformasi linear, determinan, nilai eigen dan vektor eigen  cara jaringan saraf memutar dan menskalakan ruang.</span>
-        </p>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="card-tag">Transform</span>
-            <span class="card-tag">Eigenvalue</span>
-            <span class="card-tag">Det</span>
-          </div>
-          <span class="card-open-btn">
-            <span data-lang="en">Open</span><span data-lang="ja">開く</span><span data-lang="id">Buka</span>
-            →
-          </span>
-        </div>
-      </div>
-    </a>
-
-    
-    <a class="module-card" href="calculus.html" id="card-calculus">
-      <div class="card-preview">
-        <canvas id="prev-calculus"></canvas>
-      </div>
-      <div class="card-body">
-        <div class="card-accent-bar" style="background:var(--accent2)"></div>
-        <div class="card-subtitle">Module 03</div>
-        <div class="card-title">
-          <i class="fa-solid fa-chart-line" style="color: var(--accent2); font-size: 15px;"></i>
-          <span data-lang="en">Calculus</span>
-          <span data-lang="ja">微積分</span>
-          <span data-lang="id">Kalkulus</span>
-        </div>
-        <p class="card-desc">
-          <span data-lang="en">Get a feel for how calculus makes learning possible. We break down derivatives, integrals, and gradient descent.</span>
-          <span data-lang="ja">微分・積分・勾配降下法  すべてのニューラルネットを学習させるエンジン。</span>
-          <span data-lang="id">Turunan, integral, dan penurunan gradien  mesin yang melatih setiap jaringan saraf.</span>
-        </p>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="card-tag">Derivative</span>
-            <span class="card-tag">Integral</span>
-            <span class="card-tag">Gradient</span>
-          </div>
-          <span class="card-open-btn">
-            <span data-lang="en">Open</span><span data-lang="ja">開く</span><span data-lang="id">Buka</span>
-            →
-          </span>
-        </div>
-      </div>
-    </a>
-
-    
-    <a class="module-card" href="probability.html" id="card-prob">
-      <div class="card-preview">
-        <canvas id="prev-prob"></canvas>
-      </div>
-      <div class="card-body">
-        <div class="card-accent-bar" style="background:var(--accent4)"></div>
-        <div class="card-subtitle">Module 04</div>
-        <div class="card-title">
-          <i class="fa-solid fa-dice" style="color: var(--accent4); font-size: 15px;"></i>
-          <span data-lang="en">Probability</span>
-          <span data-lang="ja">確率・統計</span>
-          <span data-lang="id">Probabilitas</span>
-        </div>
-        <p class="card-desc">
-          <span data-lang="en">Grasp how AI handles uncertainty. This module explores normal distributions, Bayes' theorem, and the Central Limit Theorem.</span>
-          <span data-lang="ja">正規分布・ベイズの定理・中心極限定理  AIにおける不確かさの数学的言語。</span>
-          <span data-lang="id">Distribusi normal, teorema Bayes, dan CLT  bahasa matematis ketidakpastian dalam AI.</span>
-        </p>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="card-tag">Bayes</span>
-            <span class="card-tag">Normal</span>
-            <span class="card-tag">CLT</span>
-          </div>
-          <span class="card-open-btn">
-            <span data-lang="en">Open</span><span data-lang="ja">開く</span><span data-lang="id">Buka</span>
-            →
-          </span>
-        </div>
-      </div>
-    </a>
-
-    
-    <a class="module-card" href="neural.html" id="card-neural">
-      <div class="card-preview">
-        <canvas id="prev-neural"></canvas>
-      </div>
-      <div class="card-body">
-        <div class="card-accent-bar" style="background:var(--accent5)"></div>
-        <div class="card-subtitle">Module 05</div>
-        <div class="card-title">
-          <i class="fa-solid fa-network-wired" style="color: var(--accent5); font-size: 15px;"></i>
-          <span data-lang="en">Neural Networks</span>
-          <span data-lang="ja">ニューラルネット</span>
-          <span data-lang="id">Jaringan Saraf</span>
-        </div>
-        <p class="card-desc">
-          <span data-lang="en">Put it all together by training a neural network in your browser. Watch the forward pass, activation functions, and backpropagation in real time.</span>
-          <span data-lang="ja">パーセプトロン・MLP順伝播・活性化関数・勾配降下法  ニューロンから深層学習まで。</span>
-          <span data-lang="id">Perceptron, forward pass MLP, fungsi aktivasi, dan gradient descent  dari neuron ke deep learning.</span>
-        </p>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="card-tag">MLP</span>
-            <span class="card-tag">Backprop</span>
-            <span class="card-tag">ReLU</span>
-          </div>
-          <span class="card-open-btn">
-            <span data-lang="en">Open</span><span data-lang="ja">開く</span><span data-lang="id">Buka</span>
-            →
-          </span>
-        </div>
-      </div>
-    </a>
-
-    </div>
-    <button class="carousel-btn right" onclick="scrollCarousel(1)">
-      <i class="fa-solid fa-chevron-right"></i>
-    </button>
-  </div>
-  <footer class="hub-footer">
-    <span data-lang="en">Created to help you learn the math behind AI. Inspired by <a href="https://www.youtube.com/c/3blue1brown" target="_blank">3Blue1Brown (Grant Sanderson)</a>, <a href="https://www.youtube.com/@mitocw" target="_blank">MIT OpenCourseWare (Gilbert Strang)</a>, <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank">Microsoft Research (Christopher Bishop)</a>, and <a href="https://www.youtube.com/@MichaelNielsen" target="_blank">Michael Nielsen</a>.</span>
-    <span data-lang="ja">AIの数学を学ぶために制作 · 参考: <a href="https://www.youtube.com/c/3blue1brown" target="_blank">3Blue1Brown (Grant Sanderson)</a>, <a href="https://www.youtube.com/@mitocw" target="_blank">MIT OpenCourseWare (Gilbert Strang)</a>, <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank">Microsoft Research (Christopher Bishop)</a>,と <a href="https://www.youtube.com/@MichaelNielsen" target="_blank">Michael Nielsen</a>.</span>
-    <span data-lang="id">Dibuat untuk belajar matematika di balik AI · Sumber: <a href="https://www.youtube.com/c/3blue1brown" target="_blank">3Blue1Brown (Grant Sanderson)</a>, <a href="https://www.youtube.com/@mitocw" target="_blank">MIT OpenCourseWare (Gilbert Strang)</a>, <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank">Microsoft Research (Christopher Bishop)</a>, dan <a href="https://www.youtube.com/@MichaelNielsen" target="_blank">Michael Nielsen</a>.</span>
-  </footer>
-</div>
-
-<div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
-  Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
-</div>
-
-<script src="theme.js"></script>
-<script>
-function scrollCarousel(dir) {
-  const c = document.getElementById('main-carousel');
-  const card = c.querySelector('.module-card');
-  if (!card) return;
-  const cardWidth = card.offsetWidth + 18; 
-  c.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
-}
-
-function updateCarouselButtons() {
-  const c = document.getElementById('main-carousel');
-  if (!c) return;
-  const leftBtn = document.querySelector('.carousel-btn.left');
-  const rightBtn = document.querySelector('.carousel-btn.right');
-  if (!leftBtn || !rightBtn) return;
-  
-  if (c.scrollLeft <= 5) {
-    leftBtn.classList.add('hidden');
-  } else {
-    leftBtn.classList.remove('hidden');
-  }
-  
-  if (c.scrollLeft + c.clientWidth >= c.scrollWidth - 5) {
-    rightBtn.classList.add('hidden');
-  } else {
-    rightBtn.classList.remove('hidden');
-  }
-}
-
-function toggleLangMenu(e) {
-  e.stopPropagation();
-  document.getElementById('lang-menu').classList.toggle('show');
-}
-window.addEventListener('click', () => {
-  const m = document.getElementById('lang-menu');
-  if(m) m.classList.remove('show');
-});
-
-function setLang(lang) {
-  document.body.setAttribute('data-active-lang', lang);
-  document.documentElement.setAttribute('lang', lang === 'ja' ? 'ja' : lang === 'id' ? 'id' : 'en');
-  ['en','ja','id'].forEach(l => {
-    const btn = document.getElementById('lb-'+l);
-    if(btn) btn.classList.toggle('active', l === lang);
-  });
-  localStorage.setItem('aiml-lang', lang);
-}
-
-const saved = localStorage.getItem('aiml-lang');
-setTimeout(() => { if (saved) setLang(saved); }, 0);
-
-
-
-
-function drawVectorPreview(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  
-  function render(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dark = isDark();
-    ctx.clearRect(0, 0, w, h);
-    const cx = w/2, cy = h/2;
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
-    ctx.lineWidth = 0.5;
-    for (let i = -5; i <= 5; i++) {
-      const px = cx + i * 22; const py = cy + i * 22;
-      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, h); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(w, py); ctx.stroke();
-    }
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
-    
-    const t = time / 1000;
-    const arrows = [
-      {dx: 2.5 * Math.cos(t), dy: -2 * Math.sin(t), color: dark?'#6a9fd8':'#2a5caa'},
-      {dx: -1.5 * Math.cos(t*1.3), dy: -2.5 * Math.sin(t*0.8), color: dark?'#d47070':'#b84040'},
-    ];
-    arrows.forEach(a => {
-      const ex = cx + a.dx*22, ey = cy - a.dy*22;
-      const angle = Math.atan2(ey-cy, ex-cx);
-      const dx2=ex-cx, dy2=ey-cy, len=Math.sqrt(dx2*dx2+dy2*dy2);
-      const hl = Math.min(10, len*0.3);
-      ctx.strokeStyle = a.color; ctx.lineWidth = 2; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ex - Math.cos(angle)*hl*0.5, ey - Math.sin(angle)*hl*0.5); ctx.stroke();
-      if (len > 2) {
-        ctx.fillStyle = a.color;
-        ctx.beginPath();
-        ctx.moveTo(ex,ey);
-        ctx.lineTo(ex-hl*Math.cos(angle-0.45), ey-hl*Math.sin(angle-0.45));
-        ctx.lineTo(ex-hl*0.45*Math.cos(angle), ey-hl*0.45*Math.sin(angle));
-        ctx.lineTo(ex-hl*Math.cos(angle+0.45), ey-hl*Math.sin(angle+0.45));
-        ctx.closePath(); ctx.fill();
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Math Lab</title>
+    <meta
+      name="description"
+      content="Interactive math visualizers for AI. Play around with vectors, matrices, calculus, probability, and neural networks."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
       }
-    });
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
 
-function drawMatrixPreview(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  
-  function render(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dark = isDark();
-    ctx.clearRect(0, 0, w, h);
-    const cx = w/2, cy = h/2, s = 28;
-    
-    const t = time / 1500;
-    const m = [1.2 + 0.3*Math.sin(t), 0.5*Math.cos(t*1.2), 0.3*Math.sin(t*0.8), 1.1 + 0.3*Math.cos(t)]; 
-    function tx(x, y) { return [cx + (m[0]*x + m[1]*y)*s, cy - (m[2]*x + m[3]*y)*s]; }
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
-    ctx.setLineDash([4,3]);
-    ctx.beginPath(); ctx.rect(cx, cy-s, s, s); ctx.stroke();
-    ctx.setLineDash([]);
-    
-    const corners = [[0,0],[1,0],[1,1],[0,1]];
-    const tc = corners.map(([x,y]) => tx(x,y));
-    ctx.strokeStyle = dark ? '#5aba80' : '#2e7d52'; ctx.lineWidth = 1.5;
-    ctx.fillStyle = dark ? 'rgba(90,186,128,0.1)' : 'rgba(46,125,82,0.1)';
-    ctx.beginPath();
-    ctx.moveTo(...tc[0]);
-    tc.forEach(p => ctx.lineTo(...p));
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    
-    const [e1x, e1y] = tx(1, 0);
-    const [e2x, e2y] = tx(0, 1);
-    function arrow(x1,y1,x2,y2,color) {
-      const ang = Math.atan2(y2-y1,x2-x1);
-      const len = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
-      if (len < 2) return;
-      const hl=Math.min(8, len*0.3);
-      ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2-Math.cos(ang)*hl*0.5, y2-Math.sin(ang)*hl*0.5); ctx.stroke();
-      ctx.fillStyle=color; ctx.beginPath();
-      ctx.moveTo(x2,y2); ctx.lineTo(x2-hl*Math.cos(ang-0.4),y2-hl*Math.sin(ang-0.4));
-      ctx.lineTo(x2-hl*Math.cos(ang+0.4),y2-hl*Math.sin(ang+0.4)); ctx.closePath(); ctx.fill();
-    }
-    arrow(cx,cy,e1x,e1y, dark?'#6a9fd8':'#2a5caa');
-    arrow(cx,cy,e2x,e2y, dark?'#d4a06a':'#8b5a2b');
-    
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
-
-function drawCalculusPreview(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  
-  function render(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dark = isDark();
-    ctx.clearRect(0, 0, w, h);
-    const cx = w/2, cy = h/2 + 10;
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(10,cy); ctx.lineTo(w-10,cy); ctx.stroke();
-    
-    ctx.strokeStyle = dark ? '#d47070' : '#b84040'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath();
-    for (let px = 10; px <= w-10; px++) {
-      const x = (px - cx) / 25;
-      const y = Math.sin(x) * 35;
-      if (px === 10) ctx.moveTo(px, cy - y);
-      else ctx.lineTo(px, cy - y);
-    }
-    ctx.stroke();
-    
-    const t = time / 1000;
-    const tx0 = Math.sin(t) * 2; 
-    const ty0 = Math.sin(tx0), slope = Math.cos(tx0);
-    const px0 = cx + tx0*25, py0 = cy - ty0*35;
-    const dx2 = 30;
-    ctx.strokeStyle = dark ? '#d4a06a' : '#9a6e00'; ctx.lineWidth = 1.5;
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(px0-dx2, py0+slope*dx2*35/25);
-    ctx.lineTo(px0+dx2, py0-slope*dx2*35/25);
-    ctx.stroke();
-    ctx.fillStyle = dark ? '#d4a06a' : '#9a6e00';
-    ctx.beginPath(); ctx.arc(px0, py0, 4, 0, Math.PI*2); ctx.fill();
-    
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
-
-function drawProbPreview(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  
-  function render(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dark = isDark();
-    ctx.clearRect(0, 0, w, h);
-    const cx = w/2, base = h - 20;
-    const mu = 0;
-    const sigma = 0.8 + 0.3 * Math.sin(time / 800);
-    function normalY(x) {
-      return Math.exp(-0.5*((x-mu)/sigma)**2) / (sigma*Math.sqrt(2*Math.PI));
-    }
-    const scaleX = 45, scaleY = 160;
-    ctx.fillStyle = dark ? 'rgba(154,136,216,0.18)' : 'rgba(91,74,158,0.1)';
-    ctx.strokeStyle = dark ? '#9a88d8' : '#5b4a9e'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let px = 10; px <= w-10; px++) {
-      const x = (px - cx) / scaleX;
-      const y = normalY(x) * scaleY;
-      if (px === 10) ctx.moveTo(px, base - y);
-      else ctx.lineTo(px, base - y);
-    }
-    ctx.lineTo(w-10, base); ctx.lineTo(10, base); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(10,base); ctx.lineTo(w-10,base); ctx.stroke();
-    
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
-
-function drawNeuralPreview(canvas) {
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  
-  function render(time) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dark = isDark();
-    ctx.clearRect(0, 0, w, h);
-    const neurons = [
-      [{x: w*0.12, y: h*0.35}, {x: w*0.12, y: h*0.65}],
-      [{x: w*0.37, y: h*0.22}, {x: w*0.37, y: h*0.5}, {x: w*0.37, y: h*0.78}],
-      [{x: w*0.63, y: h*0.35}, {x: w*0.63, y: h*0.65}],
-      [{x: w*0.88, y: h*0.5}],
-    ];
-    const colors = [
-      dark ? '#6a9fd8' : '#2a5caa',
-      dark ? '#5aba80' : '#2e7d52',
-      dark ? '#d47070' : '#b84040',
-      dark ? '#d4a06a' : '#9a6e00',
-    ];
-    
-    ctx.lineWidth = 0.8;
-    for (let li = 0; li < neurons.length-1; li++) {
-      neurons[li].forEach((a, i) => {
-        neurons[li+1].forEach((b, j) => {
-          
-          const v = Math.sin(li*10 + i*5 + j) > 0 ? 1 : -1;
-          ctx.strokeStyle = v > 0
-            ? (dark ? 'rgba(106,159,216,0.25)' : 'rgba(42,92,170,0.2)')
-            : (dark ? 'rgba(212,112,112,0.25)' : 'rgba(184,64,64,0.2)');
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-          
-          
-          const pulseT = ((time/2000) + (li*0.3 + i*0.2 + j*0.5)) % 1.0;
-          if (pulseT > 0 && pulseT < 0.2) {
-             const prog = pulseT * 5; 
-             const px = a.x + (b.x-a.x)*prog;
-             const py = a.y + (b.y-a.y)*prog;
-             ctx.fillStyle = v > 0 ? (dark?'#6a9fd8':'#2a5caa') : (dark?'#d47070':'#b84040');
-             ctx.globalAlpha = Math.sin(prog * Math.PI);
-             ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2); ctx.fill();
-             ctx.globalAlpha = 1;
-          }
-        });
-      });
-    }
-    
-    neurons.forEach((layer, li) => {
-      layer.forEach((n, i) => {
-        ctx.fillStyle = dark ? colors[li] : colors[li];
-        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)';
-        ctx.lineWidth = 1;
-        
-        const glow = Math.sin(time/500 + li + i) * 0.5 + 0.5;
-        const radius = 6 + glow * 1.5;
-        ctx.beginPath(); ctx.arc(n.x, n.y, radius, 0, Math.PI*2);
-        ctx.fill(); ctx.stroke();
-      });
-    });
-    
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
-
-function initBackgroundAnimation() {
-  const canvas = document.getElementById('bg-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  
-  let w, h;
-  const nodes = [];
-  const numNodes = Math.min(80, Math.floor(window.innerWidth / 15));
-  
-  function resize() {
-    w = window.innerWidth;
-    h = window.innerHeight;
-    canvas.width = w * (window.devicePixelRatio || 1);
-    canvas.height = h * (window.devicePixelRatio || 1);
-    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-  }
-  
-  window.addEventListener('resize', resize);
-  resize();
-  
-  const symbols = [
-    { text: '∑', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '∫', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '∂', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '∞', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '∇', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: 'π', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '{ }', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '</>', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: 'λ', family: "'JetBrains Mono', monospace", weight: 'normal' },
-    { text: '\uf0c3', family: "'Font Awesome 6 Free'", weight: '900' }, 
-    { text: '\uf610', family: "'Font Awesome 6 Free'", weight: '900' }, 
-    { text: '\uf471', family: "'Font Awesome 6 Free'", weight: '900' }, 
-    { text: '\uf5dc', family: "'Font Awesome 6 Free'", weight: '900' }  
-  ];
-  for(let i = 0; i < numNodes; i++) {
-    const isSymbol = Math.random() > 0.65;
-    nodes.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      radius: Math.random() * 2 + 1,
-      symbolObj: isSymbol ? symbols[Math.floor(Math.random() * symbols.length)] : null,
-      size: isSymbol ? Math.random() * 10 + 12 : null
-    });
-  }
-  
-  function render() {
-    ctx.clearRect(0, 0, w, h);
-    const dark = isDark();
-    
-    
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)';
-    ctx.lineWidth = 1;
-    const gridSize = 50;
-    const offsetX = (Date.now() * 0.005) % (gridSize * 4);
-    const offsetY = (Date.now() * 0.005) % (gridSize * 4);
-    
-    ctx.beginPath();
-    for(let x = -offsetX; x < w; x += gridSize) {
-      ctx.moveTo(x, 0); ctx.lineTo(x, h);
-    }
-    for(let y = -offsetY; y < h; y += gridSize) {
-      ctx.moveTo(0, y); ctx.lineTo(w, y);
-    }
-    ctx.stroke();
-
-    ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for(let x = -offsetX; x < w; x += gridSize * 4) {
-      ctx.moveTo(x, 0); ctx.lineTo(x, h);
-    }
-    for(let y = -offsetY; y < h; y += gridSize * 4) {
-      ctx.moveTo(0, y); ctx.lineTo(w, y);
-    }
-    ctx.stroke();
-    
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    nodes.forEach(n => {
-      n.x += n.vx;
-      n.y += n.vy;
-      if (n.x < -30) n.x = w + 30;
-      else if (n.x > w + 30) n.x = -30;
-      if (n.y < -30) n.y = h + 30;
-      else if (n.y > h + 30) n.y = -30;
-      
-      if (n.symbolObj) {
-        ctx.font = `${n.symbolObj.weight} ${n.size}px ${n.symbolObj.family}`;
-        ctx.fillStyle = dark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)';
-        ctx.fillText(n.symbolObj.text, n.x, n.y);
-      } else {
-        ctx.fillStyle = dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-        ctx.fill();
+      body {
+        display: flex;
+        flex-direction: column;
       }
-    });
-    
-    const maxDist = 150; 
-    for(let i = 0; i < numNodes; i++) {
-      for(let j = i + 1; j < numNodes; j++) {
-        const dx = nodes[i].x - nodes[j].x;
-        const dy = nodes[i].y - nodes[j].y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
-        if (dist < maxDist) {
-          const alpha = (1 - dist/maxDist) * (dark ? 0.15 : 0.12); 
-          ctx.strokeStyle = dark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.stroke();
+
+      #bg-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: color-mix(in srgb, var(--surface) 90%, transparent);
+        backdrop-filter: blur(8px);
+      }
+
+      .page-shell {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .hub-hero {
+        text-align: center;
+        padding: 3rem 1rem 1.5rem;
+        flex-shrink: 0;
+      }
+      .hub-hero .title-serif {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.8rem);
+        font-weight: 400;
+        color: var(--ink);
+        line-height: 1.25;
+        margin-bottom: 0.6rem;
+      }
+      .hub-hero .title-serif em {
+        font-style: italic;
+        color: var(--accent);
+      }
+      .hub-hero .subtitle {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 16px;
+        color: var(--ink2);
+        max-width: 38ch;
+        margin: 0 auto 1.5rem;
+        line-height: 1.6;
+      }
+
+      .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .top-bar-logo {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 15px;
+        color: var(--ink3);
+        letter-spacing: 0.06em;
+      }
+      .top-bar-logo span {
+        color: var(--accent);
+      }
+
+      .card-grid {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 18px;
+        padding: 1rem 2rem 2rem 2rem;
+        margin-top: 0;
+        flex: 1;
+        align-items: center;
+      }
+
+      .carousel-wrapper {
+        position: relative;
+        display: flex;
+        flex: 1;
+        width: 100%;
+        align-items: stretch;
+      }
+
+      .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: color-mix(in srgb, var(--surface) 90%, transparent);
+        border: 1px solid var(--border2);
+        color: var(--ink);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: var(--shadow);
+        transition: all 0.2s;
+        backdrop-filter: blur(8px);
+      }
+      .carousel-btn:hover {
+        background: var(--surface);
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-50%) scale(1.05);
+      }
+      .carousel-btn.left {
+        left: 1rem;
+      }
+      .carousel-btn.right {
+        right: 1rem;
+      }
+      .carousel-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-50%) scale(0.9);
+      }
+
+      .card-grid::-webkit-scrollbar {
+        display: none;
+      }
+      .card-grid::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 0 2rem;
+      }
+      .card-grid::-webkit-scrollbar-thumb {
+        background: var(--surface2);
+        border-radius: 4px;
+      }
+      .card-grid::-webkit-scrollbar-thumb:hover {
+        background: var(--border);
+      }
+
+      .module-card {
+        min-width: 340px;
+        max-width: 400px;
+        height: max-content;
+        flex-shrink: 0;
+        scroll-snap-align: center;
+        background: color-mix(in srgb, var(--surface) 85%, transparent);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        overflow: hidden;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          border-color 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+      }
+      .module-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow);
+        border-color: var(--accent);
+      }
+
+      .card-preview {
+        position: relative;
+        height: 140px;
+        background: var(--canvas-bg);
+        border-bottom: 1px solid var(--border2);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .card-preview canvas {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+      }
+
+      .card-body {
+        padding: 14px 16px 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .card-accent-bar {
+        height: 2px;
+        border-radius: 2px;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--ink);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-subtitle {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ink3);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .card-desc {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 15px;
+        color: var(--ink2);
+        line-height: 1.55;
+        flex: 1;
+      }
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+      .card-tags {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .card-tag {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ink3);
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        padding: 1px 5px;
+      }
+      .card-open-btn {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        padding: 5px 12px;
+        border-radius: 4px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: opacity 0.15s;
+        white-space: nowrap;
+        text-decoration: none;
+      }
+      .card-open-btn:hover {
+        opacity: 0.85;
+      }
+
+      .hub-footer {
+        text-align: center;
+        padding: 1.25rem 1rem;
+        border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        color: var(--ink3);
+        flex-shrink: 0;
+      }
+      .hub-footer a {
+        color: var(--ink3);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      @media (max-width: 768px) {
+        html,
+        body {
+          height: auto;
+          overflow: visible;
+        }
+        .page-shell {
+          height: auto;
+          overflow: visible;
+        }
+
+        .hub-hero {
+          padding: 1.5rem 1rem 0.5rem;
+        }
+        .hub-hero .title-serif {
+          font-size: 1.8rem;
+        }
+        .hub-hero .subtitle {
+          font-size: 14px;
+          margin-bottom: 0;
+        }
+        .module-card {
+          min-width: 280px;
+          max-width: 85vw;
+        }
+        .card-grid {
+          padding: 1rem 1rem 1.5rem 1rem;
+          gap: 12px;
+          align-items: stretch;
+        }
+        .card-grid::-webkit-scrollbar-track {
+          margin: 0 1rem;
+        }
+        .hub-footer {
+          padding: 1rem;
+          font-size: 12px;
+        }
+        .card-preview {
+          height: 120px;
+        }
+        .card-body {
+          padding: 12px 14px 14px;
+        }
+        .card-title {
+          font-size: 1.1rem;
+        }
+        .card-desc {
+          font-size: 14px;
         }
       }
-    }
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-}
 
-window.addEventListener('load', () => {
-  initBackgroundAnimation();
-  drawVectorPreview(document.getElementById('prev-vector'));
-  drawMatrixPreview(document.getElementById('prev-matrix'));
-  drawCalculusPreview(document.getElementById('prev-calculus'));
-  drawProbPreview(document.getElementById('prev-prob'));
-  drawNeuralPreview(document.getElementById('prev-neural'));
-  
-  const c = document.getElementById('main-carousel');
-  if (c) {
-    c.addEventListener('scroll', updateCarouselButtons);
-    window.addEventListener('resize', updateCarouselButtons);
-    
-    setTimeout(updateCarouselButtons, 50);
-  }
-});
+      @media (max-height: 700px) and (min-width: 769px) {
+        .hub-hero {
+          padding: 1rem 1rem 0;
+        }
+        .card-grid {
+          padding-top: 0.5rem;
+        }
+        .card-preview {
+          height: 110px;
+        }
+        .card-desc {
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .hub-footer {
+          padding: 0.5rem;
+          border-top: none;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <meta name="author" content="Rico Eriansyah" />
+    <meta
+      name="keywords"
+      content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab"
+    />
+    <link rel="icon" type="image/png" href="favicon.png" />
+  </head>
+  <body data-active-lang="en">
+    <canvas id="bg-canvas"></canvas>
 
-</script>
-</body>
+    <header class="top-bar module-header">
+      <span class="top-bar-logo"
+        ><span>ai</span> math lab &times;
+        <span
+          style="
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family:
+              ui-sans-serif,
+              system-ui,
+              sans-serif,
+              &quot;Apple Color Emoji&quot;,
+              &quot;Segoe UI Emoji&quot;,
+              Segoe UI Symbol,
+              &quot;Noto Color Emoji&quot;;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+          "
+          ><img
+            src="dahono_logo.svg"
+            alt="Dahono Labs"
+            style="
+              height: 1em;
+              width: auto;
+              border-radius: 2px;
+              vertical-align: middle;
+            "
+          />
+          Dahono Labs.</span
+        ></span
+      >
+      <div class="header-actions">
+        <a href="references.html" class="docs-btn">
+          <i class="fa-solid fa-book"></i>
+          <span class="docs-text" data-lang="en">Docs</span>
+          <span class="docs-text" data-lang="ja">文書</span>
+          <span class="docs-text" data-lang="id">Dokumen</span>
+        </a>
+        <div class="custom-lang-dropdown">
+          <button
+            class="lang-btn-icon"
+            onclick="toggleLangMenu(event)"
+            id="lang-menu-btn"
+            aria-label="Select Language"
+          >
+            <i class="fa-solid fa-globe"></i>
+          </button>
+          <ul class="lang-menu" id="lang-menu">
+            <li><button id="lb-en" onclick="setLang('en')">English</button></li>
+            <li><button id="lb-ja" onclick="setLang('ja')">日本語</button></li>
+            <li>
+              <button id="lb-id" onclick="setLang('id')">Indonesia</button>
+            </li>
+          </ul>
+        </div>
+        <button
+          class="theme-btn-icon"
+          onclick="toggleTheme()"
+          id="theme-btn"
+          aria-label="Toggle Theme"
+        >
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <div class="hub-hero">
+        <h1 class="title-serif">
+          <span data-lang="en"
+            >The Mathematics of<br /><em>Artificial Intelligence</em></span
+          >
+          <span data-lang="ja">人工知能の<br /><em>数学を学ぶ</em></span>
+          <span data-lang="id"
+            >Matematika untuk<br /><em>Kecerdasan Buatan</em></span
+          >
+        </h1>
+        <p class="subtitle">
+          <span data-lang="en"
+            >Interactive visualizers for the core math behind modern AI.
+            Explore, experiment, and build intuition.</span
+          >
+          <span data-lang="ja"
+            >現代AIの核心にある数学をインタラクティブに学ぼう。探索して直感を養う。</span
+          >
+          <span data-lang="id"
+            >Visualisasi interaktif untuk matematika inti di balik AI modern.
+            Eksplorasi dan bangun intuisi.</span
+          >
+        </p>
+      </div>
+
+      <div class="carousel-wrapper">
+        <button class="carousel-btn left" onclick="scrollCarousel(-1)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="card-grid" id="main-carousel">
+          <a class="module-card" href="vector.html" id="card-vector">
+            <div class="card-preview">
+              <canvas id="prev-vector"></canvas>
+            </div>
+            <div class="card-body">
+              <div
+                class="card-accent-bar"
+                style="background: var(--accent)"
+              ></div>
+              <div class="card-subtitle">Module 01</div>
+              <div class="card-title">
+                <i
+                  class="fa-solid fa-arrow-up-right-dots"
+                  style="color: var(--accent); font-size: 15px"
+                ></i>
+                <span data-lang="en">Vectors</span>
+                <span data-lang="ja">ベクトル</span>
+                <span data-lang="id">Vektor</span>
+              </div>
+              <p class="card-desc">
+                <span data-lang="en"
+                  >Understand vectors by seeing them in action. We cover
+                  magnitude, direction, linear combinations, span, and
+                  basis.</span
+                >
+                <span data-lang="ja"
+                  >大きさ・方向・線形結合・スパン・基底 AI特徴空間の言語。</span
+                >
+                <span data-lang="id"
+                  >Besar, arah, kombinasi linear, span, dan basis bahasa ruang
+                  fitur AI.</span
+                >
+              </p>
+              <div class="card-footer">
+                <div class="card-tags">
+                  <span class="card-tag">2D / 3D</span>
+                  <span class="card-tag">Span</span>
+                  <span class="card-tag">Basis</span>
+                </div>
+                <span class="card-open-btn">
+                  <span data-lang="en">Open</span
+                  ><span data-lang="ja">開く</span
+                  ><span data-lang="id">Buka</span>
+                  →
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <a class="module-card" href="matrix.html" id="card-matrix">
+            <div class="card-preview">
+              <canvas id="prev-matrix"></canvas>
+            </div>
+            <div class="card-body">
+              <div
+                class="card-accent-bar"
+                style="background: var(--accent3)"
+              ></div>
+              <div class="card-subtitle">Module 02</div>
+              <div class="card-title">
+                <i
+                  class="fa-solid fa-table-cells"
+                  style="color: var(--accent3); font-size: 15px"
+                ></i>
+                <span data-lang="en">Matrices</span>
+                <span data-lang="ja">行列</span>
+                <span data-lang="id">Matriks</span>
+              </div>
+              <p class="card-desc">
+                <span data-lang="en"
+                  >See how matrices transform space. You can visualize linear
+                  transformations, determinants, eigenvalues, and
+                  eigenvectors.</span
+                >
+                <span data-lang="ja"
+                  >線形変換・行列式・固有値・固有ベクトル
+                  ニューラルネットが空間を変換する仕組み。</span
+                >
+                <span data-lang="id"
+                  >Transformasi linear, determinan, nilai eigen dan vektor eigen
+                  cara jaringan saraf memutar dan menskalakan ruang.</span
+                >
+              </p>
+              <div class="card-footer">
+                <div class="card-tags">
+                  <span class="card-tag">Transform</span>
+                  <span class="card-tag">Eigenvalue</span>
+                  <span class="card-tag">Det</span>
+                </div>
+                <span class="card-open-btn">
+                  <span data-lang="en">Open</span
+                  ><span data-lang="ja">開く</span
+                  ><span data-lang="id">Buka</span>
+                  →
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <a class="module-card" href="calculus.html" id="card-calculus">
+            <div class="card-preview">
+              <canvas id="prev-calculus"></canvas>
+            </div>
+            <div class="card-body">
+              <div
+                class="card-accent-bar"
+                style="background: var(--accent2)"
+              ></div>
+              <div class="card-subtitle">Module 03</div>
+              <div class="card-title">
+                <i
+                  class="fa-solid fa-chart-line"
+                  style="color: var(--accent2); font-size: 15px"
+                ></i>
+                <span data-lang="en">Calculus</span>
+                <span data-lang="ja">微積分</span>
+                <span data-lang="id">Kalkulus</span>
+              </div>
+              <p class="card-desc">
+                <span data-lang="en"
+                  >Get a feel for how calculus makes learning possible. We break
+                  down derivatives, integrals, and gradient descent.</span
+                >
+                <span data-lang="ja"
+                  >微分・積分・勾配降下法
+                  すべてのニューラルネットを学習させるエンジン。</span
+                >
+                <span data-lang="id"
+                  >Turunan, integral, dan penurunan gradien mesin yang melatih
+                  setiap jaringan saraf.</span
+                >
+              </p>
+              <div class="card-footer">
+                <div class="card-tags">
+                  <span class="card-tag">Derivative</span>
+                  <span class="card-tag">Integral</span>
+                  <span class="card-tag">Gradient</span>
+                </div>
+                <span class="card-open-btn">
+                  <span data-lang="en">Open</span
+                  ><span data-lang="ja">開く</span
+                  ><span data-lang="id">Buka</span>
+                  →
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <a class="module-card" href="probability.html" id="card-prob">
+            <div class="card-preview">
+              <canvas id="prev-prob"></canvas>
+            </div>
+            <div class="card-body">
+              <div
+                class="card-accent-bar"
+                style="background: var(--accent4)"
+              ></div>
+              <div class="card-subtitle">Module 04</div>
+              <div class="card-title">
+                <i
+                  class="fa-solid fa-dice"
+                  style="color: var(--accent4); font-size: 15px"
+                ></i>
+                <span data-lang="en">Probability</span>
+                <span data-lang="ja">確率・統計</span>
+                <span data-lang="id">Probabilitas</span>
+              </div>
+              <p class="card-desc">
+                <span data-lang="en"
+                  >Grasp how AI handles uncertainty. This module explores normal
+                  distributions, Bayes' theorem, and the Central Limit
+                  Theorem.</span
+                >
+                <span data-lang="ja"
+                  >正規分布・ベイズの定理・中心極限定理
+                  AIにおける不確かさの数学的言語。</span
+                >
+                <span data-lang="id"
+                  >Distribusi normal, teorema Bayes, dan CLT bahasa matematis
+                  ketidakpastian dalam AI.</span
+                >
+              </p>
+              <div class="card-footer">
+                <div class="card-tags">
+                  <span class="card-tag">Bayes</span>
+                  <span class="card-tag">Normal</span>
+                  <span class="card-tag">CLT</span>
+                </div>
+                <span class="card-open-btn">
+                  <span data-lang="en">Open</span
+                  ><span data-lang="ja">開く</span
+                  ><span data-lang="id">Buka</span>
+                  →
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <a class="module-card" href="neural.html" id="card-neural">
+            <div class="card-preview">
+              <canvas id="prev-neural"></canvas>
+            </div>
+            <div class="card-body">
+              <div
+                class="card-accent-bar"
+                style="background: var(--accent5)"
+              ></div>
+              <div class="card-subtitle">Module 05</div>
+              <div class="card-title">
+                <i
+                  class="fa-solid fa-network-wired"
+                  style="color: var(--accent5); font-size: 15px"
+                ></i>
+                <span data-lang="en">Neural Networks</span>
+                <span data-lang="ja">ニューラルネット</span>
+                <span data-lang="id">Jaringan Saraf</span>
+              </div>
+              <p class="card-desc">
+                <span data-lang="en"
+                  >Put it all together by training a neural network in your
+                  browser. Watch the forward pass, activation functions, and
+                  backpropagation in real time.</span
+                >
+                <span data-lang="ja"
+                  >パーセプトロン・MLP順伝播・活性化関数・勾配降下法
+                  ニューロンから深層学習まで。</span
+                >
+                <span data-lang="id"
+                  >Perceptron, forward pass MLP, fungsi aktivasi, dan gradient
+                  descent dari neuron ke deep learning.</span
+                >
+              </p>
+              <div class="card-footer">
+                <div class="card-tags">
+                  <span class="card-tag">MLP</span>
+                  <span class="card-tag">Backprop</span>
+                  <span class="card-tag">ReLU</span>
+                </div>
+                <span class="card-open-btn">
+                  <span data-lang="en">Open</span
+                  ><span data-lang="ja">開く</span
+                  ><span data-lang="id">Buka</span>
+                  →
+                </span>
+              </div>
+            </div>
+          </a>
+        </div>
+        <button class="carousel-btn right" onclick="scrollCarousel(1)">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+      <footer class="hub-footer">
+        <span data-lang="en"
+          >Created to help you learn the math behind AI. Inspired by
+          <a href="https://www.youtube.com/c/3blue1brown" target="_blank"
+            >3Blue1Brown (Grant Sanderson)</a
+          >,
+          <a href="https://www.youtube.com/@mitocw" target="_blank"
+            >MIT OpenCourseWare (Gilbert Strang)</a
+          >,
+          <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank"
+            >Microsoft Research (Christopher Bishop)</a
+          >, and
+          <a href="https://www.youtube.com/@MichaelNielsen" target="_blank"
+            >Michael Nielsen</a
+          >.</span
+        >
+        <span data-lang="ja"
+          >AIの数学を学ぶために制作 · 参考:
+          <a href="https://www.youtube.com/c/3blue1brown" target="_blank"
+            >3Blue1Brown (Grant Sanderson)</a
+          >,
+          <a href="https://www.youtube.com/@mitocw" target="_blank"
+            >MIT OpenCourseWare (Gilbert Strang)</a
+          >,
+          <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank"
+            >Microsoft Research (Christopher Bishop)</a
+          >,と
+          <a href="https://www.youtube.com/@MichaelNielsen" target="_blank"
+            >Michael Nielsen</a
+          >.</span
+        >
+        <span data-lang="id"
+          >Dibuat untuk belajar matematika di balik AI · Sumber:
+          <a href="https://www.youtube.com/c/3blue1brown" target="_blank"
+            >3Blue1Brown (Grant Sanderson)</a
+          >,
+          <a href="https://www.youtube.com/@mitocw" target="_blank"
+            >MIT OpenCourseWare (Gilbert Strang)</a
+          >,
+          <a href="https://www.youtube.com/@MicrosoftResearch" target="_blank"
+            >Microsoft Research (Christopher Bishop)</a
+          >, dan
+          <a href="https://www.youtube.com/@MichaelNielsen" target="_blank"
+            >Michael Nielsen</a
+          >.</span
+        >
+      </footer>
+    </div>
+
+    <div
+      class="sticky-footer"
+      style="
+        text-align: center;
+        padding: 20px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 15px;
+        color: var(--ink2);
+        width: 100%;
+        display: block;
+        flex-shrink: 0;
+      "
+    >
+      Designed & Engineered by
+      <a
+        href="https://ricoeri.my.id"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          color: var(--accent);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 6px;
+          background: color-mix(in srgb, var(--accent) 12%, transparent);
+          margin-left: 4px;
+          border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        "
+        >Rico Eriansyah</a
+      >
+    </div>
+
+    <script src="theme.js"></script>
+    <script>
+      function scrollCarousel(dir) {
+        const c = document.getElementById("main-carousel");
+        const card = c.querySelector(".module-card");
+        if (!card) return;
+        const cardWidth = card.offsetWidth + 18;
+        c.scrollBy({ left: dir * cardWidth, behavior: "smooth" });
+      }
+
+      function updateCarouselButtons() {
+        const c = document.getElementById("main-carousel");
+        if (!c) return;
+        const leftBtn = document.querySelector(".carousel-btn.left");
+        const rightBtn = document.querySelector(".carousel-btn.right");
+        if (!leftBtn || !rightBtn) return;
+
+        if (c.scrollLeft <= 5) {
+          leftBtn.classList.add("hidden");
+        } else {
+          leftBtn.classList.remove("hidden");
+        }
+
+        if (c.scrollLeft + c.clientWidth >= c.scrollWidth - 5) {
+          rightBtn.classList.add("hidden");
+        } else {
+          rightBtn.classList.remove("hidden");
+        }
+      }
+
+      function toggleLangMenu(e) {
+        e.stopPropagation();
+        document.getElementById("lang-menu").classList.toggle("show");
+      }
+      window.addEventListener("click", () => {
+        const m = document.getElementById("lang-menu");
+        if (m) m.classList.remove("show");
+      });
+
+      function setLang(lang) {
+        document.body.setAttribute("data-active-lang", lang);
+        document.documentElement.setAttribute(
+          "lang",
+          lang === "ja" ? "ja" : lang === "id" ? "id" : "en",
+        );
+        ["en", "ja", "id"].forEach((l) => {
+          const btn = document.getElementById("lb-" + l);
+          if (btn) btn.classList.toggle("active", l === lang);
+        });
+        localStorage.setItem("aiml-lang", lang);
+      }
+
+      const saved = localStorage.getItem("aiml-lang");
+      setTimeout(() => {
+        if (saved) setLang(saved);
+      }, 0);
+
+      function drawVectorPreview(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.offsetWidth,
+          h = canvas.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        function render(time) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const dark = isDark();
+          ctx.clearRect(0, 0, w, h);
+          const cx = w / 2,
+            cy = h / 2;
+
+          ctx.strokeStyle = dark
+            ? "rgba(255,255,255,0.05)"
+            : "rgba(0,0,0,0.06)";
+          ctx.lineWidth = 0.5;
+          for (let i = -5; i <= 5; i++) {
+            const px = cx + i * 22;
+            const py = cy + i * 22;
+            ctx.beginPath();
+            ctx.moveTo(px, 0);
+            ctx.lineTo(px, h);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, py);
+            ctx.lineTo(w, py);
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.25)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, cy);
+          ctx.lineTo(w, cy);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx, 0);
+          ctx.lineTo(cx, h);
+          ctx.stroke();
+
+          const t = time / 1000;
+          const arrows = [
+            {
+              dx: 2.5 * Math.cos(t),
+              dy: -2 * Math.sin(t),
+              color: dark ? "#6a9fd8" : "#2a5caa",
+            },
+            {
+              dx: -1.5 * Math.cos(t * 1.3),
+              dy: -2.5 * Math.sin(t * 0.8),
+              color: dark ? "#d47070" : "#b84040",
+            },
+          ];
+          arrows.forEach((a) => {
+            const ex = cx + a.dx * 22,
+              ey = cy - a.dy * 22;
+            const angle = Math.atan2(ey - cy, ex - cx);
+            const dx2 = ex - cx,
+              dy2 = ey - cy,
+              len = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            const hl = Math.min(10, len * 0.3);
+            ctx.strokeStyle = a.color;
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(
+              ex - Math.cos(angle) * hl * 0.5,
+              ey - Math.sin(angle) * hl * 0.5,
+            );
+            ctx.stroke();
+            if (len > 2) {
+              ctx.fillStyle = a.color;
+              ctx.beginPath();
+              ctx.moveTo(ex, ey);
+              ctx.lineTo(
+                ex - hl * Math.cos(angle - 0.45),
+                ey - hl * Math.sin(angle - 0.45),
+              );
+              ctx.lineTo(
+                ex - hl * 0.45 * Math.cos(angle),
+                ey - hl * 0.45 * Math.sin(angle),
+              );
+              ctx.lineTo(
+                ex - hl * Math.cos(angle + 0.45),
+                ey - hl * Math.sin(angle + 0.45),
+              );
+              ctx.closePath();
+              ctx.fill();
+            }
+          });
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      function drawMatrixPreview(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.offsetWidth,
+          h = canvas.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        function render(time) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const dark = isDark();
+          ctx.clearRect(0, 0, w, h);
+          const cx = w / 2,
+            cy = h / 2,
+            s = 28;
+
+          const t = time / 1500;
+          const m = [
+            1.2 + 0.3 * Math.sin(t),
+            0.5 * Math.cos(t * 1.2),
+            0.3 * Math.sin(t * 0.8),
+            1.1 + 0.3 * Math.cos(t),
+          ];
+          function tx(x, y) {
+            return [
+              cx + (m[0] * x + m[1] * y) * s,
+              cy - (m[2] * x + m[3] * y) * s,
+            ];
+          }
+
+          ctx.strokeStyle = dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.rect(cx, cy - s, s, s);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          const corners = [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1],
+          ];
+          const tc = corners.map(([x, y]) => tx(x, y));
+          ctx.strokeStyle = dark ? "#5aba80" : "#2e7d52";
+          ctx.lineWidth = 1.5;
+          ctx.fillStyle = dark ? "rgba(90,186,128,0.1)" : "rgba(46,125,82,0.1)";
+          ctx.beginPath();
+          ctx.moveTo(...tc[0]);
+          tc.forEach((p) => ctx.lineTo(...p));
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          const [e1x, e1y] = tx(1, 0);
+          const [e2x, e2y] = tx(0, 1);
+          function arrow(x1, y1, x2, y2, color) {
+            const ang = Math.atan2(y2 - y1, x2 - x1);
+            const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            if (len < 2) return;
+            const hl = Math.min(8, len * 0.3);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(
+              x2 - Math.cos(ang) * hl * 0.5,
+              y2 - Math.sin(ang) * hl * 0.5,
+            );
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(
+              x2 - hl * Math.cos(ang - 0.4),
+              y2 - hl * Math.sin(ang - 0.4),
+            );
+            ctx.lineTo(
+              x2 - hl * Math.cos(ang + 0.4),
+              y2 - hl * Math.sin(ang + 0.4),
+            );
+            ctx.closePath();
+            ctx.fill();
+          }
+          arrow(cx, cy, e1x, e1y, dark ? "#6a9fd8" : "#2a5caa");
+          arrow(cx, cy, e2x, e2y, dark ? "#d4a06a" : "#8b5a2b");
+
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      function drawCalculusPreview(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.offsetWidth,
+          h = canvas.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        function render(time) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const dark = isDark();
+          ctx.clearRect(0, 0, w, h);
+          const cx = w / 2,
+            cy = h / 2 + 10;
+
+          ctx.strokeStyle = dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)";
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(10, cy);
+          ctx.lineTo(w - 10, cy);
+          ctx.stroke();
+
+          ctx.strokeStyle = dark ? "#d47070" : "#b84040";
+          ctx.lineWidth = 2;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          for (let px = 10; px <= w - 10; px++) {
+            const x = (px - cx) / 25;
+            const y = Math.sin(x) * 35;
+            if (px === 10) ctx.moveTo(px, cy - y);
+            else ctx.lineTo(px, cy - y);
+          }
+          ctx.stroke();
+
+          const t = time / 1000;
+          const tx0 = Math.sin(t) * 2;
+          const ty0 = Math.sin(tx0),
+            slope = Math.cos(tx0);
+          const px0 = cx + tx0 * 25,
+            py0 = cy - ty0 * 35;
+          const dx2 = 30;
+          ctx.strokeStyle = dark ? "#d4a06a" : "#9a6e00";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(px0 - dx2, py0 + (slope * dx2 * 35) / 25);
+          ctx.lineTo(px0 + dx2, py0 - (slope * dx2 * 35) / 25);
+          ctx.stroke();
+          ctx.fillStyle = dark ? "#d4a06a" : "#9a6e00";
+          ctx.beginPath();
+          ctx.arc(px0, py0, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      function drawProbPreview(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.offsetWidth,
+          h = canvas.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        function render(time) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const dark = isDark();
+          ctx.clearRect(0, 0, w, h);
+          const cx = w / 2,
+            base = h - 20;
+          const mu = 0;
+          const sigma = 0.8 + 0.3 * Math.sin(time / 800);
+          function normalY(x) {
+            return (
+              Math.exp(-0.5 * ((x - mu) / sigma) ** 2) /
+              (sigma * Math.sqrt(2 * Math.PI))
+            );
+          }
+          const scaleX = 45,
+            scaleY = 160;
+          ctx.fillStyle = dark
+            ? "rgba(154,136,216,0.18)"
+            : "rgba(91,74,158,0.1)";
+          ctx.strokeStyle = dark ? "#9a88d8" : "#5b4a9e";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let px = 10; px <= w - 10; px++) {
+            const x = (px - cx) / scaleX;
+            const y = normalY(x) * scaleY;
+            if (px === 10) ctx.moveTo(px, base - y);
+            else ctx.lineTo(px, base - y);
+          }
+          ctx.lineTo(w - 10, base);
+          ctx.lineTo(10, base);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)";
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(10, base);
+          ctx.lineTo(w - 10, base);
+          ctx.stroke();
+
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      function drawNeuralPreview(canvas) {
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.offsetWidth,
+          h = canvas.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        function render(time) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const dark = isDark();
+          ctx.clearRect(0, 0, w, h);
+          const neurons = [
+            [
+              { x: w * 0.12, y: h * 0.35 },
+              { x: w * 0.12, y: h * 0.65 },
+            ],
+            [
+              { x: w * 0.37, y: h * 0.22 },
+              { x: w * 0.37, y: h * 0.5 },
+              { x: w * 0.37, y: h * 0.78 },
+            ],
+            [
+              { x: w * 0.63, y: h * 0.35 },
+              { x: w * 0.63, y: h * 0.65 },
+            ],
+            [{ x: w * 0.88, y: h * 0.5 }],
+          ];
+          const colors = [
+            dark ? "#6a9fd8" : "#2a5caa",
+            dark ? "#5aba80" : "#2e7d52",
+            dark ? "#d47070" : "#b84040",
+            dark ? "#d4a06a" : "#9a6e00",
+          ];
+
+          ctx.lineWidth = 0.8;
+          for (let li = 0; li < neurons.length - 1; li++) {
+            neurons[li].forEach((a, i) => {
+              neurons[li + 1].forEach((b, j) => {
+                const v = Math.sin(li * 10 + i * 5 + j) > 0 ? 1 : -1;
+                ctx.strokeStyle =
+                  v > 0
+                    ? dark
+                      ? "rgba(106,159,216,0.25)"
+                      : "rgba(42,92,170,0.2)"
+                    : dark
+                      ? "rgba(212,112,112,0.25)"
+                      : "rgba(184,64,64,0.2)";
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+
+                const pulseT =
+                  (time / 2000 + (li * 0.3 + i * 0.2 + j * 0.5)) % 1.0;
+                if (pulseT > 0 && pulseT < 0.2) {
+                  const prog = pulseT * 5;
+                  const px = a.x + (b.x - a.x) * prog;
+                  const py = a.y + (b.y - a.y) * prog;
+                  ctx.fillStyle =
+                    v > 0
+                      ? dark
+                        ? "#6a9fd8"
+                        : "#2a5caa"
+                      : dark
+                        ? "#d47070"
+                        : "#b84040";
+                  ctx.globalAlpha = Math.sin(prog * Math.PI);
+                  ctx.beginPath();
+                  ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.globalAlpha = 1;
+                }
+              });
+            });
+          }
+
+          neurons.forEach((layer, li) => {
+            layer.forEach((n, i) => {
+              ctx.fillStyle = dark ? colors[li] : colors[li];
+              ctx.strokeStyle = dark
+                ? "rgba(255,255,255,0.15)"
+                : "rgba(0,0,0,0.1)";
+              ctx.lineWidth = 1;
+
+              const glow = Math.sin(time / 500 + li + i) * 0.5 + 0.5;
+              const radius = 6 + glow * 1.5;
+              ctx.beginPath();
+              ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            });
+          });
+
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      function initBackgroundAnimation() {
+        const canvas = document.getElementById("bg-canvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        let w, h;
+        const nodes = [];
+        const numNodes = Math.min(80, Math.floor(window.innerWidth / 15));
+
+        function resize() {
+          w = window.innerWidth;
+          h = window.innerHeight;
+          canvas.width = w * (window.devicePixelRatio || 1);
+          canvas.height = h * (window.devicePixelRatio || 1);
+          ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+        }
+
+        window.addEventListener("resize", resize);
+        resize();
+
+        const symbols = [
+          {
+            text: "∑",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "∫",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "∂",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "∞",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "∇",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "π",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "{ }",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "</>",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          {
+            text: "λ",
+            family: "'JetBrains Mono', monospace",
+            weight: "normal",
+          },
+          { text: "\uf0c3", family: "'Font Awesome 6 Free'", weight: "900" },
+          { text: "\uf610", family: "'Font Awesome 6 Free'", weight: "900" },
+          { text: "\uf471", family: "'Font Awesome 6 Free'", weight: "900" },
+          { text: "\uf5dc", family: "'Font Awesome 6 Free'", weight: "900" },
+        ];
+        for (let i = 0; i < numNodes; i++) {
+          const isSymbol = Math.random() > 0.65;
+          nodes.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            radius: Math.random() * 2 + 1,
+            symbolObj: isSymbol
+              ? symbols[Math.floor(Math.random() * symbols.length)]
+              : null,
+            size: isSymbol ? Math.random() * 10 + 12 : null,
+          });
+        }
+
+        function render() {
+          ctx.clearRect(0, 0, w, h);
+          const dark = isDark();
+
+          ctx.strokeStyle = dark
+            ? "rgba(255,255,255,0.03)"
+            : "rgba(0,0,0,0.04)";
+          ctx.lineWidth = 1;
+          const gridSize = 50;
+          const offsetX = (Date.now() * 0.005) % (gridSize * 4);
+          const offsetY = (Date.now() * 0.005) % (gridSize * 4);
+
+          ctx.beginPath();
+          for (let x = -offsetX; x < w; x += gridSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+          }
+          for (let y = -offsetY; y < h; y += gridSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+          }
+          ctx.stroke();
+
+          ctx.strokeStyle = dark
+            ? "rgba(255,255,255,0.05)"
+            : "rgba(0,0,0,0.07)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let x = -offsetX; x < w; x += gridSize * 4) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+          }
+          for (let y = -offsetY; y < h; y += gridSize * 4) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+          }
+          ctx.stroke();
+
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          nodes.forEach((n) => {
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < -30) n.x = w + 30;
+            else if (n.x > w + 30) n.x = -30;
+            if (n.y < -30) n.y = h + 30;
+            else if (n.y > h + 30) n.y = -30;
+
+            if (n.symbolObj) {
+              ctx.font = `${n.symbolObj.weight} ${n.size}px ${n.symbolObj.family}`;
+              ctx.fillStyle = dark
+                ? "rgba(255,255,255,0.25)"
+                : "rgba(0,0,0,0.3)";
+              ctx.fillText(n.symbolObj.text, n.x, n.y);
+            } else {
+              ctx.fillStyle = dark
+                ? "rgba(255,255,255,0.35)"
+                : "rgba(0,0,0,0.35)";
+              ctx.beginPath();
+              ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
+
+          const maxDist = 150;
+          for (let i = 0; i < numNodes; i++) {
+            for (let j = i + 1; j < numNodes; j++) {
+              const dx = nodes[i].x - nodes[j].x;
+              const dy = nodes[i].y - nodes[j].y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < maxDist) {
+                const alpha = (1 - dist / maxDist) * (dark ? 0.15 : 0.12);
+                ctx.strokeStyle = dark
+                  ? `rgba(255,255,255,${alpha})`
+                  : `rgba(0,0,0,${alpha})`;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[j].x, nodes[j].y);
+                ctx.stroke();
+              }
+            }
+          }
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      }
+
+      window.addEventListener("load", () => {
+        initBackgroundAnimation();
+        drawVectorPreview(document.getElementById("prev-vector"));
+        drawMatrixPreview(document.getElementById("prev-matrix"));
+        drawCalculusPreview(document.getElementById("prev-calculus"));
+        drawProbPreview(document.getElementById("prev-prob"));
+        drawNeuralPreview(document.getElementById("prev-neural"));
+
+        const c = document.getElementById("main-carousel");
+        if (c) {
+          c.addEventListener("scroll", updateCarouselButtons);
+          window.addEventListener("resize", updateCarouselButtons);
+
+          setTimeout(updateCarouselButtons, 50);
+        }
+      });
+    </script>
+  </body>
 </html>

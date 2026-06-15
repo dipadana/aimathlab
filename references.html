@@ -201,7 +201,7 @@
     </div>
     
     <div class="ref-section">
-      <div class="ref-title" id="t-dh-title">6. Dahono AI Gateway</div>
+      <div class="ref-title" id="t-dh-title">6. Dahono Labs Gateway</div>
       
       <div class="ref-subtitle"><span class="q-badge q-where" id="t-where6">WHERE</span> <span id="t-dh-where-sub">The Provider of AIMathLab's AI Tutor</span></div>
       <div class="ref-text" id="t-dh-where">
@@ -255,7 +255,7 @@ const dict = {
     neu_how: "<strong>The Forward Pass:</strong> $\\mathbf{a}^{(l)} = \\sigma(\\mathbf{W}^{(l)} \\mathbf{a}^{(l-1)} + \\mathbf{b}^{(l)})$. A linear mapping followed by a non-linear activation $\\sigma$ (e.g., ReLU).<br><strong>Backpropagation:</strong> The gradient of the loss with respect to any weight is calculated efficiently by applying the calculus chain rule backward from the output layer to the input. For example: $\\frac{\\partial L}{\\partial w} = \\frac{\\partial L}{\\partial a} \\frac{\\partial a}{\\partial z} \\frac{\\partial z}{\\partial w}$.",
     neu_where: "The Multilayer Perceptron (MLP) and Backpropagation form the computational engine of absolutely every modern deep learning system, from simple classifiers to trillion-parameter autoregressive language models (GPT-4) and Convolutional Neural Networks (ResNet).",
 
-    dh_title: "6. Dahono AI Gateway",
+    dh_title: "6. Dahono Labs Gateway",
     dh_where: "The AI Tutor feature in this project is powered by <strong>Dahono Labs API Gateway</strong>. It is designed to be 100% compatible with the OpenAI API format, allowing seamless integration with existing tools and models.",
     dh_how: "The gateway acts as an intelligent router and load balancer. AIMathLab sends the mathematical state (vector coordinates, matrix values, etc.) to the <code>dahono/ai-chat</code> model via a Vercel serverless edge function, ensuring the API key remains completely secure. The responses are then streamed back to the browser in real-time using Server-Sent Events (SSE)."
   },
@@ -295,7 +295,7 @@ const dict = {
     neu_how: "<strong>フォワードパス（順伝播）：</strong> $\\mathbf{a}^{(l)} = \\sigma(\\mathbf{W}^{(l)} \\mathbf{a}^{(l-1)} + \\mathbf{b}^{(l)})$。行列による線形変換の後に、ReLUなどの非線形活性化関数 $\\sigma$ を適用します。<br><strong>バックプロパゲーション（誤差逆伝播法）：</strong> 出力層での誤差を、微積分の「連鎖律（チェインルール）」を用いて入力側へ逆方向に伝播させることで、すべての重みの勾配を効率的に計算します（例：$\\frac{\\partial L}{\\partial w} = \\frac{\\partial L}{\\partial a} \\frac{\\partial a}{\\partial z} \\frac{\\partial z}{\\partial w}$）。",
     neu_where: "多層パーセプトロン（MLP）とバックプロパゲーションのアルゴリズムは、単純な画像分類から、GPT-4のような超巨大言語モデル、ResNetのような畳み込みニューラルネットワーク（CNN）に至るまで、すべての現代AIの「心臓部」として稼働しています。",
 
-    dh_title: "6. Dahono AI Gateway",
+    dh_title: "6. Dahono Labs Gateway",
     dh_where: "このプロジェクトのAIチューター機能は、<strong>Dahono Labs API Gateway</strong> を活用しています。OpenAI APIフォーマットと100%の互換性を持つように設計されており、既存のツールやモデルとシームレスに統合できます。",
     dh_how: "ゲートウェイはインテリジェントなルーターおよびロードバランサーとして機能します。AIMathLabは数学的状態（ベクトル座標、行列の値など）をVercelのサーバーレスエッジ関数を介して <code>dahono/ai-chat</code> モデルに送信し、APIキーを完全に保護します。その後、Server-Sent Events（SSE）を使用してリアルタイムでブラウザに応答がストリーミングされます。"
   },
@@ -335,7 +335,7 @@ const dict = {
     neu_how: "<strong>Forward Pass (Propagasi Maju):</strong> $\\mathbf{a}^{(l)} = \\sigma(\\mathbf{W}^{(l)} \\mathbf{a}^{(l-1)} + \\mathbf{b}^{(l)})$. Transformasi linier dengan matriks diikuti oleh penerapan fungsi aktivasi non-linier $\\sigma$ (seperti ReLU).<br><strong>Backpropagation (Propagasi Balik):</strong> Nilai gradien dari setiap bobot dihitung secara efisien dari lapisan <em>output</em> mundur ke lapisan <em>input</em> dengan menerapkan Aturan Rantai (Chain Rule) dari kalkulus. Contohnya: $\\frac{\\partial L}{\\partial w} = \\frac{\\partial L}{\\partial a} \\frac{\\partial a}{\\partial z} \\frac{\\partial z}{\\partial w}$.",
     neu_where: "Algoritma Multilayer Perceptron (MLP) dan Backpropagation adalah \"mesin penggerak\" utama di balik semua sistem deep learning saat ini, mulai dari pengklasifikasi gambar sederhana, arsitektur CNN seperti ResNet, hingga model bahasa raksasa seperti GPT-4.",
 
-    dh_title: "6. Dahono AI Gateway",
+    dh_title: "6. Dahono Labs Gateway",
     dh_where: "Fitur AI Tutor dalam proyek ini didukung oleh <strong>Dahono Labs API Gateway</strong>. Gateway ini dirancang agar 100% kompatibel dengan format API OpenAI, yang memungkinkan integrasi yang mulus dengan model dan alat yang sudah ada.",
     dh_how: "Gateway ini berfungsi sebagai router cerdas dan penyeimbang beban (load balancer). AIMathLab mengirimkan state matematika (koordinat vektor, nilai matriks, dll) ke model <code>dahono/ai-chat</code> melalui Vercel serverless edge function, sehingga API key tetap aman. Respons AI kemudian dialirkan kembali ke browser secara real-time menggunakan Server-Sent Events (SSE)."
   }
