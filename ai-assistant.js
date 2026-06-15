@@ -5,6 +5,7 @@
   let _abortCtrl = null;
   let _chatHistory = [];
   let _isQuizMode = false;
+  let _ttsEnabled = false;
 
   window.AIMathTutor = {
     ask, // called when clicking Explain or Send
@@ -12,8 +13,34 @@
     isStreaming: () => _isStreaming,
     renderCard,
     toggleQuizMode,
-    clearHistory
+    clearHistory,
+    toggleTTS
   };
+
+  function toggleTTS() {
+    _ttsEnabled = !_ttsEnabled;
+    const btn = document.getElementById('ai-speaker-btn');
+    if (btn) btn.classList.toggle('active', _ttsEnabled);
+    if (!_ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+  }
+
+  function speakText(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    
+    // Clean text: remove markdown and [[...]] commands
+    const cleanText = text.replace(/\[\[.*?\]\]/g, '')
+                          .replace(/[*_#`]/g, '')
+                          .replace(/\$.*?\$/g, ' equation ') // roughly replace math blocks
+                          .trim();
+    if (!cleanText) return;
+
+    const utter = new SpeechSynthesisUtterance(cleanText);
+    const lang = document.body.getAttribute('data-active-lang') || 'en';
+    const localeMap = { en: 'en-US', ja: 'ja-JP', id: 'id-ID' };
+    utter.lang = localeMap[lang] || 'en-US';
+    window.speechSynthesis.speak(utter);
+  }
 
   function toggleQuizMode() {
     _isQuizMode = !_isQuizMode;
@@ -151,9 +178,8 @@
             if (delta) {
               fullResponse += delta;
               
-              // We want to hide [[SET: param=value]] from the user UI while streaming if possible,
-              // but for simplicity, we'll strip it out of the displayed text dynamically.
-              const displayableText = fullResponse.replace(/\[\[SET:\s*([^=\]]+)=([^\]]+)\]\]/g, '');
+              // We want to hide [[SET: ...]], [[HIGHLIGHT: ...]], and [[ANNOTATE: ...]] from the user UI while streaming
+              const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
               
               textEl.textContent = displayableText;
               textEl.appendChild(cursor);
@@ -164,10 +190,21 @@
       }
 
       cursor.remove();
+      const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
+      textEl.textContent = finalDisplayableText;
+
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
-      // Parse structured commands: [[SET: param=value]]
+      // Parse structured commands
       parseAndExecuteCommands(fullResponse);
+
+      if (window.MathJax) {
+        window.MathJax.typesetPromise([textEl]).catch(() => {});
+      }
+      
+      if (_ttsEnabled) {
+        speakText(finalDisplayableText);
+      }
 
       setCardState('idle', explainBtn, sendBtn);
 
@@ -183,9 +220,9 @@
   }
 
   function parseAndExecuteCommands(text) {
-    const regex = /\[\[SET:\s*([^=\]]+)=([^\]]+)\]\]/g;
+    const setRegex = /\[\[SET:\s*([^=\]]+)=([^\]]+)\]\]/g;
     let match;
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = setRegex.exec(text)) !== null) {
       const paramId = match[1].trim();
       const value = match[2].trim();
       const el = document.getElementById(paramId);
@@ -194,6 +231,31 @@
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    }
+
+    const highlightRegex = /\[\[HIGHLIGHT:\s*([^\]]+)\]\]/g;
+    while ((match = highlightRegex.exec(text)) !== null) {
+      const elId = match[1].trim();
+      const el = document.getElementById(elId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ai-highlight-pulse');
+        setTimeout(() => el.classList.remove('ai-highlight-pulse'), 3000);
+      }
+    }
+
+    const annotateRegex = /\[\[ANNOTATE:\s*([^\]]+)\]\]/g;
+    while ((match = annotateRegex.exec(text)) !== null) {
+      const msg = match[1].trim();
+      const container = document.querySelector('.canvas-column') || document.body;
+      const overlay = document.createElement('div');
+      overlay.className = 'ai-annotation-overlay';
+      overlay.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${msg}`;
+      container.appendChild(overlay);
+      setTimeout(() => {
+        overlay.classList.add('ai-annotation-fade-out');
+        setTimeout(() => overlay.remove(), 400);
+      }, 5000);
     }
   }
 
@@ -361,6 +423,9 @@
           <img src="dahono_logo.png" alt="Dahono Labs" style="height: 1em; width: auto; border-radius: 2px;"> Dahono Labs.
         </span>
         <div class="ai-header-actions">
+          <button id="ai-speaker-btn" class="ai-speaker-btn" onclick="AIMathTutor.toggleTTS()" title="Toggle Voice Output">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
           <button id="ai-quiz-btn" class="ai-quiz-btn" onclick="AIMathTutor.toggleQuizMode()" title="Toggle Quiz Mode">
             <i class="fa-solid fa-clipboard-question"></i> Quiz
           </button>
@@ -425,10 +490,11 @@
       ``,
       `Task: Answer the user's question or explain the current canvas state.`,
       `Connect the specific numbers/state they are seeing to the broader concepts of Artificial Intelligence or Machine Learning where applicable.`,
-      `Be concise, highly insightful, and encourage further exploration. Plain text only, no markdown, no LaTeX.`,
-      `IMPORTANT PARAMETER CONTROL: You have the ability to physically control the sliders on the user's screen! If the user asks you to demonstrate something (e.g. "show me an exploding gradient"), or if you think a demonstration is helpful, you can append structured commands to your response.`,
-      `To set a slider, include the exact syntax [[SET: parameter_id=value]] at the end of your response. For example: [[SET: gdLR=2.5]]. The client will automatically parse this and adjust the visualizer live!`,
-      `Known parameter IDs for the current module will be included in the context lines if available.`,
+      `Be concise, highly insightful, and encourage further exploration. You can use LaTeX math formatting by wrapping inline math in $...$ and block math in $$...$$.`,
+      `ADVANCED COMMANDS: You can perform actions on the user's interface by appending these exact commands to your response:`,
+      `1. [[SET: parameter_id=value]] -> Adjusts a slider live (e.g. [[SET: gdLR=2.5]]). Known parameter IDs are in the context.`,
+      `2. [[HIGHLIGHT: dom_id]] -> Draws the user's attention to a specific UI element by pulsing it.`,
+      `3. [[ANNOTATE: message]] -> Shows a floating visual annotation overlay over the canvas with your message.`,
       langInstructions[lang] || langInstructions.en,
     ].join('\n');
 

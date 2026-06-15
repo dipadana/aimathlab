@@ -290,4 +290,79 @@
   100% { opacity: 1; transform: scale(1.05); }
 }
 
+/* Speaker Toggle Button */
+.ai-speaker-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--ink3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ai-speaker-btn:hover {
+  background: var(--surface2);
+  color: var(--ink2);
+}
+.ai-speaker-btn.active {
+  color: var(--accent);
+}
+
+/* Context-Aware UI Highlighting */
+.ai-highlight-pulse {
+  animation: ai-glow 1.5s ease-in-out infinite alternate;
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  scroll-margin: 50px;
+}
+@keyframes ai-glow {
+  0% { box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 40%, transparent); }
+  100% { box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 80%, transparent); }
+}
+
+/* Canvas Annotation Overlay */
+.ai-annotation-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slide-down 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.ai-annotation-overlay i {
+  color: var(--accent);
+  font-size: 16px;
+}
+@keyframes slide-down {
+  from { top: -20px; opacity: 0; transform: translateX(-50%) scale(0.9); }
+  to { top: 20px; opacity: 1; transform: translateX(-50%) scale(1); }
+}
+.ai-annotation-fade-out {
+  animation: fade-out 0.4s ease-in forwards;
+}
+@keyframes fade-out {
+  from { opacity: 1; transform: translateX(-50%) scale(1); }
+  to { opacity: 0; transform: translateX(-50%) scale(0.9); top: 10px; }
+}
+
 
