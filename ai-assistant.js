@@ -8,7 +8,7 @@
   let _ttsEnabled = false;
 
   window.AIMathTutor = {
-    ask, // called when clicking Explain or Send
+    ask,
     cancel,
     isStreaming: () => _isStreaming,
     renderCard,
@@ -28,10 +28,9 @@
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     
-    // Clean text: remove markdown and [[...]] commands
     const cleanText = text.replace(/\[\[.*?\]\]/g, '')
                           .replace(/[*_#`]/g, '')
-                          .replace(/\$.*?\$/g, ' equation ') // roughly replace math blocks
+                          .replace(/\$.*?\$/g, ' equation ')
                           .trim();
     if (!cleanText) return;
 
@@ -47,7 +46,6 @@
     const btn = document.getElementById('ai-quiz-btn');
     if (btn) btn.classList.toggle('active', _isQuizMode);
     clearHistory();
-    // Auto-trigger an explain to start the quiz
     if (window.buildAIContext) window.buildAIContext();
   }
 
@@ -57,7 +55,6 @@
     if (body) body.innerHTML = idlePlaceholder();
   }
 
-  // ask receives the system context messages from buildAIContext
   async function ask(systemContextMsgs, cardId, userMessage = null) {
     if (_isStreaming) cancel();
 
@@ -69,7 +66,6 @@
     
     if (!body) return;
 
-    // Clear placeholder if first message
     if (body.querySelector('.ai-placeholder')) {
       body.innerHTML = '';
     }
@@ -77,16 +73,13 @@
     _isStreaming = true;
     _abortCtrl = new AbortController();
 
-    // Setup UI for loading
     setCardState('loading', explainBtn, sendBtn);
 
-    // If it's a user message, add it to history and UI
     if (userMessage) {
       _chatHistory.push({ role: 'user', content: userMessage });
       appendMessageUI('user', userMessage);
       if (inputField) inputField.value = '';
     } else {
-      // If it's just "Explain", we pass a default instruction to the model
       const lang = document.body.getAttribute('data-active-lang') || 'en';
       const defaultReq = {
         en: _isQuizMode ? 'Please give me a quiz challenge based on this.' : 'Please explain what I am seeing.',
@@ -94,20 +87,13 @@
         id: _isQuizMode ? 'Tolong berikan saya kuis berdasarkan ini.' : 'Tolong jelaskan apa yang saya lihat.'
       };
       _chatHistory.push({ role: 'user', content: defaultReq[lang] });
-      // We don't necessarily show the default "Explain" text in UI, or maybe we do to make it clear.
       appendMessageUI('user', defaultReq[lang]);
     }
-
-    // Construct final payload
-    // systemContextMsgs usually contains the system prompt pretending to be 'user' (for models that only support user)
-    // We'll map systemContextMsgs to system, and append history.
     let payloadMessages = [];
     if (systemContextMsgs && systemContextMsgs.length > 0) {
-      // Convert the context into a true system prompt
       payloadMessages.push({ role: 'system', content: systemContextMsgs[0].content });
     }
     
-    // Add quiz mode instruction if active
     if (_isQuizMode) {
       payloadMessages[0].content += `\n\nQUIZ MODE ACTIVE: Act as an examiner. Do NOT explain the math directly. Instead, give the user a specific challenge to complete by adjusting the visualizer parameters. When they ask to check their answer, evaluate their success based on the live visualizer state provided in the context.`;
     }
@@ -132,7 +118,6 @@
 
       setCardState('streaming', explainBtn, sendBtn);
 
-      // Create AI response bubble
       const msgBubble = document.createElement('div');
       msgBubble.className = 'ai-msg ai-msg-assistant';
       const textEl = document.createElement('p');
@@ -178,7 +163,6 @@
             if (delta) {
               fullResponse += delta;
               
-              // We want to hide [[SET: ...]], [[HIGHLIGHT: ...]], and [[ANNOTATE: ...]] from the user UI while streaming
               const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
               
               textEl.innerHTML = parseMarkdown(displayableText);
@@ -195,7 +179,6 @@
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
-      // Parse structured commands
       parseAndExecuteCommands(fullResponse);
 
       if (window.MathJax) {
@@ -260,29 +243,20 @@
   }
 
   function parseMarkdown(text) {
-    // 1. Extract math blocks to protect them
     const mathBlocks = [];
     let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g, (match) => {
       mathBlocks.push(match);
       return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
     });
 
-    // 2. Simple markdown replacements
-    // Bold
     processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    // Italic
     processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    // Lists
     processedText = processedText.replace(/^[ \t]*[-*][ \t]+(.*)$/gm, '<li>$1</li>');
     processedText = processedText.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
-    // Newlines to breaks (for non-list text)
-    // First, remove newlines around <ul> blocks to avoid messy spacing
     processedText = processedText.replace(/<\/ul>\n+/g, '</ul>');
     processedText = processedText.replace(/\n+<ul>/g, '<ul>');
-    // Then convert remaining newlines to <br>
     processedText = processedText.replace(/\n/g, '<br>');
 
-    // 3. Restore math blocks
     processedText = processedText.replace(/__MATH_BLOCK_(\d+)__/g, (match, index) => {
       return mathBlocks[parseInt(index, 10)];
     });
@@ -338,7 +312,6 @@
     const input = document.getElementById('ai-chat-input');
     if (!input || !input.value.trim()) return;
     
-    // Call the original context builder but pass our user message
     if (window.buildAIContext) {
       window.buildAIContext(input.value.trim());
     }
@@ -361,7 +334,6 @@
     return `<p class="ai-placeholder">${hints[lang] || hints.en}</p>`;
   }
 
-  // Web Speech API
   function initSpeech() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       return null;
@@ -387,12 +359,10 @@
         }
       }
       if (input) {
-        // If there's final transcript, append it to whatever was typed
         if (finalTranscript) {
           input.value = (input.dataset.originalText || '') + finalTranscript;
           delete input.dataset.originalText;
         } else {
-          // just show interim
           if (input.dataset.originalText === undefined) {
              input.dataset.originalText = input.value;
           }
@@ -424,7 +394,6 @@
     } else {
       if (!window._recognition) window._recognition = initSpeech();
       if (window._recognition) {
-        // Update language
         const lang = document.body.getAttribute('data-active-lang') || 'en';
         const localeMap = { en: 'en-US', ja: 'ja-JP', id: 'id-ID' };
         window._recognition.lang = localeMap[lang] || 'en-US';
@@ -479,7 +448,6 @@
     `;
     col.appendChild(card);
     
-    // Bind functions for the inline onclick handlers since they reference AIMathTutor
     window.AIMathTutor.toggleMic = toggleMic;
     window.AIMathTutor.handleSend = handleSend;
 
