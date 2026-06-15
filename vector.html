@@ -1216,7 +1216,7 @@ function updateLCPanel() {
 
   slidersEl.innerHTML=vectors.map((v,i)=>{
     const c=lcCoeffs[i];
-    return `<div class="lc-row"><span class="lc-name" style="color:${v.color}">${v.name}</span>
+    return `<div class="lc-row"><span class="lc-name" style="color:${v.color}">c<sub>${i+1}</sub></span>
       <input type="range" id="lc-s-${i}" min="-4" max="4" step="0.1" value="${c}"
         oninput="lcCoeffs[${i}]=parseFloat(this.value);document.getElementById('lc-v-${i}').textContent=parseFloat(this.value).toFixed(1);updateLCResult();render()">
       <span class="lc-val" id="lc-v-${i}">${c.toFixed(1)}</span></div>`;
