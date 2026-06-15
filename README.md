@@ -11,6 +11,7 @@ The project is built entirely using **pure HTML, vanilla CSS, and vanilla JavaSc
 ## Key Features
 
 *   **Real-Time Math Visualization**: Interactive vector spaces, matrix warping grids, dynamic calculus curves, probability distributions, and live neural network training.
+*   **Advanced Context-Aware AI Tutor**: Intelligent assistant powered by Dahono Labs `ccai-pro` model. Features live markdown rendering, MathJax equations, multilingual Text-to-Speech (TTS), and the ability to physically highlight UI elements (`[[HIGHLIGHT]]`) and annotate the interactive canvas (`[[ANNOTATE]]`).
 *   **Internationalization (i18n)**: Native multilingual support in **English (`en`)**, **Japanese (`ja`)**, and **Indonesian (`id`)** with instant, client-side DOM swapping.
 *   **Cross-Device State Sync**: Integrated with **Supabase Authentication and Database** to save and restore interactive inputs, active tabs, custom matrices, and vectors in real-time.
 *   **Adaptive Dark/Light Theme**: Sleek dark and light modes utilizing CSS variables, matching system preferences automatically and synchronizing canvas colors smoothly.
@@ -72,12 +73,15 @@ graph TD
     UI[HTML5 / Vanilla CSS] -->|User Interaction| JS[theme.js & Module Logic]
     JS -->|Canvas API| Visuals[HTML5 Canvas Render]
     JS -->|Fetch API / SDK| Supabase[Supabase Client v2]
+    JS -->|Server-Sent Events| Edge[Vercel Edge API /api/ai]
+    Edge -->|OpenAI-Compatible| Dahono[Dahono Labs ccai-pro]
     Supabase -->|Auth / Session| Database[(User State DB Table)]
     Config[build.sh / config.json] -->|Inject Keys| JS
 ```
 
 *   **Frontend**: Pure HTML5 / Canvas API, CSS Variables, Vanilla ES6+ JavaScript.
 *   **Math Rendering**: MathJax 3.
+*   **AI Backend**: OpenAI-compatible streaming API hitting a Vercel Edge Function (`/api/ai.js`) powered by the Dahono Labs API Gateway.
 *   **Backend / Persistence**: Supabase JS SDK v2 (Authentication & Upsert for `user_states`).
 *   **Deployment**: Vercel (Static site output mapping to `/public` directory).
 
@@ -97,7 +101,7 @@ The site is built and deployed using `vercel.json` and `build.sh`.
 
 *   **Build Script (`build.sh`)**:
     *   Creates a `public` directory.
-    *   Copies all assets (`.html`, *.css, *.js, *.png) to `public/`.
+    *   Copies all assets (`*.html`, `*.css`, `*.js`, `*.png`, `*.svg`) to `public/`.
     *   Injects the deployment's environment variables (`$SUPABASE_URL` and `$SUPABASE_ANON_KEY`) into `public/config.js` and `public/config.json`.
 *   **Vercel Config (`vercel.json`)**:
     *   Sets the build command to `bash build.sh`.
@@ -112,6 +116,8 @@ Created by **Rico Eriansyah**. Inspired by the educational approaches of:
 *   **Gilbert Strang** (MIT Linear Algebra)
 *   **Christopher Bishop** (Pattern Recognition and Machine Learning)
 *   **Michael Nielsen** (Neural Networks and Deep Learning)
+
+Special thanks to **[Dahono Labs](https://labs.dahono.com)** for providing the `ccai-pro` model and API Gateway that powers the interactive AI Tutor.
 
 ---
 
