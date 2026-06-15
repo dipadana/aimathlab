@@ -230,7 +230,10 @@
 }
 .ai-msg-assistant {
   align-self: flex-start;
-  padding: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 12px 12px 12px 0;
 }
 .ai-msg-error {
   align-self: flex-start;
