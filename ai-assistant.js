@@ -181,7 +181,7 @@
               // We want to hide [[SET: ...]], [[HIGHLIGHT: ...]], and [[ANNOTATE: ...]] from the user UI while streaming
               const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
               
-              textEl.textContent = displayableText;
+              textEl.innerHTML = parseMarkdown(displayableText);
               textEl.appendChild(cursor);
               body.scrollTop = body.scrollHeight;
             }
