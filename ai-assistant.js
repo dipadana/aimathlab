@@ -69,6 +69,13 @@
           if (data === '[DONE]') break;
           try {
             const json = JSON.parse(data);
+            if (json.error) {
+              cursor.remove();
+              setCardState('error', cardId, btn, spinner, 'The AI gateway is temporarily unavailable. Please try again.');
+              _isStreaming = false;
+              _abortCtrl = null;
+              return;
+            }
             const delta = json.choices?.[0]?.delta?.content;
             if (delta) {
               textEl.insertBefore(document.createTextNode(delta), cursor);

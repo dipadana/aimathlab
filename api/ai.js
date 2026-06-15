@@ -2,34 +2,23 @@ export const config = { runtime: 'edge' };
 
 const GATEWAY_URL = 'https://gateway.dahono.com/v1/chat/completions';
 const MODEL = 'dahono/claude-opus-4.8-thinking-free';
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1000;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function callGateway(apiKey, body, attempt) {
-  const res = await fetch(GATEWAY_URL, {
+async function callGateway(apiKey, messages, stream) {
+  return fetch(GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: body.messages,
-      stream: body.stream || false,
-      max_tokens: 512,
-    }),
+    body: JSON.stringify({ model: MODEL, messages, stream, max_tokens: 512 }),
   });
+}
 
-  if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < MAX_RETRIES) {
-    await sleep(RETRY_DELAY_MS * attempt);
-    return callGateway(apiKey, body, attempt + 1);
-  }
-
-  return res;
+function upstreamErrorResponse(message) {
+  return new Response(JSON.stringify({ error: message }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 export default async function handler(req) {
@@ -76,43 +65,64 @@ export default async function handler(req) {
     });
   }
 
-  const upstream = await callGateway(apiKey, body, 1);
+  const useStream = body.stream === true;
+  const upstream = await callGateway(apiKey, body.messages, useStream);
 
   if (!upstream.ok) {
-    const rawText = await upstream.text();
-    let detail = rawText;
-    try {
-      const parsed = JSON.parse(rawText);
-      detail = parsed?.error?.message || rawText;
-    } catch {}
+    return upstreamErrorResponse('The AI gateway is temporarily unavailable. Please try again.');
+  }
 
-    if (upstream.status === 502 || upstream.status === 503 || upstream.status === 504) {
-      return new Response(JSON.stringify({ error: 'The AI gateway is temporarily unavailable. Please try again in a moment.' }), {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' },
-      });
+  if (!useStream) {
+    const data = await upstream.json();
+    if (data.error) {
+      return upstreamErrorResponse('The AI gateway is temporarily unavailable. Please try again.');
     }
-
-    return new Response(JSON.stringify({ error: `Gateway error (${upstream.status})`, detail }), {
-      status: upstream.status,
+    return new Response(JSON.stringify(data), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (body.stream) {
-    return new Response(upstream.body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no',
-      },
-    });
-  }
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let firstChunkChecked = false;
 
-  const data = await upstream.json();
-  return new Response(JSON.stringify(data), {
+  const transform = new TransformStream({
+    transform(chunk, controller) {
+      if (!firstChunkChecked) {
+        firstChunkChecked = true;
+        const text = decoder.decode(chunk, { stream: true });
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.error) {
+              controller.enqueue(encoder.encode(
+                `data: {"error":"The AI gateway is temporarily unavailable. Please try again."}\n\n`
+              ));
+              controller.terminate();
+              return;
+            }
+          } catch {}
+        }
+        controller.enqueue(chunk);
+        return;
+      }
+      controller.enqueue(chunk);
+    },
+  });
+
+  upstream.body.pipeTo(transform.writable).catch(() => {});
+
+  return new Response(transform.readable, {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+    },
   });
 }
