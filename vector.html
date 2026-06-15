@@ -1239,7 +1239,7 @@ function updateLCResult() {
     rx+=(v.ex-v.ox)*c; ry+=(v.ey-v.oy)*c; rz+=((v.ez||0)-(v.oz||0))*c;
     const sign=i===0?'':(c>=0?' + ':' − ');
     const absC=Math.abs(c).toFixed(1);
-    return `${sign}${absC}<span style="color:${v.color}">${v.name}</span>`;
+    return `${sign}${absC}<span style="color:${v.color}">v<sub>${i+1}</sub></span>`;
   });
   const dim=currentMode==='3d'?`(${fmt(rx)}, ${fmt(ry)}, ${fmt(rz)})`:`(${fmt(rx)}, ${fmt(ry)})`;
   const mag=currentMode==='3d'?Math.sqrt(rx*rx+ry*ry+rz*rz):Math.sqrt(rx*rx+ry*ry);
