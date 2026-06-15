@@ -1,5 +1,13 @@
 {
   "outputDirectory": "public",
-  "buildCommand": "bash build.sh", 
-  "installCommand": ""
+  "buildCommand": "bash build.sh",
+  "installCommand": "",
+  "functions": {
+    "api/ai.js": {
+      "runtime": "@vercel/node@4"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/ai", "destination": "/api/ai" }
+  ]
 }

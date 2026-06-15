@@ -18,6 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="ai-assistant.css">
+<script src="ai-assistant.js"></script>
 <style>
 .tab-bar { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
 .tab-btn { font-family:'JetBrains Mono',monospace; font-size: 14px; padding:5px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--ink3); transition:background 0.12s,color 0.12s; }
@@ -86,7 +88,7 @@
   <div class="main-layout">
 
     
-    <div class="canvas-column">
+    <div class="canvas-column" id="canvas-column-neural">
       <div class="canvas-wrap">
         <canvas id="canvas" height="480"></canvas>
       </div>
@@ -816,6 +818,46 @@ window.addEventListener('themechange',()=>render());
 buildNetwork();
 resize();
 updateTheoryNote();
+
+AIMathTutor.renderCard('canvas-column-neural');
+
+window.buildAIContext = function () {
+  const actFnName = document.getElementById('act-select')?.value || currentActFn;
+  const context = [`Active tab: ${currentTab}`];
+
+  if (currentTab === 'mlp') {
+    context.push(`Network architecture: [${arch.join(', ')}] neurons per layer`);
+    context.push(`Activation function: ${ACTS[actFnName]?.label || actFnName}`);
+    if (forwardDone && activations.length) {
+      const out = activations[activations.length - 1];
+      context.push(`Last forward pass output: [${out.map(v => v.toFixed(4)).join(', ')}]`);
+    } else {
+      context.push('Forward pass not yet run');
+    }
+  } else if (currentTab === 'act') {
+    const fn = ACTS[currentActFn];
+    context.push(`Viewing activation function: ${fn.label}`);
+    context.push(`At x = ${actX.toFixed(3)}: f(x) = ${fn.f(actX).toFixed(4)}, f'(x) = ${fn.df(actX).toFixed(4)}`);
+  } else if (currentTab === 'perceptron') {
+    const z = pX1*pW1 + pX2*pW2 + pBias;
+    const out = ACTS.sigmoid.f(z);
+    context.push(`Single neuron: x1=${pX1.toFixed(1)}, x2=${pX2.toFixed(1)}, w1=${pW1.toFixed(1)}, w2=${pW2.toFixed(1)}, b=${pBias.toFixed(1)}`);
+    context.push(`z = ${z.toFixed(4)}, σ(z) = ${out.toFixed(4)}`);
+  } else if (currentTab === 'dboundary') {
+    let loss = 0;
+    dbData.forEach(d => { let {out} = dbForward(d.x); loss += -(d.y*Math.log(out+1e-8)+(1-d.y)*Math.log(1-out+1e-8)); });
+    loss /= dbData.length;
+    context.push(`XOR decision boundary training: epoch=${dbEpoch}, BCE loss=${loss.toFixed(4)}`);
+  } else if (currentTab === 'backprop') {
+    const a1 = ACTS.sigmoid.f(bpW1 * bpX);
+    const a2 = ACTS.sigmoid.f(bpW2 * a1);
+    const L = 0.5*(a2 - bpY)**2;
+    context.push(`Backprop chain: w1=${bpW1.toFixed(3)}, w2=${bpW2.toFixed(3)}, target y=${bpY.toFixed(1)}, output=${a2.toFixed(4)}, loss=${L.toFixed(4)}`);
+  }
+
+  const msgs = window.buildAIMessages('Neural Network Visualizer', context);
+  AIMathTutor.ask(msgs, 'ai-card-body');
+};
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
     Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>

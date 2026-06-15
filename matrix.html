@@ -18,6 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="ai-assistant.css">
+<script src="ai-assistant.js"></script>
 <style>
 .matrix-input-wrap {
   display: grid;
@@ -179,7 +181,7 @@
 
   <div class="main-layout">
 
-    <div style="flex:1;min-width:300px">
+    <div style="flex:1;min-width:300px" id="canvas-column-mat">
       <div class="canvas-wrap">
         <canvas id="canvas" height="500"></canvas>
       </div>
@@ -909,11 +911,35 @@ function resetLME() {
   updateLME();
 }
 
-window.addEventListener('resize', resize);
-window.addEventListener('themechange', () => render());
+window.addEventListener('resize',resize);
+window.addEventListener('themechange',()=>{const p=palette();if(typeof render==='function')render();});
 resize();
-updateMatrix();
 updateTheoryNote();
+
+AIMathTutor.renderCard('canvas-column-mat');
+
+window.buildAIContext = function () {
+  const [a,b,c,d] = mat;
+  const det = a*d - b*c;
+  const tr  = a+d;
+  const eig = computeEigenvalues(mat);
+  let eigStr;
+  if (!eig[0].real) {
+    eigStr = `complex (rotation/scaling)`;
+  } else {
+    eigStr = `λ1=${eig[0].lambda.toFixed(3)}, λ2=${eig[1].lambda.toFixed(3)}`;
+  }
+  const context = [
+    `Matrix A = [[${a}, ${b}], [${c}, ${d}]]`,
+    `det(A) = ${det.toFixed(4)}${Math.abs(det)<1e-9?' (singular — collapses space to a line or point)':''}`,
+    `trace(A) = ${tr.toFixed(4)}`,
+    `Eigenvalues: ${eigStr}`,
+    `LME input vector: (${lmeVec.x}, ${lmeVec.y}) → output Av = (${(a*lmeVec.x+b*lmeVec.y).toFixed(3)}, ${(c*lmeVec.x+d*lmeVec.y).toFixed(3)})`,
+  ];
+  const msgs = window.buildAIMessages('Matrix Transformations', context);
+  AIMathTutor.ask(msgs, 'ai-card-body');
+};
+updateMatrix();
 updateLME();
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">

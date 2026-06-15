@@ -18,6 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="ai-assistant.css">
+<script src="ai-assistant.js"></script>
 <style>
 .tab-bar { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
 .tab-btn { font-family:'JetBrains Mono',monospace; font-size: 14px; padding:5px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--ink3); transition:background 0.12s,color 0.12s; }
@@ -94,7 +96,7 @@
   <div class="main-layout">
 
     
-    <div style="flex:1;min-width:300px">
+    <div style="flex:1;min-width:300px" id="canvas-column-calc">
       <div class="canvas-wrap">
         <canvas id="canvas" height="480"></canvas>
       </div>
@@ -683,6 +685,32 @@ resize();
 gdPath=[{x:gdX0,y:FNS.gd.f(gdX0)}];
 gd2dPath=[{x:gd2dX0,y:gd2dY0}];
 updateTheoryNote();
+
+AIMathTutor.renderCard('canvas-column-calc');
+
+window.buildAIContext = function () {
+  const F = fn();
+  const context = [`Active tab: ${currentTab}`, `Function: ${F ? F.label : 'n/a'}`];
+
+  if (currentTab === 'deriv') {
+    context.push(`x = ${xPos.toFixed(3)}, f(x) = ${F.f(xPos).toFixed(4)}, f'(x) = ${F.df(xPos).toFixed(4)}`);
+  } else if (currentTab === 'integ') {
+    context.push(`Integration bounds: a = ${intA.toFixed(1)}, b = ${intB.toFixed(1)}, Riemann partitions n = ${riemannN}`);
+  } else if (currentTab === 'taylor') {
+    context.push(`Taylor expansion point a = ${taylorA.toFixed(2)}, degree n = ${taylorN}`);
+  } else if (currentTab === 'gd') {
+    const last = gdPath.length ? gdPath[gdPath.length-1] : {x: gdX0, y: FNS.gd.f(gdX0)};
+    context.push(`Gradient descent: x₀ = ${gdX0}, η = ${gdLR}, steps = ${gdPath.length}`);
+    context.push(`Current position: x = ${last.x.toFixed(4)}, f(x) = ${last.y.toFixed(4)}, gradient = ${FNS.gd.df(last.x).toFixed(4)}`);
+  } else if (currentTab === 'gd2d') {
+    const last2 = gd2dPath.length ? gd2dPath[gd2dPath.length-1] : {x: gd2dX0, y: gd2dY0};
+    context.push(`2D gradient descent: η = ${gd2dLR}, steps = ${gd2dPath.length}`);
+    context.push(`Current position: (${last2.x.toFixed(3)}, ${last2.y.toFixed(3)}), f = ${FNS2D.gd2d.f(last2.x, last2.y).toFixed(4)}`);
+  }
+
+  const msgs = window.buildAIMessages('Calculus Visualizer', context);
+  AIMathTutor.ask(msgs, 'ai-card-body');
+};
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
     Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>

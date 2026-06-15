@@ -18,6 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="ai-assistant.css">
+<script src="ai-assistant.js"></script>
 <style>
 #z-row, #scale-z-row { display: none; }
 body.mode3d #z-row, body.mode3d #scale-z-row { display: block; }
@@ -127,7 +129,7 @@ body.mode3d #hint3d { display: flex; }
 
   <div class="main-layout">
 
-    <div class="canvas-column">
+    <div class="canvas-column" id="canvas-column-vec">
       <div class="canvas-wrap">
         <canvas id="canvas" height="500"></canvas>
         <div id="zoom-badge">1×</div>
@@ -1500,6 +1502,35 @@ window.addEventListener('themechange', () => {
 });
 resize();
 updateTheoryNote();
+
+AIMathTutor.renderCard('canvas-column-vec');
+
+window.buildAIContext = function () {
+  const mode  = currentMode;
+  const vecs  = window.vectors || [];
+  const lang  = document.body.getAttribute('data-active-lang') || 'en';
+
+  const context = [
+    `Mode: ${mode.toUpperCase()}`,
+    `Vectors on canvas: ${vecs.length === 0 ? 'none' : vecs.map((v, i) => {
+      if (mode === '3d') return `${v.name}=(${(v.ex-v.ox).toFixed(2)}, ${(v.ey-v.oy).toFixed(2)}, ${((v.ez||0)-(v.oz||0)).toFixed(2)})`;
+      return `${v.name}=(${(v.ex-v.ox).toFixed(2)}, ${(v.ey-v.oy).toFixed(2)})`;
+    }).join(', ')}`,
+  ];
+
+  if (vecs.length >= 2 && showResultant) {
+    let rx=0,ry=0,rz=0;
+    vecs.forEach(v=>{ rx+=v.ex-v.ox; ry+=v.ey-v.oy; rz+=(v.ez||0)-(v.oz||0); });
+    context.push(`Resultant vector shown: (${rx.toFixed(2)}, ${ry.toFixed(2)}${mode==='3d'?', '+rz.toFixed(2):''})`);
+  }
+
+  if (window.lcCoeffs && lcCoeffs.length && lcShowOnCanvas) {
+    context.push(`Linear combination active with coefficients: ${lcCoeffs.map((c,i)=>`c${i+1}=${c.toFixed(2)}`).join(', ')}`);
+  }
+
+  const msgs = window.buildAIMessages('Vector Space Visualizer', context);
+  AIMathTutor.ask(msgs, 'ai-card-body');
+};
 </script>
 
 <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; border-top: 1px solid var(--border);">

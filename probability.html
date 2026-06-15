@@ -18,6 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="ai-assistant.css">
+<script src="ai-assistant.js"></script>
 <style>
 .tab-bar { display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; }
 .tab-btn { font-family:'JetBrains Mono',monospace; font-size: 14px; padding:5px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--border2); background:transparent; color:var(--ink3); transition:background 0.12s,color 0.12s; }
@@ -83,7 +85,7 @@
 
   <div class="main-layout">
 
-    <div style="flex:1;min-width:300px">
+    <div style="flex:1;min-width:300px" id="canvas-column-prob">
       <div class="canvas-wrap">
         <canvas id="canvas" height="440"></canvas>
       </div>
@@ -709,6 +711,35 @@ resize();
 
 runCLT();
 updateTheoryNote();
+
+AIMathTutor.renderCard('canvas-column-prob');
+
+window.buildAIContext = function () {
+  const context = [`Active tab: ${currentTab}`];
+
+  if (currentTab === 'normal') {
+    const prob = normalCDF(normalMu + normalK*normalSigma, normalMu, normalSigma) - normalCDF(normalMu - normalK*normalSigma, normalMu, normalSigma);
+    context.push(`Normal distribution N(μ=${normalMu.toFixed(1)}, σ=${normalSigma.toFixed(2)})`);
+    context.push(`Shaded area ±${normalK.toFixed(1)}σ = ${(prob*100).toFixed(2)}%`);
+  } else if (currentTab === 'bayes') {
+    const PB = bayesPA*bayesPBA + (1-bayesPA)*bayesPBNA;
+    const PAB = bayesPA*bayesPBA / PB;
+    context.push(`P(A)=${bayesPA.toFixed(2)}, P(B|A)=${bayesPBA.toFixed(2)}, P(B|¬A)=${bayesPBNA.toFixed(2)}`);
+    context.push(`P(B)=${PB.toFixed(4)}, posterior P(A|B)=${PAB.toFixed(4)}`);
+  } else if (currentTab === 'binom') {
+    context.push(`Binomial B(n=${binomN}, p=${binomP.toFixed(2)}), mean=${(binomN*binomP).toFixed(2)}, variance=${(binomN*binomP*(1-binomP)).toFixed(3)}`);
+  } else if (currentTab === 'clt') {
+    context.push(`CLT with n=${cltN} samples per group, source = ${document.getElementById('clt-src').value}`);
+  } else if (currentTab === 'multivar') {
+    context.push(`Multivariate Normal: σ_x=${mvSx.toFixed(1)}, σ_y=${mvSy.toFixed(1)}, correlation ρ=${mvRho.toFixed(2)}`);
+  } else if (currentTab === 'markov') {
+    context.push(`Markov chain: P(A|A)=${mkPaa.toFixed(2)}, P(B|B)=${mkPbb.toFixed(2)}, steps=${mkSteps}`);
+    context.push(`Current state: P(A)=${mkState[0].toFixed(3)}, P(B)=${mkState[1].toFixed(3)}`);
+  }
+
+  const msgs = window.buildAIMessages('Probability & Statistics', context);
+  AIMathTutor.ask(msgs, 'ai-card-body');
+};
 </script>
   <div class="sticky-footer" style="text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; font-size: 15px; color: var(--ink2); width: 100%; display: block; flex-shrink: 0;">
     Designed & Engineered by <a href="https://ricoeri.my.id" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); margin-left: 4px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);">Rico Eriansyah</a>
