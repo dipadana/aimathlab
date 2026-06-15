@@ -1,7 +1,7 @@
 export const config = { runtime: 'edge' };
 
 const GATEWAY_URL = 'https://gateway.dahono.com/v1/chat/completions';
-const MODEL = 'dahono/claude-opus-4.8-thinking-free';
+const MODEL = 'dahono/ai-chat';
 
 async function callGateway(apiKey, messages, stream) {
   return fetch(GATEWAY_URL, {
@@ -12,6 +12,10 @@ async function callGateway(apiKey, messages, stream) {
     },
     body: JSON.stringify({ model: MODEL, messages, stream, max_tokens: 512 }),
   });
+}
+
+function errorSSE(message) {
+  return `data: ${JSON.stringify({ error: message })}\n\n`;
 }
 
 function upstreamErrorResponse(message) {
@@ -69,7 +73,15 @@ export default async function handler(req) {
   const upstream = await callGateway(apiKey, body.messages, useStream);
 
   if (!upstream.ok) {
-    return upstreamErrorResponse('The AI gateway is temporarily unavailable. Please try again.');
+    const status = upstream.status;
+    const messages = {
+      401: 'API key is invalid or has been revoked.',
+      402: 'Insufficient credit balance on the AI gateway.',
+      404: 'The requested model is not available.',
+      429: 'Rate limit exceeded. Please wait a moment and try again.',
+    };
+    const msg = messages[status] || 'The AI gateway is temporarily unavailable. Please try again.';
+    return upstreamErrorResponse(msg);
   }
 
   if (!useStream) {
@@ -85,32 +97,37 @@ export default async function handler(req) {
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
-  let firstChunkChecked = false;
+  let settled = false;
 
   const transform = new TransformStream({
     transform(chunk, controller) {
-      if (!firstChunkChecked) {
-        firstChunkChecked = true;
-        const text = decoder.decode(chunk, { stream: true });
-        const lines = text.split('\n');
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const payload = line.slice(6).trim();
-          if (payload === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(payload);
-            if (parsed.error) {
-              controller.enqueue(encoder.encode(
-                `data: {"error":"The AI gateway is temporarily unavailable. Please try again."}\n\n`
-              ));
-              controller.terminate();
-              return;
-            }
-          } catch {}
-        }
+      const text = decoder.decode(chunk, { stream: true });
+
+      if (settled) {
         controller.enqueue(chunk);
         return;
       }
+
+      const lines = text.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') { settled = true; break; }
+        try {
+          const parsed = JSON.parse(payload);
+          if (parsed.error) {
+            controller.enqueue(encoder.encode(
+              errorSSE('The AI gateway is temporarily unavailable. Please try again.')
+            ));
+            controller.terminate();
+            return;
+          }
+          if (parsed.choices?.[0]?.delta?.content !== undefined) {
+            settled = true;
+          }
+        } catch {}
+      }
+
       controller.enqueue(chunk);
     },
   });
