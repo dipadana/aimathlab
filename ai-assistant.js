@@ -163,7 +163,7 @@
           <i class="fa-solid fa-sparkles"></i>
           <span>AI Tutor</span>
         </span>
-        <span class="ai-model-tag">claude-opus-4.8</span>
+        <span class="ai-model-tag">Dahono AI</span>
         <div class="ai-header-actions">
           <span id="ai-spinner" class="ai-spinner" style="display:none"></span>
           <button id="ai-explain-btn" class="ai-explain-btn" onclick="if(window.buildAIContext) window.buildAIContext();">
