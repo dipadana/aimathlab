@@ -451,7 +451,7 @@
           <span>AI Tutor</span>
         </span>
         <span class="ai-model-tag" style="display: inline-flex; align-items: center; gap: 4px; font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', Segoe UI Symbol, 'Noto Color Emoji'; font-weight: 700; letter-spacing: -0.02em; color: #e02020;">
-          <img src="dahono_logo.png" alt="Dahono Labs" style="height: 1em; width: auto; border-radius: 2px;"> Dahono Labs.
+          <img class="dahono-logo" src="${window.isDark && window.isDark() ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg'}" alt="Dahono Labs" style="height: 1em; width: auto; border-radius: 2px;">
         </span>
         <div class="ai-header-actions">
           <button id="ai-speaker-btn" class="ai-speaker-btn" onclick="AIMathTutor.toggleTTS()" title="Toggle Voice Output">

@@ -27,6 +27,7 @@ function applyTheme() {
     document.documentElement.removeAttribute('data-theme');
   }
   updateThemeIcon();
+  if (typeof updateLogos === 'function') updateLogos();
   window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: window.isDark() ? 'dark' : 'light' } }));
 }
 
@@ -51,6 +52,14 @@ function updateThemeIcon() {
   const icon = btn.querySelector('i');
   if (!icon) return;
   icon.className = window.isDark() ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+}
+
+window.updateLogos = function() {
+  const isDarkTheme = window.isDark();
+  const logos = document.querySelectorAll('.dahono-logo');
+  logos.forEach(img => {
+    img.src = isDarkTheme ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg';
+  });
 }
 
 applyTheme();
