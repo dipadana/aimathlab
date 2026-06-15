@@ -1268,12 +1268,13 @@ function updateLCResult() {
       const cxStr = fmt(cumX), cyStr = fmt(cumY), czStr = fmt(cumZ);
       const coords = currentMode === '3d' ? `(${cxStr},&thinsp;${cyStr},&thinsp;${czStr})` : `(${cxStr},&thinsp;${cyStr})`;
       let text = '';
+      const vHtmlName = `v<sub>${i+1}</sub>`;
       if (lang === 'ja') {
-        text = `${v.name} ${Ls.scale} ${c.toFixed(1)}倍: ${coords}`;
+        text = `${vHtmlName} ${Ls.scale} ${c.toFixed(1)}倍: ${coords}`;
       } else if (lang === 'id') {
-        text = `${Ls.scale} ${v.name} dengan ${c.toFixed(1)}: ${coords}`;
+        text = `${Ls.scale} ${vHtmlName} dengan ${c.toFixed(1)}: ${coords}`;
       } else {
-        text = `${Ls.scale} ${v.name} by ${c.toFixed(1)}: ${coords}`;
+        text = `${Ls.scale} ${vHtmlName} by ${c.toFixed(1)}: ${coords}`;
       }
       const icon = i === 0 ? '<i class="fa-solid fa-arrow-right"></i>' : '<i class="fa-solid fa-plus"></i>';
       const isStepShown = lcAnimStep === -1 || lcAnimStep >= i;
@@ -1441,7 +1442,7 @@ function updateOpsPanel() {
   const cx = dy1*dz2 - dz1*dy2, cy = dz1*dx2 - dx1*dz2, cz = dx1*dy2 - dy1*dx2;
   const crossMag = Math.sqrt(cx*cx+cy*cy+cz*cz);
   el.innerHTML = `
-    <div style="font-size: 14px;color:var(--ink3);margin-bottom:6px">Operations on <strong>${v1.name}</strong> and <strong>${v2.name}</strong>:</div>
+    <div style="font-size: 14px;color:var(--ink3);margin-bottom:6px">Operations on <strong>v<sub>1</sub></strong> and <strong>v<sub>2</sub></strong>:</div>
     <div style="margin-bottom:4px"><span style="color:var(--ink3)">Dot Product (v₁·v₂) = </span><strong>${fmt(dot)}</strong></div>
     <div><span style="color:var(--ink3)">Angle (θ) = </span><strong>${(theta*180/Math.PI).toFixed(1)}°</strong></div>
     ${currentMode === '3d' ? `<div style="margin-top:4px"><span style="color:var(--ink3)">Cross Mag |v₁×v₂| = </span><strong>${fmt(crossMag)}</strong></div>
