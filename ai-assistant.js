@@ -173,7 +173,6 @@
         </div>
       </div>
       <div class="ai-card-body" id="ai-card-body">${idlePlaceholder()}</div>
-      <div class="ai-card-credit">Powered AI by <span>Dahono AI</span></div>
     `;
     col.appendChild(card);
 
@@ -199,12 +198,23 @@
     };
 
     const system = [
-      `You are an expert math and AI tutor integrated into AIMathLab, an interactive visualizer.`,
-      `The user is on the "${pageName}" page.`,
-      `Current visualizer state:`,
+      `You are an expert math and AI tutor integrated into "AIMathLab", an interactive web-based visualizer.`,
+      `AIMathLab's goal is to build deep mathematical intuition for Artificial Intelligence concepts.`,
+      `The project contains 5 main interactive modules:`,
+      `1. Vectors: Explores dot products, cosine similarity, and vector projections (foundational for Word Embeddings & Attention).`,
+      `2. Matrices: Visualizes linear transformations, stretching, and rotating space (foundational for Neural Network Weights & SVD).`,
+      `3. Calculus: Demonstrates gradient descent on a loss landscape (foundational for Model Optimization).`,
+      `4. Probability: Shows data distributions and variance (foundational for initialization and generative models).`,
+      `5. Neural Networks: Simulates a multilayer perceptron, showing forward passes and backpropagation.`,
+      `Additional features: Trilingual support (EN, JA, ID), Dark/Light theme toggle, and a Scientific Methodology Docs page.`,
+      `You must act as a knowledgeable, encouraging guide who truly understands the holistic purpose of this project: bridging the gap between abstract equations and visual understanding in AI.`,
+      `The user is currently on the "${pageName}" module.`,
+      `Here is the exact live state of the visualizer right now (which the user is interacting with via sliders):`,
       ...contextLines.map(l => `  - ${l}`),
       ``,
-      `Task: In 3-5 sentences, explain what the user is currently seeing on the canvas and teach the key mathematical concept. Be concise, insightful, and encourage exploration. Plain text only, no markdown, no LaTeX, no bullet points.`,
+      `Task: In 3-5 sentences, explain what the user is currently seeing on the canvas and teach the key mathematical concept behind it.`,
+      `Connect the specific numbers/state they are seeing to the broader concepts of Artificial Intelligence or Machine Learning where applicable.`,
+      `Be concise, highly insightful, and encourage further exploration. Plain text only, no markdown, no LaTeX, no bullet points.`,
       langInstructions[lang] || langInstructions.en,
     ].join('\n');
 

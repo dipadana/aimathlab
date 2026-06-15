@@ -8,20 +8,6 @@
   position: relative;
 }
 
-.ai-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent4) 50%, var(--accent3) 100%);
-  opacity: 0;
-  transition: opacity 0.4s;
-  border-radius: 10px 10px 0 0;
-}
-.ai-card--streaming::before,
-.ai-card--done::before {
-  opacity: 1;
-}
 .ai-card--streaming {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border2));
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
@@ -125,17 +111,17 @@
 }
 
 .ai-card-body {
-  padding: 12px 14px;
+  padding: 14px 16px;
   min-height: 56px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
   color: var(--ink2);
 }
 
 .ai-placeholder {
   color: var(--ink3);
-  font-size: 13px;
+  font-size: 14px;
   font-family: 'DM Sans', sans-serif;
   margin: 0;
 }
@@ -144,7 +130,7 @@
 .ai-stream-text {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.75;
   letter-spacing: 0.01em;
 }
@@ -181,29 +167,13 @@
   height: 13px;
   width: 75%;
   border-radius: 4px;
-  background: linear-gradient(90deg,
-    color-mix(in srgb, var(--border2) 80%, transparent) 25%,
-    color-mix(in srgb, var(--accent) 12%, transparent) 50%,
-    color-mix(in srgb, var(--border2) 80%, transparent) 75%
-  );
-  background-size: 200% 100%;
-  animation: ai-shimmer 1.4s infinite;
+  background: var(--surface2);
+  animation: ai-shimmer 1.4s infinite alternate;
   margin-top: 4px;
 }
 @keyframes ai-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0%   { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
-.ai-card-credit {
-  padding: 5px 14px 7px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--ink3);
-  border-top: 1px solid var(--border);
-  background: var(--surface2);
-}
-.ai-card-credit span {
-  color: #e02020;
-  font-weight: 600;
-}
+
