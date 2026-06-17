@@ -556,7 +556,14 @@
     processedText = processedText.trim();
 
     if (isFinal && processedText === '' && text.trim() !== '') {
-      processedText = text.replace(/<\/?think\s*>/gi, '').trim();
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      if (lang === 'ja') {
+        processedText = 'ビジュアライザーのパラメータを調整しました。';
+      } else if (lang === 'id') {
+        processedText = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
+      } else {
+        processedText = 'I have adjusted the visualizer parameters for you.';
+      }
     }
 
     const mathBlocks = [];
