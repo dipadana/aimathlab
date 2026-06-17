@@ -199,6 +199,12 @@ let _user = null;
 let _saveTimer = null;
 let _saveIndicator = null;
 
+window.AIMLAuth = {
+  getSupabase: () => _supabase,
+  getUser: () => _user,
+  openAuthModal: () => { if (_supabase) openAuthModal(_supabase); }
+};
+
 function getPageKey() {
   return window.location.pathname.split('/').pop() || 'index.html';
 }

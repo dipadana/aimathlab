@@ -69,7 +69,7 @@
   margin-left: auto;
 }
 
-.ai-quiz-btn, .ai-clear-btn {
+.ai-quiz-btn, .ai-clear-btn, .ai-draw-btn {
   background: none;
   border: 1px solid transparent;
   color: var(--ink3);
@@ -83,7 +83,7 @@
   align-items: center;
   gap: 4px;
 }
-.ai-quiz-btn:hover, .ai-clear-btn:hover {
+.ai-quiz-btn:hover, .ai-clear-btn:hover, .ai-draw-btn:hover {
   background: var(--surface2);
   color: var(--ink2);
 }
@@ -91,6 +91,11 @@
   background: color-mix(in srgb, var(--accent3) 15%, transparent);
   color: var(--accent3);
   border-color: color-mix(in srgb, var(--accent3) 30%, transparent);
+}
+.ai-draw-btn.active {
+  background: color-mix(in srgb, #e02020 15%, transparent);
+  color: #e02020;
+  border-color: color-mix(in srgb, #e02020 30%, transparent);
 }
 
 .ai-explain-btn {
@@ -382,4 +387,31 @@
   to { opacity: 0; transform: translateX(-50%) scale(0.9); top: 10px; }
 }
 
-
+.ai-thought-process {
+  font-size: 13px;
+  color: var(--ink3);
+  background: var(--surface2);
+  border-left: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.ai-thought-process summary {
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+  color: var(--accent);
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.ai-thought-process summary:hover {
+  text-decoration: underline;
+}
+.ai-thought-process .content {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--ink2);
+}

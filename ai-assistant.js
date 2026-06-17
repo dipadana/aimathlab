@@ -6,6 +6,70 @@
   let _chatHistory = [];
   let _isQuizMode = false;
   let _ttsEnabled = false;
+  let _isDrawMode = false;
+  let _drawLayer = null;
+  let _drawCtx = null;
+  let _isDrawing = false;
+
+  const _profileManager = {
+    _cache: null,
+    _lastUserId: null,
+    async init() {
+      const auth = window.AIMLAuth;
+      const user = auth?.getUser();
+      if (!auth || !user) {
+        this._cache = {};
+        this._lastUserId = null;
+        return;
+      }
+      if (this._lastUserId === user.id && this._cache) return;
+      
+      this._lastUserId = user.id;
+      if (auth.getSupabase()) {
+        try {
+          const { data } = await auth.getSupabase()
+            .from('user_states')
+            .select('state')
+            .eq('user_id', user.id)
+            .eq('page_name', '_ai_profile')
+            .maybeSingle();
+          if (data && data.state) {
+            this._cache = data.state;
+            return;
+          }
+        } catch (e) { console.warn("AI Profile load err:", e); }
+      }
+      this._cache = {};
+    },
+    get() { return this._cache || {}; },
+    async update(key, value) {
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getUser() || !auth.getSupabase()) {
+        if (auth && auth.openAuthModal) auth.openAuthModal();
+        return false;
+      }
+      if (!this._cache) this._cache = {};
+      this._cache[key] = value;
+      try {
+        await auth.getSupabase().from('user_states').upsert({
+          user_id: auth.getUser().id,
+          page_name: '_ai_profile',
+          state: this._cache,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,page_name' });
+        return true;
+      } catch(e) { return false; }
+    },
+    getSummary() {
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getUser()) {
+        return "User is NOT logged in. The Learning Profile is disabled. Prompt the user to log in (top right button) if they want a personalized learning experience! DO NOT use the update_profile tool.";
+      }
+      const p = this.get();
+      if (Object.keys(p).length === 0) return "No profile data yet.";
+      return Object.entries(p).map(([k, v]) => `${k}: ${v}`).join(', ');
+    }
+  };
 
   window.AIMathTutor = {
     ask,
@@ -14,8 +78,98 @@
     renderCard,
     toggleQuizMode,
     clearHistory,
-    toggleTTS
+    toggleTTS,
+    toggleDrawMode,
+    clearDrawLayer
   };
+
+  function toggleDrawMode() {
+    _isDrawMode = !_isDrawMode;
+    const btn = document.getElementById('ai-draw-btn');
+    if (btn) btn.classList.toggle('active', _isDrawMode);
+    
+    if (_isDrawMode && !_drawLayer) {
+      initDrawLayer();
+    }
+    if (_drawLayer) {
+      _drawLayer.style.pointerEvents = _isDrawMode ? 'auto' : 'none';
+    }
+  }
+
+  function initDrawLayer() {
+    const mainCanvas = document.querySelector('canvas:not(#ai-draw-layer)');
+    if (!mainCanvas) return;
+    const wrap = mainCanvas.parentElement;
+    if (!wrap) return;
+
+    if (getComputedStyle(wrap).position === 'static') {
+      wrap.style.position = 'relative';
+    }
+
+    _drawLayer = document.createElement('canvas');
+    _drawLayer.id = 'ai-draw-layer';
+    _drawLayer.width = mainCanvas.width;
+    _drawLayer.height = mainCanvas.height;
+    _drawLayer.style.position = 'absolute';
+    _drawLayer.style.top = mainCanvas.offsetTop + 'px';
+    _drawLayer.style.left = mainCanvas.offsetLeft + 'px';
+    _drawLayer.style.width = mainCanvas.style.width || mainCanvas.offsetWidth + 'px';
+    _drawLayer.style.height = mainCanvas.style.height || mainCanvas.offsetHeight + 'px';
+    _drawLayer.style.pointerEvents = 'auto';
+    _drawLayer.style.zIndex = '10';
+    _drawLayer.style.cursor = 'crosshair';
+    
+    wrap.appendChild(_drawLayer);
+    _drawCtx = _drawLayer.getContext('2d');
+    _drawCtx.strokeStyle = '#e02020';
+    _drawCtx.lineWidth = 3;
+    _drawCtx.lineCap = 'round';
+    _drawCtx.lineJoin = 'round';
+
+    const getPos = (e) => {
+      const rect = _drawLayer.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const scaleX = _drawLayer.width / rect.width;
+      const scaleY = _drawLayer.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    };
+
+    const startDraw = (e) => {
+      if (!_isDrawMode) return;
+      e.preventDefault();
+      _isDrawing = true;
+      const pos = getPos(e);
+      _drawCtx.beginPath();
+      _drawCtx.moveTo(pos.x, pos.y);
+    };
+
+    const draw = (e) => {
+      if (!_isDrawing || !_isDrawMode) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      _drawCtx.lineTo(pos.x, pos.y);
+      _drawCtx.stroke();
+    };
+
+    const endDraw = () => { _isDrawing = false; };
+
+    _drawLayer.addEventListener('mousedown', startDraw);
+    _drawLayer.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', endDraw);
+    _drawLayer.addEventListener('touchstart', startDraw, {passive:false});
+    _drawLayer.addEventListener('touchmove', draw, {passive:false});
+    window.addEventListener('touchend', endDraw);
+  }
+
+  function clearDrawLayer() {
+    if (_drawCtx && _drawLayer) {
+      _drawCtx.clearRect(0, 0, _drawLayer.width, _drawLayer.height);
+    }
+  }
 
   function toggleTTS() {
     _ttsEnabled = !_ttsEnabled;
@@ -89,9 +243,13 @@
       _chatHistory.push({ role: 'user', content: defaultReq[lang] });
       appendMessageUI('user', defaultReq[lang]);
     }
+    await _profileManager.init();
+
     let payloadMessages = [];
     if (systemContextMsgs && systemContextMsgs.length > 0) {
-      payloadMessages.push({ role: 'system', content: systemContextMsgs[0].content });
+      let sysContent = systemContextMsgs[0].content;
+      sysContent = sysContent.replace('__PROFILE_PLACEHOLDER__', _profileManager.getSummary());
+      payloadMessages.push({ role: 'system', content: sysContent });
     }
     
     if (_isQuizMode) {
@@ -104,10 +262,21 @@
       const lastIdx = payloadMessages.length - 1;
       const lastMsg = payloadMessages[lastIdx];
       if (lastMsg.role === 'user') {
-        const activeCanvas = document.querySelector('canvas');
+        const activeCanvas = document.querySelector('canvas:not(#ai-draw-layer)');
         if (activeCanvas) {
           try {
-            const currentCanvasBase64 = activeCanvas.toDataURL('image/jpeg', 0.8);
+            let currentCanvasBase64 = null;
+            if (_drawLayer) {
+              const mergeCanvas = document.createElement('canvas');
+              mergeCanvas.width = activeCanvas.width;
+              mergeCanvas.height = activeCanvas.height;
+              const mergeCtx = mergeCanvas.getContext('2d');
+              mergeCtx.drawImage(activeCanvas, 0, 0);
+              mergeCtx.drawImage(_drawLayer, 0, 0);
+              currentCanvasBase64 = mergeCanvas.toDataURL('image/jpeg', 0.8);
+            } else {
+              currentCanvasBase64 = activeCanvas.toDataURL('image/jpeg', 0.8);
+            }
             payloadMessages[lastIdx] = {
               role: 'user',
               content: [
@@ -123,10 +292,18 @@
     }
 
     try {
+      const tools = [
+        { type: "function", function: { name: "set_parameter", description: "Adjusts a visualizer parameter slider live.", parameters: { type: "object", properties: { id: { type: "string" }, value: { type: "number" } }, required: ["id", "value"] } } },
+        { type: "function", function: { name: "highlight_element", description: "Draws the user's attention to a specific UI element by pulsing it.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } } },
+        { type: "function", function: { name: "annotate", description: "Shows a floating visual annotation overlay over the canvas.", parameters: { type: "object", properties: { message: { type: "string" } }, required: ["message"] } } },
+        { type: "function", function: { name: "update_profile", description: "Updates the user's learning profile.", parameters: { type: "object", properties: { subject: { type: "string" }, proficiency: { type: "string" } }, required: ["subject", "proficiency"] } } },
+        { type: "function", function: { name: "render_custom_ui", description: "Generates an isolated, interactive HTML snippet in a sandbox iframe inside the chat.", parameters: { type: "object", properties: { html: { type: "string", description: "The raw HTML string, including inline CSS and JS" }, height: { type: "number", description: "The height in pixels of the iframe" } }, required: ["html", "height"] } } }
+      ];
+
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: payloadMessages, stream: true }),
+        body: JSON.stringify({ messages: payloadMessages, stream: true, tools: tools }),
         signal: _abortCtrl.signal,
       });
 
@@ -158,6 +335,7 @@
       const decoder = new TextDecoder();
       let buffer = '';
       let fullResponse = '';
+      let toolCalls = {};
 
       while (true) {
         const { done, value } = await reader.read();
@@ -181,12 +359,29 @@
               setCardState('idle', explainBtn, sendBtn);
               return;
             }
-            const delta = json.choices?.[0]?.delta?.content;
-            if (delta) {
+            const delta = json.choices?.[0]?.delta?.content || '';
+            const reasoning = json.choices?.[0]?.delta?.reasoning_content || '';
+            const deltaToolCalls = json.choices?.[0]?.delta?.tool_calls;
+            
+            if (deltaToolCalls) {
+              for (const tc of deltaToolCalls) {
+                if (!toolCalls[tc.index]) toolCalls[tc.index] = { id: tc.id, name: tc.function?.name, arguments: '' };
+                if (tc.function?.arguments) toolCalls[tc.index].arguments += tc.function.arguments;
+              }
+            }
+            
+            if (reasoning) {
+              if (!fullResponse.includes('<think>')) fullResponse += '<think>';
+              fullResponse += reasoning;
+            } else if (delta) {
+              if (fullResponse.includes('<think>') && !fullResponse.includes('</think>')) {
+                fullResponse += '</think>\n\n';
+              }
               fullResponse += delta;
-              
-              const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
-              
+            }
+
+            if (delta || reasoning) {
+              const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
               textEl.innerHTML = parseMarkdown(displayableText);
               textEl.appendChild(cursor);
               body.scrollTop = body.scrollHeight;
@@ -196,11 +391,21 @@
       }
 
       cursor.remove();
-      const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE):\s*([^\]]+)\]\]/g, '');
+      const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
       textEl.innerHTML = parseMarkdown(finalDisplayableText);
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
+      for (const idx in toolCalls) {
+        const tc = toolCalls[idx];
+        try {
+          const args = JSON.parse(tc.arguments);
+          executeToolCall(tc.name, args, body);
+          _chatHistory.push({ role: 'assistant', tool_calls: [{ id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.arguments } }] });
+          _chatHistory.push({ role: 'tool', tool_call_id: tc.id, content: "Success" });
+        } catch (e) { console.error("Tool parsing error", e); }
+      }
+
       parseAndExecuteCommands(fullResponse);
 
       if (window.MathJax) {
@@ -221,6 +426,52 @@
     } finally {
       _isStreaming = false;
       _abortCtrl = null;
+    }
+  }
+
+  function executeToolCall(name, args, body) {
+    if (name === 'set_parameter') {
+      const el = document.getElementById(args.id);
+      if (el) {
+        el.value = args.value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else if (name === 'highlight_element') {
+      const el = document.getElementById(args.id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ai-highlight-pulse');
+        setTimeout(() => el.classList.remove('ai-highlight-pulse'), 3000);
+      }
+    } else if (name === 'annotate') {
+      const container = document.querySelector('.canvas-column') || document.body;
+      const overlay = document.createElement('div');
+      overlay.className = 'ai-annotation-overlay';
+      overlay.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${args.message}`;
+      container.appendChild(overlay);
+      setTimeout(() => {
+        overlay.classList.add('ai-annotation-fade-out');
+        setTimeout(() => overlay.remove(), 400);
+      }, 5000);
+    } else if (name === 'update_profile') {
+      _profileManager.update(args.subject, args.proficiency);
+    } else if (name === 'render_custom_ui') {
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '100%';
+      iframe.style.height = (args.height || 200) + 'px';
+      iframe.style.border = '1px solid var(--border2)';
+      iframe.style.borderRadius = '8px';
+      iframe.style.marginTop = '10px';
+      iframe.style.background = '#fff';
+      iframe.sandbox = "allow-scripts";
+      iframe.srcdoc = args.html;
+      
+      const msgBubble = document.createElement('div');
+      msgBubble.className = 'ai-msg ai-msg-assistant';
+      msgBubble.appendChild(iframe);
+      body.appendChild(msgBubble);
+      body.scrollTop = body.scrollHeight;
     }
   }
 
@@ -262,11 +513,25 @@
         setTimeout(() => overlay.remove(), 400);
       }, 5000);
     }
+
+    const profileRegex = /\[\[UPDATE_PROFILE:\s*([^=\]]+)=([^\]]+)\]\]/g;
+    while ((match = profileRegex.exec(text)) !== null) {
+      _profileManager.update(match[1].trim(), match[2].trim());
+    }
   }
 
   function parseMarkdown(text) {
+    let processedText = text.replace(/<think>([\s\S]*?)<\/think>/g, (match, p1) => {
+      return `<details class="ai-thought-process"><summary><i class="fa-solid fa-brain"></i> AI Thought Process</summary><div class="content">${p1.trim()}</div></details>`;
+    });
+    if (processedText.includes('<think>') && !processedText.includes('</think>')) {
+      processedText = processedText.replace(/<think>([\s\S]*)$/g, (match, p1) => {
+        return `<details class="ai-thought-process" open><summary><i class="fa-solid fa-brain"></i> AI is thinking...</summary><div class="content">${p1}</div></details>`;
+      });
+    }
+
     const mathBlocks = [];
-    let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
+    processedText = processedText.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
       mathBlocks.push(match);
       return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
     });
@@ -467,13 +732,16 @@
           <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${window.isDark && window.isDark() ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg'}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
         </span>
         <div class="ai-header-actions">
+          <button id="ai-draw-btn" class="ai-draw-btn" onclick="AIMathTutor.toggleDrawMode()" title="Toggle Whiteboard Mode">
+            <i class="fa-solid fa-pen"></i> Draw
+          </button>
           <button id="ai-speaker-btn" class="ai-speaker-btn" onclick="AIMathTutor.toggleTTS()" title="Toggle Voice Output">
             <i class="fa-solid fa-volume-high"></i>
           </button>
           <button id="ai-quiz-btn" class="ai-quiz-btn" onclick="AIMathTutor.toggleQuizMode()" title="Toggle Quiz Mode">
             <i class="fa-solid fa-clipboard-question"></i> Quiz
           </button>
-          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory()" title="Clear Chat">
+          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();" title="Clear Chat & Drawing">
             <i class="fa-solid fa-trash-can"></i>
           </button>
           <span id="ai-spinner" class="ai-spinner" style="display:none"></span>
@@ -534,10 +802,12 @@
       `Task: Answer the user's question or explain the current canvas state.`,
       `Connect the specific numbers/state they are seeing to the broader concepts of Artificial Intelligence or Machine Learning where applicable.`,
       `Be concise, highly insightful, and encourage further exploration. You can use LaTeX math formatting by wrapping inline math in $...$ and block math in $$...$$.`,
-      `ADVANCED COMMANDS: You can perform actions on the user's interface by appending these exact commands to your response:`,
-      `1. [[SET: parameter_id=value]] -> Adjusts a slider live (e.g. [[SET: gdLR=2.5]]). Known parameter IDs are in the context.`,
-      `2. [[HIGHLIGHT: dom_id]] -> Draws the user's attention to a specific UI element by pulsing it.`,
-      `3. [[ANNOTATE: message]] -> Shows a floating visual annotation overlay over the canvas with your message.`,
+      `You have access to native tools. ALWAYS use tool calls when you need to interact with the visualizer UI (set_parameter, highlight_element, annotate) or update the user's learning profile (update_profile).`,
+      `DO NOT use the old text-based [[SET:...]] commands anymore. Rely purely on the tools array.`,
+      `If you need to show a dynamic or interactive element inside the chat, use the render_custom_ui tool.`,
+      ``,
+      `User Learning Profile State: __PROFILE_PLACEHOLDER__`,
+      `Adapt your explanations to match their proficiency. For complex math, please use <think> tags to reason before answering!`,
       langInstructions[lang] || langInstructions.en,
     ].join('\n');
 

@@ -3,14 +3,23 @@ export const config = { runtime: 'edge' };
 const GATEWAY_URL = 'https://gateway.dahono.com/v1/chat/completions';
 const MODEL = 'dahono/qwen3.7-plus';
 
-async function callGateway(apiKey, messages, stream) {
+async function callGateway(apiKey, requestBody, stream) {
+  const payload = {
+    model: MODEL,
+    messages: requestBody.messages,
+    stream,
+    max_tokens: requestBody.max_tokens || 4096
+  };
+  if (requestBody.tools) payload.tools = requestBody.tools;
+  if (requestBody.tool_choice) payload.tool_choice = requestBody.tool_choice;
+
   return fetch(GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: MODEL, messages, stream, max_tokens: 512 }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -70,7 +79,7 @@ export default async function handler(req) {
   }
 
   const useStream = body.stream === true;
-  const upstream = await callGateway(apiKey, body.messages, useStream);
+  const upstream = await callGateway(apiKey, body, useStream);
 
   if (!upstream.ok) {
     const status = upstream.status;
@@ -122,7 +131,11 @@ export default async function handler(req) {
             controller.terminate();
             return;
           }
-          if (parsed.choices?.[0]?.delta?.content !== undefined) {
+          if (
+            parsed.choices?.[0]?.delta?.content !== undefined ||
+            parsed.choices?.[0]?.delta?.tool_calls !== undefined ||
+            parsed.choices?.[0]?.delta?.reasoning_content !== undefined
+          ) {
             settled = true;
           }
         } catch {}
