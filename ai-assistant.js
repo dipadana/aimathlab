@@ -263,15 +263,6 @@
       const lastIdx = payloadMessages.length - 1;
       const lastMsg = payloadMessages[lastIdx];
       if (lastMsg.role === 'user') {
-        const lang = document.body.getAttribute('data-active-lang') || 'en';
-        const langDirectives = {
-          en: '',
-          ja: '\n\n[CRITICAL: \u65e5\u672c\u8a9e\u3067\u56de\u7b54\u3057\u3066\u304f\u3060\u3055\u3044]',
-          id: '\n\n[SANGAT PENTING: Anda DIWAJIBKAN menjawab sepenuhnya dalam Bahasa Indonesia. DILARANG menggunakan bahasa Inggris untuk penjelasan.]'
-        };
-        const augmentedText = lastMsg.content + (langDirectives[lang] || '');
-        lastMsg.content = augmentedText;
-
         const activeCanvas = document.querySelector('canvas:not(#ai-draw-layer)');
         if (activeCanvas) {
           try {
@@ -291,7 +282,7 @@
             payloadMessages[lastIdx] = {
               role: 'user',
               content: [
-                { type: 'text', text: augmentedText },
+                { type: 'text', text: lastMsg.content },
                 { type: 'image_url', image_url: { url: currentCanvasBase64 } }
               ]
             };
@@ -299,6 +290,13 @@
             console.warn('Could not capture canvas image:', e);
           }
         }
+      }
+      
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      if (lang === 'ja') {
+        payloadMessages.push({ role: 'system', content: 'CRITICAL: You must write your final response in Japanese (日本語). Do NOT use English in your final output.' });
+      } else if (lang === 'id') {
+        payloadMessages.push({ role: 'system', content: 'CRITICAL: You must write your final response in Indonesian (Bahasa Indonesia). Do NOT use English in your final output.' });
       }
     }
 
@@ -857,6 +855,8 @@
       `You have access to native tools. ALWAYS use tool calls when you need to interact with the visualizer UI (set_parameter, highlight_element, annotate) or update the user's learning profile (update_profile).`,
       `DO NOT use the old text-based [[SET:...]] commands anymore. Rely purely on the tools array.`,
       `If you need to show a dynamic or interactive element inside the chat, use the render_custom_ui tool.`,
+      `CRITICAL RULE: You MUST ALWAYS provide a helpful text explanation of what you are doing alongside any tool calls. Do NOT just silently call tools.`,
+      `CRITICAL RULE: Your final explanation MUST be written OUTSIDE of any <think> tags so the user can read it.`,
       ``,
       `User Learning Profile State: __PROFILE_PLACEHOLDER__`,
       `Adapt your explanations to match their proficiency.`,
