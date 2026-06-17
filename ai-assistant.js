@@ -263,6 +263,15 @@
       const lastIdx = payloadMessages.length - 1;
       const lastMsg = payloadMessages[lastIdx];
       if (lastMsg.role === 'user') {
+        const lang = document.body.getAttribute('data-active-lang') || 'en';
+        const langDirectives = {
+          en: '',
+          ja: '\n\n[CRITICAL DIRECTIVE: You MUST respond entirely in Japanese.]',
+          id: '\n\n[CRITICAL DIRECTIVE: You MUST respond entirely in Indonesian.]'
+        };
+        const augmentedText = lastMsg.content + (langDirectives[lang] || '');
+        lastMsg.content = augmentedText;
+
         const activeCanvas = document.querySelector('canvas:not(#ai-draw-layer)');
         if (activeCanvas) {
           try {
@@ -278,10 +287,11 @@
             } else {
               currentCanvasBase64 = activeCanvas.toDataURL('image/jpeg', 0.8);
             }
+            
             payloadMessages[lastIdx] = {
               role: 'user',
               content: [
-                { type: 'text', text: lastMsg.content },
+                { type: 'text', text: augmentedText },
                 { type: 'image_url', image_url: { url: currentCanvasBase64 } }
               ]
             };
@@ -320,7 +330,9 @@
 
       const aiMsgEl = appendMessageUI('assistant', '');
       const textEl = aiMsgEl.querySelector('.ai-stream-text');
-      textEl.innerHTML = '<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> Thinking...</div>';
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      const tWords = { en: 'Thinking...', ja: '考え中...', id: 'Berpikir...' };
+      textEl.innerHTML = `<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> ${tWords[lang] || tWords.en}</div>`;
       const cursor = document.createElement('span');
       cursor.className = 'ai-cursor';
       cursor.textContent = '\u258c';
@@ -382,7 +394,9 @@
               const markdownText = parseMarkdown(displayableText);
               
               if (markdownText === '') {
-                 textEl.innerHTML = '<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> Thinking...</div>';
+                const lang = document.body.getAttribute('data-active-lang') || 'en';
+                const tWords = { en: 'Thinking...', ja: '考え中...', id: 'Berpikir...' };
+                textEl.innerHTML = `<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> ${tWords[lang] || tWords.en}</div>`;
               } else {
                  textEl.innerHTML = markdownText;
                  textEl.appendChild(cursor);
@@ -738,22 +752,26 @@
       <div class="ai-card-header">
         <span class="ai-badge">
           <i class="fa-solid fa-sparkles"></i>
-          <span>AI Tutor</span>
+          <span>
+            <span data-lang="en">AI Tutor</span>
+            <span data-lang="ja">AIチューター</span>
+            <span data-lang="id">Tutor AI</span>
+          </span>
         </span>
         <span class="ai-model-tag" style="display: inline-flex; align-items: center; gap: 4px; font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', Segoe UI Symbol, 'Noto Color Emoji'; font-weight: 700; letter-spacing: -0.02em; color: #e02020;">
           <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${window.isDark && window.isDark() ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg'}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
         </span>
         <div class="ai-header-actions">
-          <button id="ai-draw-btn" class="ai-draw-btn" onclick="AIMathTutor.toggleDrawMode()" title="Toggle Whiteboard Mode">
-            <i class="fa-solid fa-pen"></i> Draw
+          <button id="ai-draw-btn" class="ai-draw-btn" onclick="AIMathTutor.toggleDrawMode()">
+            <i class="fa-solid fa-pen"></i> <span data-lang="en">Draw</span><span data-lang="ja">描画</span><span data-lang="id">Gambar</span>
           </button>
-          <button id="ai-speaker-btn" class="ai-speaker-btn" onclick="AIMathTutor.toggleTTS()" title="Toggle Voice Output">
+          <button id="ai-speaker-btn" class="ai-speaker-btn" onclick="AIMathTutor.toggleTTS()">
             <i class="fa-solid fa-volume-high"></i>
           </button>
-          <button id="ai-quiz-btn" class="ai-quiz-btn" onclick="AIMathTutor.toggleQuizMode()" title="Toggle Quiz Mode">
-            <i class="fa-solid fa-clipboard-question"></i> Quiz
+          <button id="ai-quiz-btn" class="ai-quiz-btn" onclick="AIMathTutor.toggleQuizMode()">
+            <i class="fa-solid fa-clipboard-question"></i> <span data-lang="en">Quiz</span><span data-lang="ja">クイズ</span><span data-lang="id">Kuis</span>
           </button>
-          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();" title="Clear Chat & Drawing">
+          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();">
             <i class="fa-solid fa-trash-can"></i>
           </button>
           <span id="ai-spinner" class="ai-spinner" style="display:none"></span>
@@ -766,7 +784,7 @@
       <div class="ai-card-body" id="ai-card-body">${idlePlaceholder()}</div>
       <div class="ai-chat-bar">
         <button id="ai-mic-btn" class="ai-mic-btn" onclick="AIMathTutor.toggleMic()"><i class="fa-solid fa-microphone"></i></button>
-        <input type="text" id="ai-chat-input" class="ai-chat-input" placeholder="Ask a question..." onkeydown="if(event.key === 'Enter') document.getElementById('ai-send-btn').click();">
+        <input type="text" id="ai-chat-input" class="ai-chat-input" onkeydown="if(event.key === 'Enter') document.getElementById('ai-send-btn').click();">
         <button id="ai-send-btn" class="ai-send-btn" onclick="AIMathTutor.handleSend()"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     `;
@@ -775,6 +793,27 @@
     window.AIMathTutor.toggleMic = toggleMic;
     window.AIMathTutor.handleSend = handleSend;
 
+    const updateTranslations = () => {
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      const titles = {
+        en: { draw: 'Toggle Whiteboard Mode', voice: 'Toggle Voice Output', quiz: 'Toggle Quiz Mode', clear: 'Clear Chat & Drawing', placeholder: 'Ask a question...' },
+        ja: { draw: 'ホワイトボードモードを切り替え', voice: '音声出力を切り替え', quiz: 'クイズモードを切り替え', clear: 'チャットと描画をクリア', placeholder: '質問を入力してください...' },
+        id: { draw: 'Alihkan Mode Papan Tulis', voice: 'Alihkan Output Suara', quiz: 'Alihkan Mode Kuis', clear: 'Hapus Obrolan & Gambar', placeholder: 'Ajukan pertanyaan...' }
+      };
+      const t = titles[lang] || titles.en;
+      document.getElementById('ai-draw-btn')?.setAttribute('title', t.draw);
+      document.getElementById('ai-speaker-btn')?.setAttribute('title', t.voice);
+      document.getElementById('ai-quiz-btn')?.setAttribute('title', t.quiz);
+      document.getElementById('ai-clear-btn')?.setAttribute('title', t.clear);
+      document.getElementById('ai-chat-input')?.setAttribute('placeholder', t.placeholder);
+
+      document.querySelectorAll('[data-lang]').forEach(el => {
+        el.style.display = (el.getAttribute('data-lang') === lang) ? '' : 'none';
+      });
+    };
+
+    updateTranslations();
+
     const observer = new MutationObserver(() => {
       const btn = document.getElementById('ai-explain-btn');
       if (btn && !_isStreaming) updateBtnLabel(btn);
@@ -782,6 +821,7 @@
       if (body && _chatHistory.length === 0 && body.querySelector('.ai-placeholder')) {
         body.innerHTML = idlePlaceholder();
       }
+      updateTranslations();
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['data-active-lang'] });
 
