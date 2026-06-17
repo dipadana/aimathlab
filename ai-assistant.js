@@ -422,7 +422,8 @@
 
     } catch (e) {
       if (e.name !== 'AbortError') {
-        appendMessageUI('error', 'Connection failed. Check your network.');
+        console.error("AI Ask Error:", e);
+        appendMessageUI('error', 'Error: ' + e.message);
       }
       setCardState('idle', explainBtn, sendBtn);
     } finally {
