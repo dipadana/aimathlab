@@ -210,7 +210,7 @@
     if (body) body.innerHTML = idlePlaceholder();
   }
 
-  async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false, previousUIString = '') {
+  async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false, previousUIString = '', existingAiMsgEl = null) {
     if (_isStreaming) return;
     
     const inputField = document.getElementById('ai-chat-input');
@@ -333,11 +333,17 @@
 
       setCardState('streaming', explainBtn, sendBtn);
 
-      const aiMsgEl = appendMessageUI('assistant', '');
+      let aiMsgEl = existingAiMsgEl || appendMessageUI('assistant', '');
       const textEl = aiMsgEl.querySelector('.ai-stream-text');
       const lang = document.body.getAttribute('data-active-lang') || 'en';
-      const tWords = { en: 'Thinking...', ja: '考え中...', id: 'Berpikir...' };
-      textEl.innerHTML = `<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> ${tWords[lang] || tWords.en}</div>`;
+      
+      if (previousUIString) {
+        textEl.innerHTML = parseMarkdown(previousUIString, false);
+      } else {
+        const tWords = { en: 'Thinking...', ja: '考え中...', id: 'Berpikir...' };
+        textEl.innerHTML = `<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> ${tWords[lang] || tWords.en}</div>`;
+      }
+      
       const cursor = document.createElement('span');
       cursor.className = 'ai-cursor';
       cursor.textContent = '\u258c';
@@ -439,12 +445,11 @@
 
       if (Object.keys(toolCalls).length > 0) {
         _isStreaming = false;
-        if (aiMsgEl) aiMsgEl.remove();
         
         const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
         const combinedForNext = previousUIString + (previousUIString && displayableText ? '\n\n' : '') + displayableText;
         
-        await ask(systemContextMsgs, cardId, null, true, combinedForNext);
+        await ask(systemContextMsgs, cardId, null, true, combinedForNext, aiMsgEl);
         return;
       }
 
