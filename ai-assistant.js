@@ -944,14 +944,22 @@
           const body = document.getElementById('ai-card-body');
           if (body) {
             body.innerHTML = '';
+            let currentAssistantText = '';
             for (const msg of _chatHistory) {
               if (msg.role === 'user') {
+                if (currentAssistantText) {
+                  const aiMsgEl = appendMessageUI('assistant', '');
+                  aiMsgEl.querySelector('.ai-stream-text').innerHTML = parseMarkdown(currentAssistantText, true);
+                  currentAssistantText = '';
+                }
                 appendMessageUI('user', msg.content);
               } else if (msg.role === 'assistant' && msg.content) {
-                const aiMsgEl = appendMessageUI('assistant', '');
-                const textEl = aiMsgEl.querySelector('.ai-stream-text');
-                textEl.innerHTML = parseMarkdown(msg.content, true);
+                currentAssistantText += (currentAssistantText ? '\n\n' : '') + msg.content;
               }
+            }
+            if (currentAssistantText) {
+              const aiMsgEl = appendMessageUI('assistant', '');
+              aiMsgEl.querySelector('.ai-stream-text').innerHTML = parseMarkdown(currentAssistantText, true);
             }
             body.scrollTop = body.scrollHeight;
           }
