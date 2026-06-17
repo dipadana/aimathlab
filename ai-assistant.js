@@ -313,7 +313,8 @@
         { type: "function", function: { name: "highlight_element", description: "Draws the user's attention to a specific UI element by pulsing it.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } } },
         { type: "function", function: { name: "annotate", description: "Shows a floating visual annotation overlay over the canvas.", parameters: { type: "object", properties: { message: { type: "string" } }, required: ["message"] } } },
         { type: "function", function: { name: "update_profile", description: "Updates the user's learning profile.", parameters: { type: "object", properties: { subject: { type: "string" }, proficiency: { type: "string" } }, required: ["subject", "proficiency"] } } },
-        { type: "function", function: { name: "render_custom_ui", description: "Generates an isolated, interactive HTML snippet in a sandbox iframe inside the chat.", parameters: { type: "object", properties: { html: { type: "string", description: "The raw HTML string, including inline CSS and JS" }, height: { type: "number", description: "The height in pixels of the iframe" } }, required: ["html", "height"] } } }
+        { type: "function", function: { name: "render_custom_ui", description: "Generates an isolated, interactive HTML snippet in a sandbox iframe inside the chat.", parameters: { type: "object", properties: { html: { type: "string", description: "The raw HTML string, including inline CSS and JS" }, height: { type: "number", description: "The height in pixels of the iframe" } }, required: ["html", "height"] } } },
+        { type: "function", function: { name: "plot_custom_math", description: "Plots custom mathematical data directly onto the visualizer canvas by setting the appropriate sliders.", parameters: { type: "object", properties: { math_type: { type: "string", enum: ["matrix2x2", "vector2", "vector3"] }, data: { type: "array", items: { type: "number" } } }, required: ["math_type", "data"] } } }
       ];
 
       const res = await fetch('/api/ai', {
@@ -511,6 +512,28 @@
       msgBubble.appendChild(iframe);
       body.appendChild(msgBubble);
       body.scrollTop = body.scrollHeight;
+    } else if (name === 'plot_custom_math') {
+      const type = args.math_type;
+      const data = args.data || [];
+      if (type === 'matrix2x2' && data.length === 4) {
+        const mapping = { m00: data[0], m01: data[1], m10: data[2], m11: data[3] };
+        for (const [id, val] of Object.entries(mapping)) {
+          const el = document.getElementById(id);
+          if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+      } else if (type === 'vector2' && data.length === 2) {
+        const mapping = { v1x: data[0], v1y: data[1] };
+        for (const [id, val] of Object.entries(mapping)) {
+          const el = document.getElementById(id);
+          if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+      } else if (type === 'vector3' && data.length === 3) {
+        const mapping = { v1x: data[0], v1y: data[1], v1z: data[2] };
+        for (const [id, val] of Object.entries(mapping)) {
+          const el = document.getElementById(id);
+          if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+      }
     }
   }
 
@@ -818,6 +841,9 @@
           <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();">
             <i class="fa-solid fa-trash-can"></i>
           </button>
+          <button id="ai-share-btn" class="ai-share-btn" onclick="AIMathTutor.shareSnapshot()">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
           <span id="ai-spinner" class="ai-spinner" style="display:none"></span>
           <button id="ai-explain-btn" class="ai-explain-btn" onclick="if(window.buildAIContext) window.buildAIContext();">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -836,6 +862,103 @@
     
     window.AIMathTutor.toggleMic = toggleMic;
     window.AIMathTutor.handleSend = handleSend;
+    
+    window.AIMathTutor.shareSnapshot = async function() {
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getUser()) {
+        if (auth && auth.openAuthModal) auth.openAuthModal();
+        return;
+      }
+      
+      const shareBtn = document.getElementById('ai-share-btn');
+      const oldHtml = shareBtn.innerHTML;
+      shareBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      shareBtn.disabled = true;
+
+      try {
+        const page_name = window.location.pathname.split('/').pop() || 'index.html';
+        const canvas_state = {};
+        
+        document.querySelectorAll('input[type="range"], input[type="number"]').forEach(input => {
+          if (input.id) canvas_state[input.id] = input.value;
+        });
+
+        const { data, error } = await auth.getSupabase()
+          .from('canvas_snapshots')
+          .insert({
+            user_id: auth.getUser().id,
+            page_name: page_name,
+            canvas_state: canvas_state,
+            chat_history: _chatHistory
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        const url = new URL(window.location.href);
+        url.searchParams.set('snapshot', data.id);
+        
+        await navigator.clipboard.writeText(url.toString());
+        shareBtn.innerHTML = '<i class="fa-solid fa-check" style="color:#00e5ff"></i>';
+      } catch (e) {
+        console.error("Snapshot error:", e);
+        shareBtn.innerHTML = '<i class="fa-solid fa-xmark" style="color:#ff4444"></i>';
+      }
+      
+      setTimeout(() => {
+        shareBtn.innerHTML = oldHtml;
+        shareBtn.disabled = false;
+      }, 2000);
+    };
+
+    window.AIMathTutor.loadSnapshot = async function(snapshotId) {
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getSupabase()) return;
+      
+      try {
+        const { data, error } = await auth.getSupabase()
+          .from('canvas_snapshots')
+          .select('*')
+          .eq('id', snapshotId)
+          .single();
+          
+        if (error || !data) throw error;
+        
+        // Restore sliders
+        if (data.canvas_state) {
+          for (const [id, val] of Object.entries(data.canvas_state)) {
+            const el = document.getElementById(id);
+            if (el) {
+              el.value = val;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
+        }
+        
+        // Restore Chat History
+        if (data.chat_history && data.chat_history.length > 0) {
+          _chatHistory = data.chat_history;
+          const body = document.getElementById('ai-card-body');
+          if (body) {
+            body.innerHTML = '';
+            for (const msg of _chatHistory) {
+              if (msg.role === 'user') {
+                appendMessageUI('user', msg.content);
+              } else if (msg.role === 'assistant' && msg.content) {
+                const aiMsgEl = appendMessageUI('assistant', '');
+                const textEl = aiMsgEl.querySelector('.ai-stream-text');
+                textEl.innerHTML = parseMarkdown(msg.content, true);
+              }
+            }
+            body.scrollTop = body.scrollHeight;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load snapshot", e);
+      }
+    };
 
     const updateTranslations = () => {
       const lang = document.body.getAttribute('data-active-lang') || 'en';
@@ -870,6 +993,12 @@
     observer.observe(document.body, { attributes: true, attributeFilter: ['data-active-lang'] });
 
     updateBtnLabel(document.getElementById('ai-explain-btn'));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const snapshotId = urlParams.get('snapshot');
+    if (snapshotId && window.AIMathTutor.loadSnapshot) {
+      window.AIMathTutor.loadSnapshot(snapshotId);
+    }
   }
 
   window.buildAIMessages = function (pageName, contextLines) {
