@@ -428,18 +428,6 @@
           const args = JSON.parse(tc.arguments);
           executeToolCall(tc.name, args, body);
           
-          if (tc.name === 'annotate' && args.message) {
-            const annotationEl = document.createElement('div');
-            annotationEl.className = 'ai-msg-annotation';
-            annotationEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> <strong>Annotation:</strong> ${args.message}`;
-            annotationEl.style.marginTop = '10px';
-            annotationEl.style.padding = '8px';
-            annotationEl.style.background = 'var(--bg-layer)';
-            annotationEl.style.borderLeft = '3px solid var(--accent)';
-            annotationEl.style.borderRadius = '4px';
-            textEl.appendChild(annotationEl);
-          }
-          
           _chatHistory.push({ role: 'assistant', tool_calls: [{ id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.arguments } }] });
           _chatHistory.push({ role: 'tool', tool_call_id: tc.id, content: "Success" });
         } catch (e) { console.error("Tool parsing error", e); }
@@ -569,18 +557,7 @@
     processedText = processedText.trim();
 
     if (isFinal && processedText === '' && text.trim() !== '') {
-      const thinkContent = text.replace(/<\/?think\s*>/gi, '').trim();
-      const lang = document.body.getAttribute('data-active-lang') || 'en';
-      let baseMsg = 'I have adjusted the visualizer parameters for you.';
-      let title = 'View Detailed Explanation';
-      if (lang === 'ja') {
-        baseMsg = 'ビジュアライザーのパラメータを調整しました。';
-        title = '詳細な説明を見る';
-      } else if (lang === 'id') {
-        baseMsg = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
-        title = 'Lihat Penjelasan Rinci';
-      }
-      processedText = `${baseMsg}\n\n<details style="margin-top:10px; padding:10px; background:var(--bg-layer); border:1px solid var(--border1); border-radius:6px; cursor:pointer;"><summary style="font-weight:bold; color:var(--accent);">${title}</summary><div style="margin-top:10px; cursor:text;">\n\n${thinkContent}\n\n</div></details>`;
+      processedText = text.replace(/<\/?think\s*>/gi, '').trim();
     }
 
     const mathBlocks = [];
