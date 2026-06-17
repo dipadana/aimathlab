@@ -317,8 +317,8 @@
 
       setCardState('streaming', explainBtn, sendBtn);
 
-      const aiMsgEl = appendMessageUI('ai', '');
-      const textEl = aiMsgEl.querySelector('.text');
+      const aiMsgEl = appendMessageUI('assistant', '');
+      const textEl = aiMsgEl.querySelector('.ai-stream-text');
       textEl.innerHTML = '<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> Thinking...</div>';
       const cursor = document.createElement('span');
       cursor.className = 'ai-cursor';
@@ -583,6 +583,7 @@
     }${role === 'assistant' ? parseMarkdown(text) : text}</p>`;
     body.appendChild(msg);
     body.scrollTop = body.scrollHeight;
+    return msg;
   }
 
   function cancel() {
