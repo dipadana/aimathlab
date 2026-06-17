@@ -263,6 +263,17 @@
       const lastIdx = payloadMessages.length - 1;
       const lastMsg = payloadMessages[lastIdx];
       if (lastMsg.role === 'user') {
+        const lang = document.body.getAttribute('data-active-lang') || 'en';
+        let augmentedText = typeof lastMsg.content === 'string' ? lastMsg.content : (lastMsg.content[0]?.text || '');
+
+        if (lang === 'ja') {
+          augmentedText += '\n\n[CRITICAL: あなたは賢いAIチューターです。必ず「日本語」で回答してください。英語は絶対に使用しないでください。]';
+        } else if (lang === 'id') {
+          augmentedText += '\n\n[SANGAT PENTING: Anda adalah tutor AI yang cerdas. Jawab HANYA menggunakan "Bahasa Indonesia". Jangan gunakan bahasa Inggris dalam respons akhir Anda.]';
+        }
+
+        let finalContent = [{ type: 'text', text: augmentedText }];
+
         const activeCanvas = document.querySelector('canvas:not(#ai-draw-layer)');
         if (activeCanvas) {
           try {
@@ -278,25 +289,20 @@
             } else {
               currentCanvasBase64 = activeCanvas.toDataURL('image/jpeg', 0.8);
             }
-            
-            payloadMessages[lastIdx] = {
-              role: 'user',
-              content: [
-                { type: 'text', text: lastMsg.content },
-                { type: 'image_url', image_url: { url: currentCanvasBase64 } }
-              ]
-            };
+            finalContent.push({ type: 'image_url', image_url: { url: currentCanvasBase64 } });
           } catch (e) {
             console.warn('Could not capture canvas image:', e);
           }
         }
+        
+        payloadMessages[lastIdx] = { role: 'user', content: finalContent };
       }
       
       const lang = document.body.getAttribute('data-active-lang') || 'en';
       if (lang === 'ja') {
-        payloadMessages.push({ role: 'system', content: 'CRITICAL: You must write your final response in Japanese (日本語). Do NOT use English in your final output.' });
+        payloadMessages.push({ role: 'system', content: 'CRITICAL: You MUST write your final response in Japanese (日本語). Do NOT use English.' });
       } else if (lang === 'id') {
-        payloadMessages.push({ role: 'system', content: 'CRITICAL: You must write your final response in Indonesian (Bahasa Indonesia). Do NOT use English in your final output.' });
+        payloadMessages.push({ role: 'system', content: 'CRITICAL: You MUST write your final response in Indonesian (Bahasa Indonesia). Do NOT use English.' });
       }
     }
 
