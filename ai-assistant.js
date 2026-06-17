@@ -393,8 +393,13 @@
       }
 
       cursor.remove();
+      
+      if (injectedThink) {
+        fullResponse += '\n</think>\n\n';
+      }
+      
       const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-      textEl.innerHTML = parseMarkdown(finalDisplayableText);
+      textEl.innerHTML = parseMarkdown(finalDisplayableText, true);
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
@@ -523,12 +528,19 @@
     }
   }
 
-  function parseMarkdown(text) {
-    let processedText = text.replace(/<think>[\s\S]*?<\/think>/g, '');
-    if (processedText.includes('<think>')) {
-      processedText = processedText.replace(/<think>[\s\S]*$/g, '');
+  function parseMarkdown(text, isFinal = false) {
+    if (!text) return '';
+    let processedText = text.replace(/<think>([\s\S]*?)<\/think\s*>/gi, '');
+    if (processedText.match(/<think>/i)) {
+      processedText = processedText.replace(/<think>[\s\S]*$/gi, '');
     }
     processedText = processedText.trim();
+
+    // Fallback: If the AI forgot to output an answer outside of its <think> tag,
+    // rescuing it will prevent an empty message bubble.
+    if (isFinal && processedText === '' && text.trim() !== '') {
+      processedText = text.replace(/<\/?think\s*>/gi, '').trim();
+    }
 
     const mathBlocks = [];
     processedText = processedText.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
