@@ -266,10 +266,24 @@
 
   function parseMarkdown(text) {
     const mathBlocks = [];
-    let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g, (match) => {
+    let processedText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
       mathBlocks.push(match);
       return `__MATH_BLOCK_${mathBlocks.length - 1}__`;
     });
+
+    const codeBlocks = [];
+    processedText = processedText.replace(/```([\s\S]*?)```/g, (match, p1) => {
+      codeBlocks.push(`<pre><code>${p1.trim()}</code></pre>`);
+      return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+    });
+    processedText = processedText.replace(/`([^`]+)`/g, (match, p1) => {
+      codeBlocks.push(`<code>${p1}</code>`);
+      return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+    });
+
+    processedText = processedText.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    processedText = processedText.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+    processedText = processedText.replace(/^# (.*$)/gm, '<h1>$1</h1>');
 
     processedText = processedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     processedText = processedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -277,7 +291,15 @@
     processedText = processedText.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
     processedText = processedText.replace(/<\/ul>\n+/g, '</ul>');
     processedText = processedText.replace(/\n+<ul>/g, '<ul>');
+
+    processedText = processedText.replace(/\n+(?=<(h1|h2|h3|ul|li|pre))/g, '\n');
+    processedText = processedText.replace(/(<\/(h1|h2|h3|ul|li|pre)>)\n+/g, '$1\n');
+
     processedText = processedText.replace(/\n/g, '<br>');
+
+    processedText = processedText.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+      return codeBlocks[parseInt(index, 10)];
+    });
 
     processedText = processedText.replace(/__MATH_BLOCK_(\d+)__/g, (match, index) => {
       return mathBlocks[parseInt(index, 10)];
