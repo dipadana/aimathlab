@@ -118,6 +118,7 @@
     _drawLayer.style.pointerEvents = 'auto';
     _drawLayer.style.zIndex = '10';
     _drawLayer.style.cursor = 'crosshair';
+    _drawLayer.style.background = 'transparent';
     
     wrap.appendChild(_drawLayer);
     _drawCtx = _drawLayer.getContext('2d');
