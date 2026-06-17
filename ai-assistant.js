@@ -427,6 +427,19 @@
         try {
           const args = JSON.parse(tc.arguments);
           executeToolCall(tc.name, args, body);
+          
+          if (tc.name === 'annotate' && args.message) {
+            const annotationEl = document.createElement('div');
+            annotationEl.className = 'ai-msg-annotation';
+            annotationEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> <strong>Annotation:</strong> ${args.message}`;
+            annotationEl.style.marginTop = '10px';
+            annotationEl.style.padding = '8px';
+            annotationEl.style.background = 'var(--bg-layer)';
+            annotationEl.style.borderLeft = '3px solid var(--accent)';
+            annotationEl.style.borderRadius = '4px';
+            textEl.appendChild(annotationEl);
+          }
+          
           _chatHistory.push({ role: 'assistant', tool_calls: [{ id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.arguments } }] });
           _chatHistory.push({ role: 'tool', tool_call_id: tc.id, content: "Success" });
         } catch (e) { console.error("Tool parsing error", e); }
