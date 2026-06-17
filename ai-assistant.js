@@ -210,12 +210,11 @@
     if (body) body.innerHTML = idlePlaceholder();
   }
 
-  async function ask(systemContextMsgs, cardId, userMessage = null) {
-    if (_isStreaming) cancel();
-
-    const card = document.getElementById(cardId);
-    const body = document.getElementById('ai-card-body');
+  async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false) {
+    if (_isStreaming) return;
+    
     const inputField = document.getElementById('ai-chat-input');
+    const body = document.getElementById('ai-card-body');
     const explainBtn = document.getElementById('ai-explain-btn');
     const sendBtn = document.getElementById('ai-send-btn');
     
@@ -230,19 +229,21 @@
 
     setCardState('loading', explainBtn, sendBtn);
 
-    if (userMessage) {
-      _chatHistory.push({ role: 'user', content: userMessage });
-      appendMessageUI('user', userMessage);
-      if (inputField) inputField.value = '';
-    } else {
-      const lang = document.body.getAttribute('data-active-lang') || 'en';
-      const defaultReq = {
-        en: _isQuizMode ? 'Please give me a quiz challenge based on this.' : 'Please explain what I am seeing.',
-        ja: _isQuizMode ? 'これに基づいたクイズを出してください。' : '見ている内容を説明してください。',
-        id: _isQuizMode ? 'Tolong berikan saya kuis berdasarkan ini.' : 'Tolong jelaskan apa yang saya lihat.'
-      };
-      _chatHistory.push({ role: 'user', content: defaultReq[lang] });
-      appendMessageUI('user', defaultReq[lang]);
+    if (!isFollowUp) {
+      if (userMessage) {
+        _chatHistory.push({ role: 'user', content: userMessage });
+        appendMessageUI('user', userMessage);
+        if (inputField) inputField.value = '';
+      } else {
+        const lang = document.body.getAttribute('data-active-lang') || 'en';
+        const defaultReq = {
+          en: _isQuizMode ? 'Please give me a quiz challenge based on this.' : 'Please explain what I am seeing.',
+          ja: _isQuizMode ? 'これに基づいたクイズを出してください。' : '見ている内容を説明してください。',
+          id: _isQuizMode ? 'Tolong berikan saya kuis berdasarkan ini.' : 'Tolong jelaskan apa yang saya lihat.'
+        };
+        _chatHistory.push({ role: 'user', content: defaultReq[lang] });
+        appendMessageUI('user', defaultReq[lang]);
+      }
     }
     await _profileManager.init();
 
