@@ -100,6 +100,28 @@
 
     payloadMessages = payloadMessages.concat(_chatHistory);
 
+    if (payloadMessages.length > 0) {
+      const lastIdx = payloadMessages.length - 1;
+      const lastMsg = payloadMessages[lastIdx];
+      if (lastMsg.role === 'user') {
+        const activeCanvas = document.querySelector('canvas');
+        if (activeCanvas) {
+          try {
+            const currentCanvasBase64 = activeCanvas.toDataURL('image/jpeg', 0.8);
+            payloadMessages[lastIdx] = {
+              role: 'user',
+              content: [
+                { type: 'text', text: lastMsg.content },
+                { type: 'image_url', image_url: { url: currentCanvasBase64 } }
+              ]
+            };
+          } catch (e) {
+            console.warn('Could not capture canvas image:', e);
+          }
+        }
+      }
+    }
+
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
