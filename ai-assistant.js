@@ -266,8 +266,8 @@
         const lang = document.body.getAttribute('data-active-lang') || 'en';
         const langDirectives = {
           en: '',
-          ja: '\n\n[CRITICAL DIRECTIVE: You MUST respond entirely in Japanese.]',
-          id: '\n\n[CRITICAL DIRECTIVE: You MUST respond entirely in Indonesian.]'
+          ja: '\n\n[CRITICAL: \u65e5\u672c\u8a9e\u3067\u56de\u7b54\u3057\u3066\u304f\u3060\u3055\u3044]',
+          id: '\n\n[SANGAT PENTING: Anda DIWAJIBKAN menjawab sepenuhnya dalam Bahasa Indonesia. DILARANG menggunakan bahasa Inggris untuk penjelasan.]'
         };
         const augmentedText = lastMsg.content + (langDirectives[lang] || '');
         lastMsg.content = augmentedText;
@@ -833,7 +833,7 @@
     const langInstructions = {
       en: 'CRITICAL: You MUST respond entirely in English.',
       ja: 'CRITICAL: You MUST respond entirely in Japanese (\u65e5\u672c\u8a9e\u3067\u56de\u7b54\u3057\u3066\u304f\u3060\u3055\u3044).',
-      id: 'CRITICAL: You MUST respond entirely in Indonesian (Jawab dalam Bahasa Indonesia).',
+      id: 'SANGAT PENTING: Anda DIWAJIBKAN menjawab sepenuhnya dalam Bahasa Indonesia. JANGAN gunakan bahasa Inggris.',
     };
 
     const system = [
