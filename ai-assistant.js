@@ -418,7 +418,8 @@
       }
       
       const finalDisplayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-      textEl.innerHTML = parseMarkdown(finalDisplayableText, true);
+      const finalCombinedText = previousUIString + (previousUIString && finalDisplayableText ? '\n\n' : '') + finalDisplayableText;
+      textEl.innerHTML = parseMarkdown(finalCombinedText, true);
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
       
