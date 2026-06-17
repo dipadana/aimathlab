@@ -438,6 +438,7 @@
 
       if (Object.keys(toolCalls).length > 0) {
         _isStreaming = false;
+        if (aiMsgEl) aiMsgEl.remove();
         await ask(systemContextMsgs, cardId, null, true);
         return;
       }
