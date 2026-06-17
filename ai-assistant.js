@@ -395,17 +395,9 @@
 
             if (delta || reasoning) {
               const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-              const markdownText = parseMarkdown(displayableText);
-              
-              if (markdownText === '') {
-                const lang = document.body.getAttribute('data-active-lang') || 'en';
-                const tWords = { en: 'Thinking...', ja: '考え中...', id: 'Berpikir...' };
-                textEl.innerHTML = `<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> ${tWords[lang] || tWords.en}</div>`;
-              } else {
-                 textEl.innerHTML = markdownText;
-                 textEl.appendChild(cursor);
-                 body.scrollTop = body.scrollHeight;
-              }
+              textEl.innerHTML = parseMarkdown(displayableText);
+              textEl.appendChild(cursor);
+              body.scrollTop = body.scrollHeight;
             }
           } catch {}
         }
@@ -550,15 +542,25 @@
 
   function parseMarkdown(text, isFinal = false) {
     if (!text) return '';
-    let processedText = text.replace(/<think>([\s\S]*?)<\/think\s*>/gi, '');
-    if (processedText.match(/<think>/i)) {
-      processedText = processedText.replace(/<think>[\s\S]*$/gi, '');
-    }
-    processedText = processedText.trim();
+    let thinkContent = '';
+    let answerContent = '';
 
-    if (isFinal && processedText === '' && text.trim() !== '') {
-      processedText = text.replace(/<\/?think\s*>/gi, '').trim();
+    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
+    if (thinkMatch) {
+      thinkContent = thinkMatch[1].trim();
+      answerContent = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim();
+    } else {
+      answerContent = text.trim();
     }
+
+    if (isFinal && answerContent === '' && thinkContent !== '') {
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      if (lang === 'ja') answerContent = 'ビジュアライザーのパラメータを調整しました。';
+      else if (lang === 'id') answerContent = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
+      else answerContent = 'I have adjusted the visualizer parameters for you.';
+    }
+
+    let processedText = answerContent;
 
     const mathBlocks = [];
     processedText = processedText.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
@@ -600,7 +602,32 @@
       return mathBlocks[parseInt(index, 10)];
     });
 
-    return processedText;
+    let thinkHtml = '';
+    if (thinkContent) {
+      const lang = document.body.getAttribute('data-active-lang') || 'en';
+      let title = 'Thought Process';
+      let thinkingMsg = 'Thinking...';
+      if (lang === 'ja') { title = '思考プロセス'; thinkingMsg = '考え中...'; }
+      if (lang === 'id') { title = 'Proses Berpikir'; thinkingMsg = 'Berpikir...'; }
+      
+      const isThinkClosed = text.includes('</think>');
+
+      if (!isThinkClosed && !isFinal) {
+        thinkHtml = `<div style="margin-bottom:15px; padding-left:15px; border-left:3px solid var(--border1); color:var(--text2);">
+          <div style="font-weight:bold; margin-bottom:5px;"><i class="fa-solid fa-brain fa-bounce"></i> ${thinkingMsg}</div>
+          <div style="white-space:pre-wrap; opacity:0.8; font-size:0.9em;">${thinkContent}</div>
+        </div>`;
+      } else {
+        thinkHtml = `<details style="margin-bottom:15px; background:var(--bg-layer); border:1px solid var(--border1); border-radius:6px; cursor:pointer; font-size:0.9em;">
+          <summary style="padding:8px 12px; font-weight:bold; color:var(--text2); user-select:none;">
+            <i class="fa-solid fa-brain"></i> ${title}
+          </summary>
+          <div style="padding:10px 12px; border-top:1px solid var(--border1); white-space:pre-wrap; color:var(--text2); cursor:text;">${thinkContent}</div>
+        </details>`;
+      }
+    }
+
+    return thinkHtml + processedText;
   }
 
   function appendMessageUI(role, text) {
