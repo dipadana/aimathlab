@@ -438,8 +438,7 @@
 
       if (Object.keys(toolCalls).length > 0) {
         _isStreaming = false;
-        _abortCtrl = null;
-        ask(systemContextMsgs, cardId, null, true);
+        await ask(systemContextMsgs, cardId, null, true);
         return;
       }
 
