@@ -336,6 +336,7 @@
       let buffer = '';
       let fullResponse = '';
       let toolCalls = {};
+      let injectedThink = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -371,12 +372,11 @@
             }
             
             if (reasoning) {
-              if (!fullResponse.includes('<think>')) fullResponse += '<think>';
+              if (!injectedThink) { injectedThink = true; fullResponse += '<think>\n'; }
               fullResponse += reasoning;
-            } else if (delta) {
-              if (fullResponse.includes('<think>') && !fullResponse.includes('</think>')) {
-                fullResponse += '</think>\n\n';
-              }
+            }
+            if (delta) {
+              if (injectedThink) { injectedThink = false; fullResponse += '\n</think>\n\n'; }
               fullResponse += delta;
             }
 
@@ -526,7 +526,7 @@
     });
     if (processedText.includes('<think>') && !processedText.includes('</think>')) {
       processedText = processedText.replace(/<think>([\s\S]*)$/g, (match, p1) => {
-        return `<details class="ai-thought-process" open><summary><i class="fa-solid fa-brain"></i> AI is thinking...</summary><div class="content">${p1}</div></details>`;
+        return `<details class="ai-thought-process" open><summary><i class="fa-solid fa-brain"></i> Thinking...</summary><div class="content">${p1}</div></details>`;
       });
     }
 
