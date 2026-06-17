@@ -536,8 +536,6 @@
     }
     processedText = processedText.trim();
 
-    // Fallback: If the AI forgot to output an answer outside of its <think> tag,
-    // rescuing it will prevent an empty message bubble.
     if (isFinal && processedText === '' && text.trim() !== '') {
       processedText = text.replace(/<\/?think\s*>/gi, '').trim();
     }
