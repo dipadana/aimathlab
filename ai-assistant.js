@@ -210,7 +210,7 @@
     if (body) body.innerHTML = idlePlaceholder();
   }
 
-  async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false) {
+  async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false, previousUIString = '') {
     if (_isStreaming) return;
     
     const inputField = document.getElementById('ai-chat-input');
@@ -396,7 +396,8 @@
 
             if (delta || reasoning) {
               const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-              textEl.innerHTML = parseMarkdown(displayableText);
+              const combinedText = previousUIString + (previousUIString && displayableText ? '\n\n' : '') + displayableText;
+              textEl.innerHTML = parseMarkdown(combinedText, false);
               textEl.appendChild(cursor);
               body.scrollTop = body.scrollHeight;
             }
@@ -439,7 +440,11 @@
       if (Object.keys(toolCalls).length > 0) {
         _isStreaming = false;
         if (aiMsgEl) aiMsgEl.remove();
-        await ask(systemContextMsgs, cardId, null, true);
+        
+        const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
+        const combinedForNext = previousUIString + (previousUIString && displayableText ? '\n\n' : '') + displayableText;
+        
+        await ask(systemContextMsgs, cardId, null, true, combinedForNext);
         return;
       }
 
@@ -553,10 +558,10 @@
     let thinkContent = '';
     let answerContent = '';
 
-    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
-    if (thinkMatch) {
-      thinkContent = thinkMatch[1].trim();
-      answerContent = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim();
+    const thinkMatches = [...text.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/gi)];
+    if (thinkMatches.length > 0) {
+      thinkContent = thinkMatches.map(m => m[1].trim()).filter(Boolean).join('\n\n---\n\n');
+      answerContent = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
     } else {
       answerContent = text.trim();
     }
