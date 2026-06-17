@@ -436,6 +436,13 @@
         speakText(finalDisplayableText);
       }
 
+      if (Object.keys(toolCalls).length > 0) {
+        _isStreaming = false;
+        _abortCtrl = null;
+        ask(systemContextMsgs, cardId, null, true);
+        return;
+      }
+
       setCardState('idle', explainBtn, sendBtn);
 
     } catch (e) {
@@ -552,13 +559,6 @@
       answerContent = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim();
     } else {
       answerContent = text.trim();
-    }
-
-    if (isFinal && answerContent === '' && thinkContent !== '') {
-      const lang = document.body.getAttribute('data-active-lang') || 'en';
-      if (lang === 'ja') answerContent = 'ビジュアライザーのパラメータを調整しました。';
-      else if (lang === 'id') answerContent = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
-      else answerContent = 'I have adjusted the visualizer parameters for you.';
     }
 
     let processedText = answerContent;
