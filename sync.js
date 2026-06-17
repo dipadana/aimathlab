@@ -36,6 +36,8 @@
         
         this.roomId = code;
         this.isHost = true;
+        sessionStorage.setItem('mp_room', code);
+        sessionStorage.setItem('mp_isHost', 'true');
         this.subscribe();
         return code;
       } catch (e) {
@@ -44,7 +46,7 @@
       }
     },
 
-    async joinRoom(code) {
+    async joinRoom(code, isRejoin = false) {
       const auth = window.AIMLAuth;
       const sb = auth?.getSupabase();
       if (!sb) return false;
@@ -59,19 +61,26 @@
         if (error || !data) throw new Error("Room not found");
         
         this.roomId = code;
-        this.isHost = false;
+        this.isHost = isRejoin ? sessionStorage.getItem('mp_isHost') === 'true' : false;
+        
+        if (!isRejoin) {
+          sessionStorage.setItem('mp_room', code);
+          sessionStorage.setItem('mp_isHost', this.isHost ? 'true' : 'false');
+        }
         
         // Initial sync
         if (data.state && auth.applyState) {
           window.isApplyingNetworkState = true;
+          clearTimeout(window._networkLockTimer);
+          window._networkLockTimer = setTimeout(() => { window.isApplyingNetworkState = false; }, 2000);
           auth.applyState(data.state);
-          window.isApplyingNetworkState = false;
         }
         
         this.subscribe();
         return true;
       } catch (e) {
         console.error("Join room failed:", e);
+        this.leaveRoom(); // Clear invalid session
         return false;
       }
     },
@@ -92,8 +101,9 @@
           (payload) => {
             if (payload.new && payload.new.state && auth.applyState) {
               window.isApplyingNetworkState = true;
+              clearTimeout(window._networkLockTimer);
+              window._networkLockTimer = setTimeout(() => { window.isApplyingNetworkState = false; }, 2000);
               auth.applyState(payload.new.state);
-              window.isApplyingNetworkState = false;
             }
           }
         )
@@ -126,11 +136,34 @@
       this.roomId = null;
       this.isHost = false;
       
+      sessionStorage.removeItem('mp_room');
+      sessionStorage.removeItem('mp_isHost');
+      
       // Attempt to clean up DB if host
       if (this.isHost) {
         const sb = window.AIMLAuth?.getSupabase();
         if (sb) {
            sb.from('active_sessions').delete().eq('room_code', this.roomId).then();
+        }
+      }
+    },
+    
+    async init() {
+      const savedRoom = sessionStorage.getItem('mp_room');
+      if (savedRoom) {
+        // Wait for auth to boot
+        let attempts = 0;
+        while (!window.AIMLAuth?.getSupabase() && attempts < 50) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+        if (window.AIMLAuth?.getSupabase()) {
+          const success = await this.joinRoom(savedRoom, true);
+          if (success) {
+            document.getElementById('mp-forms').style.display = 'none';
+            document.getElementById('mp-status').style.display = 'block';
+            document.getElementById('mp-code-display').innerText = savedRoom.toUpperCase();
+          }
         }
       }
     }
@@ -188,6 +221,8 @@
         actionsContainer.appendChild(mpBtn);
       }
     }
+    
+    window.AIMLSync.init();
   });
 
   window.handleHostRoom = async (btn) => {
