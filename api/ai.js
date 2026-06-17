@@ -1,7 +1,7 @@
 export const config = { runtime: 'edge' };
 
 const GATEWAY_URL = 'https://gateway.dahono.com/v1/chat/completions';
-const MODEL = 'dahono/ccai-pro';
+const MODEL = 'dahono/qwen3.7-plus';
 
 async function callGateway(apiKey, messages, stream) {
   return fetch(GATEWAY_URL, {
