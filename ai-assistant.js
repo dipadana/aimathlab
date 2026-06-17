@@ -317,13 +317,9 @@
 
       setCardState('streaming', explainBtn, sendBtn);
 
-      const msgBubble = document.createElement('div');
-      msgBubble.className = 'ai-msg ai-msg-assistant';
-      const textEl = document.createElement('p');
-      textEl.className = 'ai-stream-text';
-      msgBubble.appendChild(textEl);
-      body.appendChild(msgBubble);
-
+      const aiMsgEl = appendMessageUI('ai', '');
+      const textEl = aiMsgEl.querySelector('.text');
+      textEl.innerHTML = '<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> Thinking...</div>';
       const cursor = document.createElement('span');
       cursor.className = 'ai-cursor';
       cursor.textContent = '\u258c';
@@ -382,9 +378,15 @@
 
             if (delta || reasoning) {
               const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-              textEl.innerHTML = parseMarkdown(displayableText);
-              textEl.appendChild(cursor);
-              body.scrollTop = body.scrollHeight;
+              const markdownText = parseMarkdown(displayableText);
+              
+              if (markdownText === '') {
+                 textEl.innerHTML = '<div class="ai-thinking"><i class="fa-solid fa-brain fa-bounce"></i> Thinking...</div>';
+              } else {
+                 textEl.innerHTML = markdownText;
+                 textEl.appendChild(cursor);
+                 body.scrollTop = body.scrollHeight;
+              }
             }
           } catch {}
         }
@@ -521,14 +523,11 @@
   }
 
   function parseMarkdown(text) {
-    let processedText = text.replace(/<think>([\s\S]*?)<\/think>/g, (match, p1) => {
-      return `<details class="ai-thought-process"><summary><i class="fa-solid fa-brain"></i> AI Thought Process</summary><div class="content">${p1.trim()}</div></details>`;
-    });
-    if (processedText.includes('<think>') && !processedText.includes('</think>')) {
-      processedText = processedText.replace(/<think>([\s\S]*)$/g, (match, p1) => {
-        return `<details class="ai-thought-process" open><summary><i class="fa-solid fa-brain"></i> Thinking...</summary><div class="content">${p1}</div></details>`;
-      });
+    let processedText = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+    if (processedText.includes('<think>')) {
+      processedText = processedText.replace(/<think>[\s\S]*$/g, '');
     }
+    processedText = processedText.trim();
 
     const mathBlocks = [];
     processedText = processedText.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g, (match) => {
@@ -807,7 +806,7 @@
       `If you need to show a dynamic or interactive element inside the chat, use the render_custom_ui tool.`,
       ``,
       `User Learning Profile State: __PROFILE_PLACEHOLDER__`,
-      `Adapt your explanations to match their proficiency. For complex math, please use <think> tags to reason before answering!`,
+      `Adapt your explanations to match their proficiency.`,
       langInstructions[lang] || langInstructions.en,
     ].join('\n');
 
