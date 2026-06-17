@@ -283,6 +283,10 @@ async function persistState() {
 function scheduleSave() {
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(persistState, 1200);
+
+  if (window.AIMLSync && window.AIMLSync.broadcastState && !window.isApplyingNetworkState) {
+    window.AIMLSync.broadcastState(captureState());
+  }
 }
 
 function flashSaveIndicator() {
