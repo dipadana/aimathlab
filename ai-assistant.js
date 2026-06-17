@@ -791,9 +791,9 @@
   window.buildAIMessages = function (pageName, contextLines) {
     const lang = document.body.getAttribute('data-active-lang') || 'en';
     const langInstructions = {
-      en: 'Respond in English.',
-      ja: '\u65e5\u672c\u8a9e\u3067\u56de\u7b54\u3057\u3066\u304f\u3060\u3055\u3044\u3002',
-      id: 'Jawab dalam Bahasa Indonesia.',
+      en: 'CRITICAL: You MUST respond entirely in English.',
+      ja: 'CRITICAL: You MUST respond entirely in Japanese (\u65e5\u672c\u8a9e\u3067\u56de\u7b54\u3057\u3066\u304f\u3060\u3055\u3044).',
+      id: 'CRITICAL: You MUST respond entirely in Indonesian (Jawab dalam Bahasa Indonesia).',
     };
 
     const system = [
