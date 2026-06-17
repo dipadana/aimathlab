@@ -913,10 +913,19 @@
 
     window.AIMathTutor.loadSnapshot = async function(snapshotId) {
       const auth = window.AIMLAuth;
-      if (!auth || !auth.getSupabase()) return;
+      if (!auth) return;
+      
+      let sb = auth.getSupabase();
+      let attempts = 0;
+      while (!sb && attempts < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        sb = auth.getSupabase();
+        attempts++;
+      }
+      if (!sb) return;
       
       try {
-        const { data, error } = await auth.getSupabase()
+        const { data, error } = await sb
           .from('canvas_snapshots')
           .select('*')
           .eq('id', snapshotId)
