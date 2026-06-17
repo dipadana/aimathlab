@@ -516,23 +516,26 @@
       const type = args.math_type;
       const data = args.data || [];
       if (type === 'matrix2x2' && data.length === 4) {
-        const mapping = { m00: data[0], m01: data[1], m10: data[2], m11: data[3] };
+        const mapping = { 'm-a': data[0], 'm-b': data[1], 'm-c': data[2], 'm-d': data[3] };
         for (const [id, val] of Object.entries(mapping)) {
           const el = document.getElementById(id);
           if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
         }
+        if (typeof window.updateMatrix === 'function') window.updateMatrix();
       } else if (type === 'vector2' && data.length === 2) {
-        const mapping = { v1x: data[0], v1y: data[1] };
+        const mapping = { 'inp-x': data[0], 'inp-y': data[1] };
         for (const [id, val] of Object.entries(mapping)) {
           const el = document.getElementById(id);
           if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
         }
+        if (typeof window.addVector === 'function') window.addVector();
       } else if (type === 'vector3' && data.length === 3) {
-        const mapping = { v1x: data[0], v1y: data[1], v1z: data[2] };
+        const mapping = { 'inp-x': data[0], 'inp-y': data[1], 'inp-z': data[2] };
         for (const [id, val] of Object.entries(mapping)) {
           const el = document.getElementById(id);
           if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
         }
+        if (typeof window.addVector === 'function') window.addVector();
       }
     }
   }
@@ -877,11 +880,7 @@
 
       try {
         const page_name = window.location.pathname.split('/').pop() || 'index.html';
-        const canvas_state = {};
-        
-        document.querySelectorAll('input[type="range"], input[type="number"]').forEach(input => {
-          if (input.id) canvas_state[input.id] = input.value;
-        });
+        const canvas_state = auth.captureState ? auth.captureState() : {};
 
         const { data, error } = await auth.getSupabase()
           .from('canvas_snapshots')
@@ -925,16 +924,9 @@
           
         if (error || !data) throw error;
         
-        // Restore sliders
-        if (data.canvas_state) {
-          for (const [id, val] of Object.entries(data.canvas_state)) {
-            const el = document.getElementById(id);
-            if (el) {
-              el.value = val;
-              el.dispatchEvent(new Event('input', { bubbles: true }));
-              el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-          }
+        // Restore sliders using the central theme.js state manager
+        if (data.canvas_state && auth.applyState) {
+          auth.applyState(data.canvas_state);
         }
         
         // Restore Chat History

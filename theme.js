@@ -202,7 +202,9 @@ let _saveIndicator = null;
 window.AIMLAuth = {
   getSupabase: () => _supabase,
   getUser: () => _user,
-  openAuthModal: () => { if (_supabase) openAuthModal(_supabase); }
+  openAuthModal: () => { if (_supabase) openAuthModal(_supabase); },
+  captureState: () => typeof captureState === 'function' ? captureState() : {},
+  applyState: (s) => { if (typeof applyState === 'function') applyState(s); }
 };
 
 function getPageKey() {
@@ -260,6 +262,7 @@ function captureState() {
 }
 
 async function persistState() {
+  if (new URLSearchParams(window.location.search).has('snapshot')) return;
   if (!_supabase || !_user) return;
   const page = getPageKey();
   if (SKIP_PAGES.has(page)) return;
@@ -295,6 +298,7 @@ function flashSaveIndicator() {
 }
 
 async function restoreState() {
+  if (new URLSearchParams(window.location.search).has('snapshot')) return;
   if (!_supabase || !_user) return;
   const page = getPageKey();
   if (SKIP_PAGES.has(page)) return;
