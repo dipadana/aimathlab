@@ -569,14 +569,18 @@
     processedText = processedText.trim();
 
     if (isFinal && processedText === '' && text.trim() !== '') {
+      const thinkContent = text.replace(/<\/?think\s*>/gi, '').trim();
       const lang = document.body.getAttribute('data-active-lang') || 'en';
+      let baseMsg = 'I have adjusted the visualizer parameters for you.';
+      let title = 'View Detailed Explanation';
       if (lang === 'ja') {
-        processedText = 'ビジュアライザーのパラメータを調整しました。';
+        baseMsg = 'ビジュアライザーのパラメータを調整しました。';
+        title = '詳細な説明を見る';
       } else if (lang === 'id') {
-        processedText = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
-      } else {
-        processedText = 'I have adjusted the visualizer parameters for you.';
+        baseMsg = 'Saya telah menyesuaikan parameter visualisator untuk Anda.';
+        title = 'Lihat Penjelasan Rinci';
       }
+      processedText = `${baseMsg}\n\n<details style="margin-top:10px; padding:10px; background:var(--bg-layer); border:1px solid var(--border1); border-radius:6px; cursor:pointer;"><summary style="font-weight:bold; color:var(--accent);">${title}</summary><div style="margin-top:10px; cursor:text;">\n\n${thinkContent}\n\n</div></details>`;
     }
 
     const mathBlocks = [];
