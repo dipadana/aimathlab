@@ -806,7 +806,9 @@
       
       const input = document.getElementById('ai-chat-input');
       if (input && input.value.trim().length > 0) {
-        handleChatSubmit();
+        if (window.AIMathTutor && window.AIMathTutor.handleSend) {
+           window.AIMathTutor.handleSend();
+        }
       }
     };
 
