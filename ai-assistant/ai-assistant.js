@@ -907,7 +907,7 @@
           </span>
         </span>
         <span class="ai-model-tag" style="display: inline-flex; align-items: center; gap: 4px; font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', Segoe UI Symbol, 'Noto Color Emoji'; font-weight: 700; letter-spacing: -0.02em; color: #e02020;">
-          <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${(document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('assets/img/favicon.png', '') || 'assets/') + (window.isDark && window.isDark() ? 'assets/svg/dahono-labs-logo-white.svg' : 'assets/svg/dahono-labs-logo-black.svg')}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
+          <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${(document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('img/favicon.png', '') || 'assets/') + 'svg/' + (window.isDark && window.isDark() ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg')}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
         </span>
         <div class="ai-header-actions">
           <button id="ai-draw-btn" class="ai-draw-btn" onclick="AIMathTutor.toggleDrawMode()">
