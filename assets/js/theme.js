@@ -61,7 +61,6 @@ window.updateLogos = function() {
     const pfx = document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('img/favicon.png', '') || 'assets/';
     img.src = pfx + 'svg/' + (isDarkTheme ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg');
   });
-});
 }
 
 applyTheme();
