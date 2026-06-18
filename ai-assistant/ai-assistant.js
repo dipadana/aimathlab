@@ -593,7 +593,7 @@
         const isSuccess = args.success;
         const msg = args.message || (isSuccess ? "Mission Accomplished!" : "Not quite, try again!");
         
-        appendMessageUI('assistant', msg, false, true); // Push AI message directly
+        appendMessageUI('assistant', msg, false, true); 
         
         if (isSuccess) {
           if (!window.confetti) {
@@ -907,7 +907,7 @@
           </span>
         </span>
         <span class="ai-model-tag" style="display: inline-flex; align-items: center; gap: 4px; font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', Segoe UI Symbol, 'Noto Color Emoji'; font-weight: 700; letter-spacing: -0.02em; color: #e02020;">
-          <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${window.isDark && window.isDark() ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg'}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
+          <a href="https://labs.dahono.com" target="_blank"><img class="dahono-logo" src="${(document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('assets/img/favicon.png', '') || 'assets/') + (window.isDark && window.isDark() ? 'assets/svg/dahono-labs-logo-white.svg' : 'assets/svg/dahono-labs-logo-black.svg')}" alt="Dahono Labs" style="height: 2em; width: auto; border-radius: 2px;"></a>
         </span>
         <div class="ai-header-actions">
           <button id="ai-draw-btn" class="ai-draw-btn" onclick="AIMathTutor.toggleDrawMode()">
@@ -970,7 +970,7 @@
       
       if (body.classList.contains('history-view')) {
         body.classList.remove('history-view');
-        // Restore current chat
+        
         body.innerHTML = '';
         if (_chatHistory.length === 0) {
           body.innerHTML = idlePlaceholder();
@@ -1124,12 +1124,12 @@
           
         if (error || !data) throw error;
         
-        // Restore sliders using the central theme.js state manager
+        
         if (data.canvas_state && auth.applyState) {
           auth.applyState(data.canvas_state);
         }
         
-        // Restore Chat History
+        
         if (data.chat_history && data.chat_history.length > 0) {
           _chatHistory = data.chat_history;
           const body = document.getElementById('ai-card-body');

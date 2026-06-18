@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en" data-active-lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scientific Methodology & References | AI Math Lab</title>
+    <meta
+      name="description"
+      content="Deep theoretical explanations of the mathematics underlying artificial intelligence, citing foundational scientific articles and official documentation."
+    />
+    <script src="../js/theme.js"></script>
+    <script src="../js/sync.js"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/shared.css" />
+    <link rel="stylesheet" href="references.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <meta name="author" content="Rico Eriansyah" />
+    <meta
+      name="keywords"
+      content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab"
+    />
+    <link rel="icon" type="image/png" href="../assets/assets/img/favicon.png" />
+  </head>
+  <body data-active-lang="en">
+    <div class="page-shell">
+      <div class="sticky-header module-header">
+        <a class="back-link" href="../" id="t-hub">← Hub</a>
+        <div class="header-actions">
+          <div class="custom-lang-dropdown">
+            <button
+              class="lang-btn-icon"
+              onclick="toggleLangMenu(event)"
+              id="lang-menu-btn"
+              aria-label="Select Language"
+            >
+              <i class="fa-solid fa-globe"></i>
+            </button>
+            <ul class="lang-menu" id="lang-menu">
+              <li>
+                <button id="lb-en" onclick="setLang('en')">English</button>
+              </li>
+              <li>
+                <button id="lb-ja" onclick="setLang('ja')">日本語</button>
+              </li>
+              <li>
+                <button id="lb-id" onclick="setLang('id')">Indonesia</button>
+              </li>
+            </ul>
+          </div>
+          <button
+            class="theme-btn-icon"
+            onclick="toggleTheme()"
+            id="theme-btn"
+            aria-label="Toggle Theme"
+          >
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="page-header"
+        style="
+          text-align: center;
+          max-width: 800px;
+          width: 100%;
+          min-width: 0;
+          margin: 0 auto 40px auto;
+        "
+      >
+        <h1 style="font-size: 36px; margin-bottom: 12px" id="t-maintitle">
+          Scientific Methodology &amp; References
+        </h1>
+        <p style="font-size: 18px" id="t-maindesc">
+          A rigorous breakdown of the mathematical theories powering Artificial
+          Intelligence, answering the <em>Why</em>, <em>How</em>,
+          <em>Where</em>, and <em>From Whom</em>.
+        </p>
+      </div>
+
+      <div class="ref-container">
+        <div class="ref-section">
+          <div class="ref-title" id="t-vec-title">
+            1. Vector Spaces &amp; Embeddings
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-why" id="t-why1">WHY</span>
+            <span id="t-vec-why-sub">The Theoretical Necessity</span>
+          </div>
+          <div class="ref-text" id="t-vec-why">
+            In machine learning, data is rarely scalar. Images, text, and audio
+            are high-dimensional entities. Vector spaces provide a formal
+            algebraic framework to measure distance, similarity, and magnitude
+            between these entities. Without vector spaces, there is no
+            mathematical definition of "semantic similarity."
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how1">HOW</span>
+            <span id="t-vec-how-sub">Mathematical Mechanics</span>
+          </div>
+          <div class="ref-text" id="t-vec-how">
+            A vector $\mathbf{v} \in \mathbb{R}^n$ represents a point or
+            direction in $n$-dimensional space. The most critical operation in
+            AI is the inner (dot) product: $\mathbf{a} \cdot \mathbf{b} =
+            \sum_{i=1}^n a_i b_i = \|\mathbf{a}\| \|\mathbf{b}\| \cos(\theta)$.
+            This operation computes the projection of one vector onto another,
+            directly measuring angular alignment (cosine similarity).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where1">WHERE</span>
+            <span id="t-vec-where-sub">Modern Applications</span>
+          </div>
+          <div class="ref-text" id="t-vec-where">
+            Vector spaces are the foundation of
+            <strong>Word Embeddings (Word2Vec)</strong> and
+            <strong>Transformer Attention Mechanisms</strong>. In Large Language
+            Models (LLMs), a word or token is mapped to a vector $\mathbf{x} \in
+            \mathbb{R}^d$. The "attention" score between query $\mathbf{q}$ and
+            key $\mathbf{k}$ is simply their scaled dot product:
+            $\text{Attention} \propto \exp(\frac{\mathbf{q} \cdot
+            \mathbf{k}}{\sqrt{d}})$.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-who" id="t-who1">FROM WHOM</span>
+            <span id="t-vec-who-sub">Foundational Literature</span>
+          </div>
+          <div class="ref-citation" id="t-vec-who">
+            <strong>[1] Textbooks:</strong> Strang, G. (2016).
+            <em>Introduction to Linear Algebra</em> (5th ed.).
+            Wellesley-Cambridge Press.<br />
+            <strong>[2] Embeddings:</strong> Mikolov, T., Sutskever, I., Chen,
+            K., Corrado, G. S., &amp; Dean, J. (2013).
+            <em
+              >Distributed representations of words and phrases and their
+              compositionality</em
+            >. Advances in neural information processing systems, 26.<br />
+            <strong>[3] Attention:</strong> Vaswani, A., et al. (2017).
+            <em>Attention is all you need</em>. Advances in neural information
+            processing systems, 30.
+          </div>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title" id="t-mat-title">
+            2. Matrix Transformations &amp; SVD
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-why" id="t-why2">WHY</span>
+            <span id="t-mat-why-sub">The Theoretical Necessity</span>
+          </div>
+          <div class="ref-text" id="t-mat-why">
+            A neural network is fundamentally a composition of linear
+            transformations interleaved with non-linearities. Matrices represent
+            these linear mappings compactly. To learn hierarchical
+            representations, an AI must stretch, rotate, and project data
+            spaces, which is strictly defined by matrix multiplication.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how2">HOW</span>
+            <span id="t-mat-how-sub">Mathematical Mechanics</span>
+          </div>
+          <div class="ref-text" id="t-mat-how">
+            A linear transformation is applied via $T(\mathbf{x}) =
+            \mathbf{A}\mathbf{x}$. The behavior of $\mathbf{A}$ can be
+            completely understood through its
+            <strong>Singular Value Decomposition (SVD)</strong>: $\mathbf{A} =
+            \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T$. This theorem proves that
+            <em>any</em> matrix transformation is simply a rotation
+            ($\mathbf{V}^T$), a scaling along orthogonal axes
+            ($\mathbf{\Sigma}$), followed by another rotation ($\mathbf{U}$).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where2">WHERE</span>
+            <span id="t-mat-where-sub">Modern Applications</span>
+          </div>
+          <div class="ref-text" id="t-mat-where">
+            <strong>Weight Matrices:</strong> The parameters of a dense neural
+            network layer are stored in a weight matrix $\mathbf{W}$.<br />
+            <strong>LoRA (Low-Rank Adaptation):</strong> Modern fine-tuning of
+            LLMs relies on the principle that the change in weights $\Delta
+            \mathbf{W}$ has a low intrinsic rank, allowing it to be decomposed
+            into two smaller matrices $\mathbf{A}$ and $\mathbf{B}$, heavily
+            relying on SVD theory.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-who" id="t-who2">FROM WHOM</span>
+            <span id="t-mat-who-sub">Foundational Literature</span>
+          </div>
+          <div class="ref-citation" id="t-mat-who">
+            <strong>[1] Textbooks:</strong> Lay, D. C., Lay, S. R., &amp;
+            McDonald, J. J. (2015).
+            <em>Linear Algebra and its Applications</em> (5th ed.). Pearson.<br />
+            <strong>[2] LoRA:</strong> Hu, E. J., et al. (2021).
+            <em>LoRA: Low-Rank Adaptation of Large Language Models</em>.
+            International Conference on Learning Representations (ICLR).
+          </div>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title" id="t-cal-title">
+            3. Multivariable Calculus &amp; Optimization
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-why" id="t-why3">WHY</span>
+            <span id="t-cal-why-sub">The Theoretical Necessity</span>
+          </div>
+          <div class="ref-text" id="t-cal-why">
+            AI models do not simply "know" the correct weights; they must
+            <em>search</em> for them. Optimization provides the compass. By
+            framing learning as the minimization of a loss function
+            $L(\mathbf{\theta})$, calculus provides the gradient vector $\nabla
+            L$, which points in the direction of steepest ascent.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how3">HOW</span>
+            <span id="t-cal-how-sub">Mathematical Mechanics</span>
+          </div>
+          <div class="ref-text" id="t-cal-how">
+            <strong>Gradient Descent:</strong> The parameter update rule is
+            $\mathbf{\theta}_{t+1} = \mathbf{\theta}_t - \alpha \nabla
+            L(\mathbf{\theta}_t)$, where $\alpha$ is the learning rate. <br />
+            <strong>Taylor Series:</strong> The Taylor polynomial $f(x) \approx
+            f(a) + f'(a)(x-a) + \frac{f''(a)}{2!}(x-a)^2$ is used to approximate
+            loss landscapes. First-order optimization uses the linear term
+            (Gradient Descent), while second-order methods use the quadratic
+            term (Newton's Method).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where3">WHERE</span>
+            <span id="t-cal-where-sub">Modern Applications</span>
+          </div>
+          <div class="ref-text" id="t-cal-where">
+            Every modern neural network is trained using variants of stochastic
+            gradient descent. The <strong>Adam Optimizer</strong> computes
+            adaptive learning rates based on estimates of the first moment (the
+            gradient) and the second moment (the uncentered variance of the
+            gradient).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-who" id="t-who3">FROM WHOM</span>
+            <span id="t-cal-who-sub">Foundational Literature</span>
+          </div>
+          <div class="ref-citation" id="t-cal-who">
+            <strong>[1] Textbooks:</strong> Stewart, J. (2015).
+            <em>Calculus: Early Transcendentals</em>. Cengage Learning.<br />
+            <strong>[2] Optimization:</strong> Nocedal, J., &amp; Wright, S.
+            (2006). <em>Numerical Optimization</em>. Springer.<br />
+            <strong>[3] Adam:</strong> Kingma, D. P., &amp; Ba, J. (2014).
+            <em>Adam: A Method for Stochastic Optimization</em>. ICLR.
+          </div>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title" id="t-prob-title">
+            4. Probability, Statistics &amp; Bayes
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-why" id="t-why4">WHY</span>
+            <span id="t-prob-why-sub">The Theoretical Necessity</span>
+          </div>
+          <div class="ref-text" id="t-prob-why">
+            The real world is noisy, ambiguous, and incomplete. Neural networks
+            do not output deterministic truths; they output probabilities.
+            Furthermore, the initialization of networks and the modeling of
+            natural phenomena assume underlying statistical distributions to
+            maintain mathematical stability.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how4">HOW</span>
+            <span id="t-prob-how-sub">Mathematical Mechanics</span>
+          </div>
+          <div class="ref-text" id="t-prob-how">
+            <strong>Central Limit Theorem (CLT):</strong> The sum of $n$
+            independent identically distributed variables converges to a Normal
+            distribution $\mathcal{N}(\mu, \sigma^2)$ as $n \to \infty$.<br />
+            <strong>Bayes' Theorem:</strong> $P(\theta | X) = \frac{P(X |
+            \theta) P(\theta)}{P(X)}$. It formalizes how to update our beliefs
+            (the <em>prior</em> $P(\theta)$) after observing evidence (the
+            <em>likelihood</em> $P(X | \theta)$).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where4">WHERE</span>
+            <span id="t-prob-where-sub">Modern Applications</span>
+          </div>
+          <div class="ref-text" id="t-prob-where">
+            <strong>Weight Initialization:</strong> Weights are initialized
+            using scaled normal distributions (e.g., Xavier/He initialization)
+            to prevent activations from exploding or vanishing.<br />
+            <strong>Diffusion Models (e.g., Midjourney, DALL-E):</strong> Image
+            generation is modeled as a <em>Markov Chain</em> that iteratively
+            removes Gaussian noise from a sample, mathematically reversing a
+            forward diffusion process.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-who" id="t-who4">FROM WHOM</span>
+            <span id="t-prob-who-sub">Foundational Literature</span>
+          </div>
+          <div class="ref-citation" id="t-prob-who">
+            <strong>[1] Textbooks:</strong> Murphy, K. P. (2012).
+            <em>Machine Learning: A Probabilistic Perspective</em>. MIT
+            Press.<br />
+            <strong>[2] Diffusion Models:</strong> Ho, J., Jain, A., &amp;
+            Abbeel, P. (2020).
+            <em>Denoising Diffusion Probabilistic Models</em>. NeurIPS.
+          </div>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title" id="t-neu-title">
+            5. Deep Learning &amp; Backpropagation
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-why" id="t-why5">WHY</span>
+            <span id="t-neu-why-sub">The Theoretical Necessity</span>
+          </div>
+          <div class="ref-text" id="t-neu-why">
+            To solve complex, non-linearly separable problems (like the XOR
+            problem), an AI needs multiple layers of representation. Deep neural
+            networks automatically learn these hierarchical representations.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how5">HOW</span>
+            <span id="t-neu-how-sub">Mathematical Mechanics</span>
+          </div>
+          <div class="ref-text" id="t-neu-how">
+            <strong>The Forward Pass:</strong> $\mathbf{a}^{(l)} =
+            \sigma(\mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)})$. A
+            linear mapping followed by a non-linear activation $\sigma$ (e.g.,
+            ReLU).<br />
+            <strong>Backpropagation:</strong> The gradient of the loss with
+            respect to any weight is calculated efficiently by applying the
+            calculus chain rule backward from the output layer to the input. For
+            example: $\frac{\partial L}{\partial w} = \frac{\partial L}{\partial
+            a} \frac{\partial a}{\partial z} \frac{\partial z}{\partial w}$.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where5">WHERE</span>
+            <span id="t-neu-where-sub">Modern Applications</span>
+          </div>
+          <div class="ref-text" id="t-neu-where">
+            The Multilayer Perceptron (MLP) and Backpropagation form the
+            computational engine of absolutely every modern deep learning
+            system, from simple classifiers to trillion-parameter autoregressive
+            language models (GPT-4) and Convolutional Neural Networks (ResNet).
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-who" id="t-who5">FROM WHOM</span>
+            <span id="t-neu-who-sub">Foundational Literature</span>
+          </div>
+          <div class="ref-citation" id="t-neu-who">
+            <strong>[1] Textbooks:</strong> Goodfellow, I., Bengio, Y., &amp;
+            Courville, A. (2016). <em>Deep Learning</em>. MIT Press.<br />
+            <strong>[2] Backpropagation:</strong> Rumelhart, D. E., Hinton, G.
+            E., &amp; Williams, R. J. (1986).
+            <em>Learning representations by back-propagating errors</em>.
+            Nature, 323(6088), 533-536.<br />
+            <strong>[3] ReLU:</strong> Nair, V., &amp; Hinton, G. E. (2010).
+            <em>Rectified linear units improve restricted boltzmann machines</em
+            >. ICML.
+          </div>
+        </div>
+
+        <div class="ref-section">
+          <div class="ref-title" id="t-dh-title">6. Dahono Labs Gateway</div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-where" id="t-where6">WHERE</span>
+            <span id="t-dh-where-sub"
+              >The Provider of AIMathLab's AI Tutor</span
+            >
+          </div>
+          <div class="ref-text" id="t-dh-where">
+            The AI Tutor feature in this project is powered by
+            <strong>Dahono Labs API Gateway</strong>. It is designed to be 100%
+            compatible with the OpenAI API format, allowing seamless integration
+            with existing tools and models.
+          </div>
+
+          <div class="ref-subtitle">
+            <span class="q-badge q-how" id="t-how6">HOW</span>
+            <span id="t-dh-how-sub">Gateway Architecture</span>
+          </div>
+          <div class="ref-text" id="t-dh-how">
+            The gateway acts as an intelligent router and load balancer.
+            AIMathLab sends the mathematical state (vector coordinates, matrix
+            values, etc.) to the <code>dahono/ccai-pro</code> model via a Vercel
+            serverless edge function, ensuring the API key remains completely
+            secure. The responses are then streamed back to the browser in
+            real-time using Server-Sent Events (SSE).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="references.js"></script>
+    <div
+      class="sticky-footer"
+      style="
+        text-align: center;
+        padding: 20px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 15px;
+        color: var(--ink2);
+        width: 100%;
+        display: block;
+        flex-shrink: 0;
+      "
+    >
+      Designed & Engineered by
+      <a
+        href="https://ricoeri.my.id"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          color: var(--accent);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 6px;
+          background: color-mix(in srgb, var(--accent) 12%, transparent);
+          margin-left: 4px;
+          border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        "
+        >Rico Eriansyah</a
+      >
+    </div>
+    <script src="../js/validation.js"></script>
+  </body>
+</html>

@@ -58,7 +58,7 @@ window.updateLogos = function() {
   const isDarkTheme = window.isDark();
   const logos = document.querySelectorAll('.dahono-logo');
   logos.forEach(img => {
-    img.src = isDarkTheme ? 'dahono-labs-logo-white.svg' : 'dahono-labs-logo-black.svg';
+    const pfx = document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('assets/img/favicon.png', '') || 'assets/'; img.src = pfx + (isDarkTheme ? 'assets/svg/dahono-labs-logo-white.svg' : 'assets/svg/dahono-labs-logo-black.svg');
   });
 }
 
@@ -796,7 +796,7 @@ async function bootAuth() {
   let config = window.aimlConfig;
   if (!config) {
     try {
-      const r = await fetch('config.json');
+      const pfx = document.querySelector('link[rel="icon"]')?.getAttribute('href')?.replace('assets/assets/img/favicon.png', '') || ''; const r = await fetch(pfx + 'config.json');
       if (r.ok) config = await r.json();
     } catch (_) {}
   }

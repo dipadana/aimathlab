@@ -1,0 +1,46 @@
+#z-row, #scale-z-row { display: none; }
+body.mode3d #z-row, body.mode3d #scale-z-row { display: block; }
+body.mode3d #hint3d { display: flex; }
+#hint3d { display: none; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--ink3); margin-top: 6px; }
+.lc-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--ink2);
+  transition: all 0.2s;
+}
+.lc-step-icon { font-size: 14px; line-height: 1; margin-top: 1px; }
+.lc-anim-btn {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.lc-anim-btn button {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.lc-anim-btn button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.lc-anim-btn button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}

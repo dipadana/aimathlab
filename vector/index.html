@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="ja" data-active-lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vectors | AI Math Lab</title>
+    <meta
+      name="description"
+      content="Understand vectors by seeing them in action. We cover magnitude, direction, linear combinations, span, and basis in this interactive 2D and 3D visualizer."
+    />
+    <script src="../js/theme.js"></script>
+    <script src="../js/sync.js"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/shared.css" />
+    <link rel="stylesheet" href="../ai-assistant/ai-assistant.css" />
+    <script src="../ai-assistant/ai-assistant.js"></script>
+    <link rel="stylesheet" href="vector.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <meta name="author" content="Rico Eriansyah" />
+    <meta
+      name="keywords"
+      content="AI, Artificial Intelligence, Mathematics, Vectors, Matrices, Calculus, Probability, Neural Networks, Visualizer, Interactive, Math Lab"
+    />
+    <link rel="icon" type="image/png" href="../assets/assets/img/favicon.png" />
+  </head>
+  <body data-active-lang="ja">
+    <div class="page-shell">
+      <div class="sticky-header module-header">
+        <a class="back-link" href="../">
+          ← <span data-lang="en">Hub</span><span data-lang="ja">ホーム</span
+          ><span data-lang="id">Beranda</span>
+        </a>
+        <div class="header-actions">
+          <a href="../references/references.html" class="docs-btn">
+            <i class="fa-solid fa-book"></i>
+            <span class="docs-text" data-lang="en">Docs</span>
+            <span class="docs-text" data-lang="ja">文書</span>
+            <span class="docs-text" data-lang="id">Dokumen</span>
+          </a>
+          <div class="custom-lang-dropdown">
+            <button
+              class="lang-btn-icon"
+              onclick="toggleLangMenu(event)"
+              id="lang-menu-btn"
+              aria-label="Select Language"
+            >
+              <i class="fa-solid fa-globe"></i>
+            </button>
+            <ul class="lang-menu" id="lang-menu">
+              <li>
+                <button id="lb-en" onclick="setLang('en')">English</button>
+              </li>
+              <li>
+                <button id="lb-ja" onclick="setLang('ja')">日本語</button>
+              </li>
+              <li>
+                <button id="lb-id" onclick="setLang('id')">Indonesia</button>
+              </li>
+            </ul>
+          </div>
+          <button
+            class="theme-btn-icon"
+            onclick="toggleTheme()"
+            id="theme-btn"
+            aria-label="Toggle Theme"
+          >
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-7" style="margin-bottom: 1.75rem">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+          "
+        >
+          <h1
+            style="
+              font-family: &quot;Source Serif 4&quot;, Georgia, serif;
+              font-size: 1.5rem;
+              font-weight: 500;
+              color: var(--ink);
+            "
+          >
+            <span data-lang="en">Vector Space Visualizer</span>
+            <span data-lang="ja">ベクトル空間ビジュアライザー</span>
+            <span data-lang="id">Visualisasi Ruang Vektor</span>
+          </h1>
+          <div style="display: flex; gap: 5px">
+            <button class="btn-mode active" id="btn2d" onclick="setMode('2d')">
+              <span data-lang="en">2D</span><span data-lang="ja">2次元</span
+              ><span data-lang="id">2D</span>
+            </button>
+            <button class="btn-mode" id="btn3d" onclick="setMode('3d')">
+              <span data-lang="en">3D</span><span data-lang="ja">3次元</span
+              ><span data-lang="id">3D</span>
+            </button>
+          </div>
+        </div>
+        <p
+          style="
+            color: var(--ink2);
+            font-size: 15px;
+            font-family: &quot;DM Sans&quot;, sans-serif;
+          "
+        >
+          <span data-lang="en"
+            >Visualizing magnitude and direction from both physics and computer
+            science perspectives.</span
+          >
+          <span data-lang="ja"
+            >物理学とコンピュータサイエンスの視点を組み合わせた、大きさ・方向の可視化。</span
+          >
+          <span data-lang="id"
+            >Menggabungkan perspektif fisika &amp; ilmu komputer —
+            visualisasikan besaran &amp; arah.</span
+          >
+        </p>
+      </div>
+
+      <div class="main-layout">
+        <div class="canvas-column" id="canvas-column-vec">
+          <div class="canvas-wrap">
+            <canvas id="canvas" height="500"></canvas>
+            <div id="zoom-badge">1×</div>
+          </div>
+          <div id="hint3d" style="justify-content: space-between">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <i
+                class="fa-solid fa-circle-info"
+                style="flex-shrink: 0; font-size: 15px"
+              ></i>
+              <span data-lang="en">Drag to rotate · Wheel to zoom</span>
+              <span data-lang="ja">ドラッグで回転 · ホイールでズーム</span>
+              <span data-lang="id">Drag untuk putar · Scroll untuk zoom</span>
+            </div>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="auto-orbit"
+                onchange="toggleOrbit(this.checked)"
+              />
+              <span data-lang="en" style="font-size: 10px">Auto Orbit</span>
+              <span data-lang="ja" style="font-size: 10px">自動回転</span>
+              <span data-lang="id" style="font-size: 10px">Putar Otomatis</span>
+            </label>
+          </div>
+          <div
+            id="stats"
+            class="mono"
+            style="
+              margin-top: 8px;
+              font-size: 14px;
+              color: var(--ink3);
+              min-height: 20px;
+              display: flex;
+              gap: 16px;
+              flex-wrap: wrap;
+            "
+          ></div>
+        </div>
+
+        <div class="controls-column">
+          <div
+            style="
+              border: 1px solid var(--border2);
+              border-radius: 6px;
+              overflow: hidden;
+            "
+          >
+            <div
+              style="
+                padding: 10px 12px;
+                background: var(--surface2);
+                border-bottom: 1px solid var(--border);
+              "
+            >
+              <span class="mono" style="font-size: 14px; color: var(--ink3)">
+                <span data-lang="en">Add Vector</span
+                ><span data-lang="ja">ベクトル追加</span
+                ><span data-lang="id">Tambah Vektor</span>
+              </span>
+            </div>
+            <div
+              style="
+                padding: 14px 12px;
+                background: var(--surface);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+              "
+            >
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"
+              >
+                <div>
+                  <label class="fieldlabel">
+                    <span data-lang="en">Component x</span
+                    ><span data-lang="ja">成分 x</span
+                    ><span data-lang="id">Komponen x</span>
+                  </label>
+                  <input type="number" id="inp-x" value="0" step="0.5" />
+                </div>
+                <div>
+                  <label class="fieldlabel">
+                    <span data-lang="en">Component y</span
+                    ><span data-lang="ja">成分 y</span
+                    ><span data-lang="id">Komponen y</span>
+                  </label>
+                  <input type="number" id="inp-y" value="0" step="0.5" />
+                </div>
+              </div>
+
+              <div id="z-row">
+                <label class="fieldlabel">
+                  <span data-lang="en">Component z</span
+                  ><span data-lang="ja">成分 z</span
+                  ><span data-lang="id">Komponen z</span>
+                </label>
+                <input type="number" id="inp-z" value="0" step="0.5" />
+              </div>
+
+              <div>
+                <label class="fieldlabel">
+                  <span data-lang="en">Scalar</span
+                  ><span data-lang="ja">スカラー</span
+                  ><span data-lang="id">Skalar</span>
+                  <span style="font-style: italic; opacity: 0.7; color: red">
+                    **<span data-lang="en">scales the vector length</span
+                    ><span data-lang="ja">ベクトルの長さを変えます</span
+                    ><span data-lang="id">mengubah panjang vektor</span></span
+                  >
+                </label>
+                <input type="number" id="inp-scalar" value="1" step="0.25" />
+              </div>
+
+              <div>
+                <label class="fieldlabel">
+                  <span data-lang="en">Origin</span
+                  ><span data-lang="ja">始点</span
+                  ><span data-lang="id">Titik awal</span>
+                </label>
+                <select id="inp-op">
+                  <option value="origin" id="opt-origin">
+                    <span data-lang="en">From origin (0, 0)</span>
+                  </option>
+                  <option value="chain" id="opt-chain">
+                    <span data-lang="en">From tip of previous</span>
+                  </option>
+                </select>
+              </div>
+
+              <button
+                class="btn btn-fill"
+                style="width: 100%; margin-top: 2px"
+                onclick="addVector()"
+              >
+                <span data-lang="en">Add</span><span data-lang="ja">追加</span
+                ><span data-lang="id">Tambah</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px">
+            <button
+              class="btn btn-outline"
+              style="flex: 1"
+              onclick="replayAll()"
+            >
+              <span data-lang="en">Replay</span><span data-lang="ja">再生</span
+              ><span data-lang="id">Putar Ulang</span>
+            </button>
+            <button
+              class="btn btn-outline"
+              style="flex: 1"
+              onclick="clearAll()"
+            >
+              <span data-lang="en">Clear</span><span data-lang="ja">クリア</span
+              ><span data-lang="id">Hapus</span>
+            </button>
+          </div>
+
+          <label class="toggle-row" for="toggle-resultant">
+            <span style="display: flex; flex-direction: column; gap: 2px">
+              <span
+                class="mono"
+                style="font-size: 14px; color: var(--ink2); font-weight: 500"
+              >
+                <span data-lang="en">Show Resultant (Σ)</span
+                ><span data-lang="ja">合力を表示 (Σ)</span
+                ><span data-lang="id">Tampilkan Resultan (Σ)</span>
+              </span>
+              <span
+                style="
+                  font-size: 13px;
+                  font-family: &quot;DM Sans&quot;, sans-serif;
+                  color: var(--ink3);
+                "
+              >
+                <span data-lang="en">Draw sum vector from origin</span
+                ><span data-lang="ja">原点から合ベクトルを描画</span
+                ><span data-lang="id">Gambar vektor jumlah dari asal</span>
+              </span>
+            </span>
+            <span class="toggle-switch">
+              <input
+                type="checkbox"
+                id="toggle-resultant"
+                onchange="toggleResultant(this.checked)"
+              />
+              <span class="toggle-track"
+                ><span class="toggle-thumb"></span
+              ></span>
+            </span>
+          </label>
+
+          <div
+            style="
+              border: 1px solid var(--border2);
+              border-radius: 6px;
+              overflow: hidden;
+            "
+          >
+            <div
+              style="
+                padding: 10px 12px;
+                background: var(--surface2);
+                border-bottom: 1px solid var(--border);
+              "
+            >
+              <span class="mono" style="font-size: 14px; color: var(--ink3)">
+                <span data-lang="en">Vector List</span
+                ><span data-lang="ja">ベクトルリスト</span
+                ><span data-lang="id">Daftar Vektor</span>
+              </span>
+            </div>
+            <div
+              id="vec-list"
+              style="
+                padding: 10px;
+                background: var(--surface);
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 200px;
+                overflow-y: auto;
+              "
+            >
+              <p class="mono" style="font-size: 14px; color: var(--ink3)">
+                <span data-lang="en">(empty)</span><span data-lang="ja">空</span
+                ><span data-lang="id">kosong</span>
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              border: 1px solid var(--border2);
+              border-radius: 6px;
+              overflow: hidden;
+              margin-top: 12px;
+            "
+          >
+            <div
+              style="
+                padding: 10px 12px;
+                background: var(--surface2);
+                border-bottom: 1px solid var(--border);
+              "
+            >
+              <span class="mono" style="font-size: 14px; color: var(--ink3)">
+                <span data-lang="en">Scale Selected Vectors</span
+                ><span data-lang="ja">選択したベクトルをスケーリング</span
+                ><span data-lang="id">Skalakan Vektor Terpilih</span>
+              </span>
+            </div>
+            <div
+              style="
+                padding: 14px 12px;
+                background: var(--surface);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+              "
+            >
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"
+              >
+                <div>
+                  <label class="fieldlabel">
+                    <span data-lang="en">Scale x</span
+                    ><span data-lang="ja">スケール x</span
+                    ><span data-lang="id">Skala x</span>
+                  </label>
+                  <input type="number" id="inp-scale-x" value="1" step="0.5" />
+                </div>
+                <div>
+                  <label class="fieldlabel">
+                    <span data-lang="en">Scale y</span
+                    ><span data-lang="ja">スケール y</span
+                    ><span data-lang="id">Skala y</span>
+                  </label>
+                  <input type="number" id="inp-scale-y" value="1" step="0.5" />
+                </div>
+              </div>
+              <div id="scale-z-row">
+                <label class="fieldlabel">
+                  <span data-lang="en">Scale z</span
+                  ><span data-lang="ja">スケール z</span
+                  ><span data-lang="id">Skala z</span>
+                </label>
+                <input type="number" id="inp-scale-z" value="1" step="0.5" />
+              </div>
+              <button
+                class="btn btn-fill"
+                style="width: 100%; margin-top: 2px"
+                onclick="applyScale()"
+              >
+                <span data-lang="en">Apply Scale</span
+                ><span data-lang="ja">適用</span
+                ><span data-lang="id">Terapkan Skala</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-lc">
+            <div class="panel-head" id="ph-lc" onclick="togglePanel('lc')">
+              <span class="ph-title">
+                <i
+                  class="fa-solid fa-arrow-right-long"
+                  style="opacity: 0.7; font-size: 15px"
+                ></i>
+                <span data-lang="en">Linear Combination</span
+                ><span data-lang="ja">線形結合</span
+                ><span data-lang="id">Kombinasi Linear</span>
+              </span>
+              <span class="ph-icon">▾</span>
+            </div>
+            <div class="panel-body" id="pb-lc">
+              <div id="lc-sliders">
+                <p class="mono" style="font-size: 14px; color: var(--ink3)">
+                  <span data-lang="en">Add vectors first</span
+                  ><span data-lang="ja">ベクトルを追加してください</span
+                  ><span data-lang="id">Tambahkan vektor dulu</span>
+                </p>
+              </div>
+              <div
+                id="lc-insight"
+                style="
+                  font-size: 12px;
+                  font-family: &quot;DM Sans&quot;, sans-serif;
+                  color: var(--ink3);
+                  background: var(--surface2);
+                  border-radius: 5px;
+                  padding: 8px 10px;
+                  margin-bottom: 4px;
+                  border-left: 3px solid var(--accent);
+                  line-height: 1.5;
+                  display: none;
+                "
+              >
+                <span data-lang="en"
+                  ><i
+                    class="fa-solid fa-lightbulb"
+                    style="color: var(--accent); margin-right: 6px"
+                  ></i
+                  >A linear combination is formed by scaling vectors and placing
+                  them tip-to-tail.</span
+                >
+                <span data-lang="ja"
+                  ><i
+                    class="fa-solid fa-lightbulb"
+                    style="color: var(--accent); margin-right: 6px"
+                  ></i
+                  >線形結合は、各ベクトルをスカラー倍し、それらを始点と終点を繋ぎ合わせる（tip-to-tail）ことで作られます。</span
+                >
+                <span data-lang="id"
+                  ><i
+                    class="fa-solid fa-lightbulb"
+                    style="color: var(--accent); margin-right: 6px"
+                  ></i
+                  >Kombinasi linear dibentuk dengan mengalikan vektor dengan
+                  skalar dan menempatkannya ujung-ke-pangkal
+                  (tip-to-tail).</span
+                >
+              </div>
+              <div
+                id="lc-result"
+                class="lc-result-box"
+                style="display: none"
+              ></div>
+              <div id="lc-steps" style="margin-top: 4px"></div>
+              <div
+                class="lc-anim-btn"
+                id="lc-anim-controls"
+                style="display: none"
+              >
+                <button id="lc-btn-animate" onclick="animateLCSteps()">
+                  <span data-lang="en"
+                    ><i class="fa-solid fa-play" style="margin-right: 5px"></i
+                    >Animate Steps</span
+                  >
+                  <span data-lang="ja"
+                    ><i class="fa-solid fa-play" style="margin-right: 5px"></i
+                    >ステップをアニメーション</span
+                  >
+                  <span data-lang="id"
+                    ><i class="fa-solid fa-play" style="margin-right: 5px"></i
+                    >Animasi Langkah</span
+                  >
+                </button>
+                <button onclick="resetLC()">
+                  <span data-lang="en"
+                    ><i
+                      class="fa-solid fa-rotate-left"
+                      style="margin-right: 5px"
+                    ></i
+                    >Reset</span
+                  >
+                  <span data-lang="ja"
+                    ><i
+                      class="fa-solid fa-rotate-left"
+                      style="margin-right: 5px"
+                    ></i
+                    >リセット</span
+                  >
+                  <span data-lang="id"
+                    ><i
+                      class="fa-solid fa-rotate-left"
+                      style="margin-right: 5px"
+                    ></i
+                    >Reset</span
+                  >
+                </button>
+              </div>
+              <label class="toggle-row" for="toggle-lc" style="margin-top: 2px">
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span
+                    class="mono"
+                    style="
+                      font-size: 14px;
+                      color: var(--ink2);
+                      font-weight: 500;
+                    "
+                  >
+                    <span data-lang="en">Show on Canvas</span
+                    ><span data-lang="ja">キャンバスに表示</span
+                    ><span data-lang="id">Tampilkan di Kanvas</span>
+                  </span>
+                  <span
+                    style="
+                      font-size: 13px;
+                      font-family: &quot;DM Sans&quot;, sans-serif;
+                      color: var(--ink3);
+                    "
+                  >
+                    <span data-lang="en">Draw LC vector</span
+                    ><span data-lang="ja">線形結合ベクトルを描画</span
+                    ><span data-lang="id">Gambar vektor LC</span>
+                  </span>
+                </span>
+                <span class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-lc"
+                    onchange="
+                      lcShowOnCanvas = this.checked;
+                      render();
+                    "
+                  />
+                  <span class="toggle-track"
+                    ><span class="toggle-thumb"></span
+                  ></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-span">
+            <div class="panel-head" id="ph-span" onclick="togglePanel('span')">
+              <span class="ph-title">
+                <i
+                  class="fa-solid fa-chart-area"
+                  style="opacity: 0.7; font-size: 15px"
+                ></i>
+                <span data-lang="en">Span</span
+                ><span data-lang="ja">スパン (Span)</span
+                ><span data-lang="id">Rentang (Span)</span>
+              </span>
+              <span class="ph-icon">▾</span>
+            </div>
+            <div class="panel-body" id="pb-span">
+              <div id="span-info">
+                <p class="mono" style="font-size: 14px; color: var(--ink3)">
+                  <span data-lang="en">Add vectors first</span
+                  ><span data-lang="ja">ベクトルを追加してください</span
+                  ><span data-lang="id">Tambahkan vektor dulu</span>
+                </p>
+              </div>
+              <label
+                class="toggle-row"
+                for="toggle-span"
+                style="margin-top: 2px"
+              >
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span
+                    class="mono"
+                    style="
+                      font-size: 14px;
+                      color: var(--ink2);
+                      font-weight: 500;
+                    "
+                  >
+                    <span data-lang="en">Show Span</span
+                    ><span data-lang="ja">スパンを表示</span
+                    ><span data-lang="id">Tampilkan Span</span>
+                  </span>
+                  <span
+                    style="
+                      font-size: 13px;
+                      font-family: &quot;DM Sans&quot;, sans-serif;
+                      color: var(--ink3);
+                    "
+                  >
+                    <span data-lang="en">Shade the subspace</span
+                    ><span data-lang="ja">張る部分空間をシェーディング</span
+                    ><span data-lang="id">Arsir subruang</span>
+                  </span>
+                </span>
+                <span class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-span"
+                    onchange="
+                      showSpan = this.checked;
+                      render();
+                    "
+                  />
+                  <span class="toggle-track"
+                    ><span class="toggle-thumb"></span
+                  ></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-basis">
+            <div
+              class="panel-head"
+              id="ph-basis"
+              onclick="togglePanel('basis')"
+            >
+              <span class="ph-title">
+                <i
+                  class="fa-solid fa-border-all"
+                  style="opacity: 0.7; font-size: 15px"
+                ></i>
+                <span data-lang="en">Basis</span
+                ><span data-lang="ja">基底 (Basis)</span
+                ><span data-lang="id">Basis</span>
+              </span>
+              <span class="ph-icon">▾</span>
+            </div>
+            <div class="panel-body" id="pb-basis">
+              <div id="basis-info">
+                <p class="mono" style="font-size: 14px; color: var(--ink3)">
+                  <span data-lang="en">Add vectors first</span
+                  ><span data-lang="ja">ベクトルを追加してください</span
+                  ><span data-lang="id">Tambahkan vektor dulu</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-ops">
+            <div class="panel-head" id="ph-ops" onclick="togglePanel('ops')">
+              <span class="ph-title">
+                <i
+                  class="fa-solid fa-calculator"
+                  style="opacity: 0.7; font-size: 15px"
+                ></i>
+                <span data-lang="en">Operations</span
+                ><span data-lang="ja">演算</span
+                ><span data-lang="id">Operasi</span>
+              </span>
+              <span class="ph-icon">▾</span>
+            </div>
+            <div class="panel-body" id="pb-ops">
+              <div id="ops-info">
+                <p class="mono" style="font-size: 14px; color: var(--ink3)">
+                  <span data-lang="en">Add at least two vectors</span
+                  ><span data-lang="ja">ベクトルを2つ以上追加してください</span
+                  ><span data-lang="id">Tambahkan minimal dua vektor</span>
+                </p>
+              </div>
+              <label
+                class="toggle-row"
+                for="toggle-dot"
+                style="margin-top: 2px; display: none"
+                id="row-dot"
+              >
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span
+                    class="mono"
+                    style="
+                      font-size: 14px;
+                      color: var(--ink2);
+                      font-weight: 500;
+                    "
+                  >
+                    <span data-lang="en">Show Projection (v₁ on v₂)</span
+                    ><span data-lang="ja">正射影を表示</span
+                    ><span data-lang="id">Tampilkan Proyeksi</span>
+                  </span>
+                </span>
+                <span class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-dot"
+                    onchange="
+                      showProjection = this.checked;
+                      render();
+                    "
+                  />
+                  <span class="toggle-track"
+                    ><span class="toggle-thumb"></span
+                  ></span>
+                </span>
+              </label>
+              <label
+                class="toggle-row"
+                for="toggle-cross"
+                style="margin-top: 2px; display: none"
+                id="row-cross"
+              >
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span
+                    class="mono"
+                    style="
+                      font-size: 14px;
+                      color: var(--ink2);
+                      font-weight: 500;
+                    "
+                  >
+                    <span data-lang="en">Show Cross Product (v₁ × v₂)</span
+                    ><span data-lang="ja">外積を表示</span
+                    ><span data-lang="id">Tampilkan Produk Silang</span>
+                  </span>
+                </span>
+                <span class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-cross"
+                    onchange="
+                      showCross = this.checked;
+                      render();
+                    "
+                  />
+                  <span class="toggle-track"
+                    ><span class="toggle-thumb"></span
+                  ></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div
+              class="panel-head"
+              id="ph-theory"
+              onclick="togglePanel('theory')"
+            >
+              <span class="ph-title">
+                <i
+                  class="fa-solid fa-book"
+                  style="opacity: 0.7; font-size: 15px"
+                ></i>
+                <span data-lang="en">Theory Note</span
+                ><span data-lang="ja">理論ノート</span
+                ><span data-lang="id">Catatan Teori</span>
+              </span>
+              <span class="ph-icon">▾</span>
+            </div>
+            <div class="panel-body" id="pb-theory">
+              <div
+                id="theory-text"
+                style="
+                  font-size: 15px;
+                  font-family: &quot;DM Sans&quot;, sans-serif;
+                  color: var(--ink2);
+                  line-height: 1.65;
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="vector.js"></script>
+
+    <div
+      class="sticky-footer"
+      style="
+        text-align: center;
+        padding: 20px;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 15px;
+        color: var(--ink2);
+        width: 100%;
+        display: block;
+        border-top: 1px solid var(--border);
+      "
+    >
+      Designed & Engineered by
+      <a
+        href="https://ricoeri.my.id"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          color: var(--accent);
+          text-decoration: none;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 6px;
+          background: color-mix(in srgb, var(--accent) 12%, transparent);
+          margin-left: 4px;
+          border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        "
+        >Rico Eriansyah</a
+      >
+    </div>
+    <script src="../js/validation.js"></script>
+  </body>
+</html>

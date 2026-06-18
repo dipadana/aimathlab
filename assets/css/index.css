@@ -1,0 +1,383 @@
+html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #bg-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: color-mix(in srgb, var(--surface) 90%, transparent);
+        backdrop-filter: blur(8px);
+      }
+
+      .page-shell {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .hub-hero {
+        text-align: center;
+        padding: 3rem 1rem 1.5rem;
+        flex-shrink: 0;
+      }
+      .hub-hero .title-serif {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.8rem);
+        font-weight: 400;
+        color: var(--ink);
+        line-height: 1.25;
+        margin-bottom: 0.6rem;
+      }
+      .hub-hero .title-serif em {
+        font-style: italic;
+        color: var(--accent);
+      }
+      .hub-hero .subtitle {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 16px;
+        color: var(--ink2);
+        max-width: 38ch;
+        margin: 0 auto 1.5rem;
+        line-height: 1.6;
+      }
+
+      .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .top-bar-logo {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 15px;
+        color: var(--ink3);
+        letter-spacing: 0.06em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .top-bar-logo span {
+        color: var(--accent);
+      }
+
+      .card-grid {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 18px;
+        padding: 1rem 2rem 2rem 2rem;
+        margin-top: 0;
+        flex: 1;
+        align-items: center;
+      }
+
+      .carousel-wrapper {
+        position: relative;
+        display: flex;
+        flex: 1;
+        width: 100%;
+        align-items: stretch;
+      }
+
+      .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: color-mix(in srgb, var(--surface) 90%, transparent);
+        border: 1px solid var(--border2);
+        color: var(--ink);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: var(--shadow);
+        transition: all 0.2s;
+        backdrop-filter: blur(8px);
+      }
+      .carousel-btn:hover {
+        background: var(--surface);
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-50%) scale(1.05);
+      }
+      .carousel-btn.left {
+        left: 1rem;
+      }
+      .carousel-btn.right {
+        right: 1rem;
+      }
+      .carousel-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-50%) scale(0.9);
+      }
+
+      .card-grid::-webkit-scrollbar {
+        display: none;
+      }
+      .card-grid::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 0 2rem;
+      }
+      .card-grid::-webkit-scrollbar-thumb {
+        background: var(--surface2);
+        border-radius: 4px;
+      }
+      .card-grid::-webkit-scrollbar-thumb:hover {
+        background: var(--border);
+      }
+
+      .module-card {
+        min-width: 340px;
+        max-width: 400px;
+        height: max-content;
+        flex-shrink: 0;
+        scroll-snap-align: center;
+        background: color-mix(in srgb, var(--surface) 85%, transparent);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        overflow: hidden;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          border-color 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+      }
+      .module-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow);
+        border-color: var(--accent);
+      }
+
+      .card-preview {
+        position: relative;
+        height: 140px;
+        background: var(--canvas-bg);
+        border-bottom: 1px solid var(--border2);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .card-preview canvas {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+      }
+
+      .card-body {
+        padding: 14px 16px 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .card-accent-bar {
+        height: 2px;
+        border-radius: 2px;
+        margin-bottom: 10px;
+      }
+      .card-title {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--ink);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-subtitle {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ink3);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .card-desc {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 15px;
+        color: var(--ink2);
+        line-height: 1.55;
+        flex: 1;
+      }
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+      .card-tags {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .card-tag {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ink3);
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        padding: 1px 5px;
+      }
+      .card-open-btn {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        padding: 5px 12px;
+        border-radius: 4px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: opacity 0.15s;
+        white-space: nowrap;
+        text-decoration: none;
+      }
+      .card-open-btn:hover {
+        opacity: 0.85;
+      }
+
+      .hub-footer {
+        text-align: center;
+        padding: 1.25rem 1rem;
+        border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        color: var(--ink3);
+        flex-shrink: 0;
+      }
+      .hub-footer a {
+        color: var(--ink3);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      @media (max-width: 768px) {
+        html,
+        body {
+          height: auto;
+          overflow: visible;
+        }
+        .page-shell {
+          height: auto;
+          overflow: visible;
+        }
+
+        .hub-hero {
+          padding: 1.5rem 1rem 0.5rem;
+        }
+        .hub-hero .title-serif {
+          font-size: 1.8rem;
+        }
+        .hub-hero .subtitle {
+          font-size: 14px;
+          margin-bottom: 0;
+        }
+        .module-card {
+          min-width: 280px;
+          max-width: 85vw;
+        }
+        .card-grid {
+          padding: 1rem 1rem 1.5rem 1rem;
+          gap: 12px;
+          align-items: stretch;
+        }
+        .card-grid::-webkit-scrollbar-track {
+          margin: 0 1rem;
+        }
+        .hub-footer {
+          padding: 1rem;
+          font-size: 12px;
+        }
+        .card-preview {
+          height: 120px;
+        }
+        .card-body {
+          padding: 12px 14px 14px;
+        }
+        .card-title {
+          font-size: 1.1rem;
+        }
+        .card-desc {
+          font-size: 14px;
+        }
+      }
+
+      @media (max-height: 700px) and (min-width: 769px) {
+        .hub-hero {
+          padding: 1rem 1rem 0;
+        }
+        .card-grid {
+          padding-top: 0.5rem;
+        }
+        .card-preview {
+          height: 110px;
+        }
+        .card-desc {
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .hub-footer {
+          padding: 0.5rem;
+          border-top: none;
+        }
+      }

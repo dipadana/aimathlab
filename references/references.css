@@ -1,0 +1,12 @@
+.ref-container { max-width: 800px; width: 100%; min-width: 0; margin: 0 auto; padding: 20px; color: var(--ink1); }
+  .ref-section { margin-bottom: 40px; border-bottom: 1px solid var(--border1); padding-bottom: 30px; }
+  .ref-section:last-child { border-bottom: none; }
+  .ref-title { font-family: system-ui, -apple-system, sans-serif; font-size: 28px; font-weight: 600; margin-bottom: 12px; color: var(--ink1); }
+  .ref-subtitle { font-family: system-ui, -apple-system, sans-serif; font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 8px; color: var(--ink2); }
+  .ref-text { font-family: system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.7; margin-bottom: 16px; color: var(--ink2); overflow-wrap: anywhere; word-break: break-word; max-width: 100%; overflow-x: auto; }
+  .ref-citation { font-family: 'JetBrains Mono', monospace; font-size: 15px; background: var(--surface2); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent1); color: var(--ink3); margin-top: 20px; overflow-x: auto; overflow-wrap: anywhere; word-break: break-word; }
+  .q-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-right: 8px; vertical-align: middle; }
+  .q-why { background: rgba(212,112,112,0.15); color: #d47070; }
+  .q-how { background: rgba(90,186,128,0.15); color: #5aba80; }
+  .q-where { background: rgba(106,159,216,0.15); color: #6a9fd8; }
+  .q-who { background: rgba(154,136,216,0.15); color: #9a88d8; }

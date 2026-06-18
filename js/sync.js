@@ -68,7 +68,7 @@
           sessionStorage.setItem('mp_isHost', this.isHost ? 'true' : 'false');
         }
         
-        // Initial sync
+        
         if (data.state && auth.applyState) {
           window.isApplyingNetworkState = true;
           clearTimeout(window._networkLockTimer);
@@ -80,7 +80,7 @@
         return true;
       } catch (e) {
         console.error("Join room failed:", e);
-        this.leaveRoom(); // Clear invalid session
+        this.leaveRoom(); 
         return false;
       }
     },
@@ -139,7 +139,7 @@
       sessionStorage.removeItem('mp_room');
       sessionStorage.removeItem('mp_isHost');
       
-      // Attempt to clean up DB if host
+      
       if (this.isHost) {
         const sb = window.AIMLAuth?.getSupabase();
         if (sb) {
@@ -151,7 +151,7 @@
     async init() {
       const savedRoom = sessionStorage.getItem('mp_room');
       if (savedRoom) {
-        // Wait for auth to boot
+        
         let attempts = 0;
         while (!window.AIMLAuth?.getSupabase() && attempts < 50) {
           await new Promise(r => setTimeout(r, 100));
@@ -169,7 +169,7 @@
     }
   };
 
-  // UI Injection for Multiplayer Modal
+  
   window.addEventListener('DOMContentLoaded', () => {
     const modalHtml = `
       <div id="mp-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
@@ -204,7 +204,7 @@
     wrapper.innerHTML = modalHtml;
     document.body.appendChild(wrapper.firstElementChild);
 
-    // Add Multiplayer Button to header
+    
     const actionsContainer = document.querySelector('.header-actions');
     if (actionsContainer) {
       const mpBtn = document.createElement('button');
