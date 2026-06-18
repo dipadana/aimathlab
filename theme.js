@@ -823,6 +823,9 @@ async function bootAuth() {
       openUpdatePasswordModal(_supabase);
     } else if (_user && !prevUser) {
       await restoreState();
+      if (window.AIMathTutor && window.AIMathTutor.linkAnonymousSession) {
+        window.AIMathTutor.linkAnonymousSession(_user.id);
+      }
     }
   });
 }

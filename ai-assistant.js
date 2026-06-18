@@ -10,6 +10,7 @@
   let _drawLayer = null;
   let _drawCtx = null;
   let _isDrawing = false;
+  let _currentChatSessionId = null;
 
   const _profileManager = {
     _cache: null,
@@ -206,8 +207,14 @@
 
   function clearHistory() {
     _chatHistory = [];
+    _currentChatSessionId = null;
     const body = document.getElementById('ai-card-body');
-    if (body) body.innerHTML = idlePlaceholder();
+    if (body) {
+      if (body.classList.contains('history-view')) {
+        body.classList.remove('history-view');
+      }
+      body.innerHTML = idlePlaceholder();
+    }
   }
 
   async function ask(systemContextMsgs, cardId, userMessage = null, isFollowUp = false, previousUIString = '', existingAiMsgEl = null) {
@@ -230,10 +237,12 @@
     setCardState('loading', explainBtn, sendBtn);
 
     if (!isFollowUp) {
+      let insertedMessage = '';
       if (userMessage) {
         _chatHistory.push({ role: 'user', content: userMessage });
         appendMessageUI('user', userMessage);
         if (inputField) inputField.value = '';
+        insertedMessage = userMessage;
       } else {
         const lang = document.body.getAttribute('data-active-lang') || 'en';
         const defaultReq = {
@@ -243,6 +252,31 @@
         };
         _chatHistory.push({ role: 'user', content: defaultReq[lang] });
         appendMessageUI('user', defaultReq[lang]);
+        insertedMessage = defaultReq[lang];
+      }
+
+      const auth = window.AIMLAuth;
+      if (auth && auth.getSupabase()) {
+        const sb = auth.getSupabase();
+        const user = auth.getUser();
+        if (!_currentChatSessionId) {
+          try {
+            const { data } = await sb.from('chat_sessions').insert({
+              user_id: user ? user.id : null,
+              title: insertedMessage.substring(0, 50) + (insertedMessage.length > 50 ? '...' : '')
+            }).select('id').single();
+            if (data) _currentChatSessionId = data.id;
+          } catch(e) { console.warn("Failed to create chat session:", e); }
+        }
+        if (_currentChatSessionId) {
+          try {
+            await sb.from('chat_messages').insert({
+              session_id: _currentChatSessionId,
+              role: 'user',
+              content: insertedMessage
+            });
+          } catch(e) { console.warn("Failed to save user message:", e); }
+        }
       }
     }
     await _profileManager.init();
@@ -424,6 +458,19 @@
       textEl.innerHTML = parseMarkdown(finalCombinedText, true);
 
       _chatHistory.push({ role: 'assistant', content: fullResponse });
+      
+      if (_currentChatSessionId) {
+        const auth = window.AIMLAuth;
+        if (auth && auth.getSupabase()) {
+          try {
+            await auth.getSupabase().from('chat_messages').insert({
+              session_id: _currentChatSessionId,
+              role: 'assistant',
+              content: fullResponse
+            });
+          } catch(e) { console.warn("Failed to save assistant message:", e); }
+        }
+      }
       
       for (const idx in toolCalls) {
         const tc = toolCalls[idx];
@@ -872,8 +919,11 @@
           <button id="ai-quiz-btn" class="ai-quiz-btn" onclick="AIMathTutor.toggleQuizMode()">
             <i class="fa-solid fa-clipboard-question"></i> <span data-lang="en">Quiz</span><span data-lang="ja">クイズ</span><span data-lang="id">Kuis</span>
           </button>
-          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();">
-            <i class="fa-solid fa-trash-can"></i>
+          <button id="ai-history-btn" class="ai-history-btn" onclick="AIMathTutor.toggleHistory()">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </button>
+          <button id="ai-clear-btn" class="ai-clear-btn" onclick="AIMathTutor.clearHistory(); AIMathTutor.clearDrawLayer();" title="New Chat">
+            <i class="fa-solid fa-plus"></i>
           </button>
           <button id="ai-share-btn" class="ai-share-btn" onclick="AIMathTutor.shareSnapshot()">
             <i class="fa-solid fa-share-nodes"></i>
@@ -896,6 +946,116 @@
     
     window.AIMathTutor.toggleMic = toggleMic;
     window.AIMathTutor.handleSend = handleSend;
+    
+    window.AIMathTutor.linkAnonymousSession = async function(userId) {
+      if (_currentChatSessionId) {
+        const auth = window.AIMLAuth;
+        if (auth && auth.getSupabase()) {
+          try {
+            await auth.getSupabase().from('chat_sessions').update({ user_id: userId }).eq('id', _currentChatSessionId);
+          } catch(e) { console.warn("Failed to link anonymous session:", e); }
+        }
+      }
+    };
+
+    window.AIMathTutor.toggleHistory = async function() {
+      const body = document.getElementById('ai-card-body');
+      if (!body) return;
+      
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getUser()) {
+        body.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--ink2);"><i class="fa-solid fa-lock" style="font-size: 2em; margin-bottom: 10px; color: var(--accent);"></i><br>Please log in to view your chat history.</div>`;
+        return;
+      }
+      
+      if (body.classList.contains('history-view')) {
+        body.classList.remove('history-view');
+        // Restore current chat
+        body.innerHTML = '';
+        if (_chatHistory.length === 0) {
+          body.innerHTML = idlePlaceholder();
+        } else {
+          _chatHistory.forEach(msg => {
+            if (msg.role === 'user' || msg.role === 'assistant') {
+              const text = typeof msg.content === 'string' ? msg.content : (msg.content[0]?.text || '');
+              appendMessageUI(msg.role, text, true);
+            }
+          });
+          body.scrollTop = body.scrollHeight;
+        }
+        return;
+      }
+      
+      body.classList.add('history-view');
+      body.innerHTML = `<div style="padding: 20px; text-align: center;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2em; color: var(--accent);"></i></div>`;
+      
+      try {
+        const { data, error } = await auth.getSupabase()
+          .from('chat_sessions')
+          .select('id, title, created_at')
+          .eq('user_id', auth.getUser().id)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          body.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--ink2);">No chat history found.</div>`;
+          return;
+        }
+        
+        body.innerHTML = '<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px;">' + data.map(session => `
+          <div style="padding: 12px; background: var(--base); border: 1px solid var(--border2); border-radius: 8px; cursor: pointer; transition: 0.2s;" 
+               onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'"
+               onclick="AIMathTutor.loadSession('${session.id}')">
+            <div style="font-weight: 600; font-size: 13px; color: var(--ink1); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${session.title || 'Chat'}</div>
+            <div style="font-size: 11px; color: var(--ink2);">${new Date(session.created_at).toLocaleString()}</div>
+          </div>
+        `).join('') + '</div>';
+        
+      } catch (e) {
+        body.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--ink2);">Error loading history: ${e.message}</div>`;
+      }
+    };
+
+    window.AIMathTutor.loadSession = async function(sessionId) {
+      const auth = window.AIMLAuth;
+      if (!auth || !auth.getSupabase()) return;
+      
+      const body = document.getElementById('ai-card-body');
+      if (body) {
+        body.classList.remove('history-view');
+        body.innerHTML = `<div style="padding: 20px; text-align: center;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2em; color: var(--accent);"></i></div>`;
+      }
+      
+      try {
+        const { data, error } = await auth.getSupabase()
+          .from('chat_messages')
+          .select('role, content')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true });
+          
+        if (error) throw error;
+        
+        _currentChatSessionId = sessionId;
+        _chatHistory = data.map(m => ({ role: m.role, content: m.content }));
+        
+        if (body) {
+          body.innerHTML = '';
+          if (_chatHistory.length === 0) {
+            body.innerHTML = idlePlaceholder();
+          } else {
+            _chatHistory.forEach(msg => {
+              const text = typeof msg.content === 'string' ? msg.content : (msg.content[0]?.text || '');
+              appendMessageUI(msg.role, text, true);
+            });
+            body.scrollTop = body.scrollHeight;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load session:", e);
+        if (body) body.innerHTML = idlePlaceholder();
+      }
+    };
     
     window.AIMathTutor.shareSnapshot = async function() {
       const auth = window.AIMLAuth;
