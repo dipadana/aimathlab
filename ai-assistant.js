@@ -314,7 +314,8 @@
         { type: "function", function: { name: "annotate", description: "Shows a floating visual annotation overlay over the canvas.", parameters: { type: "object", properties: { message: { type: "string" } }, required: ["message"] } } },
         { type: "function", function: { name: "update_profile", description: "Updates the user's learning profile.", parameters: { type: "object", properties: { subject: { type: "string" }, proficiency: { type: "string" } }, required: ["subject", "proficiency"] } } },
         { type: "function", function: { name: "render_custom_ui", description: "Generates an isolated, interactive HTML snippet in a sandbox iframe inside the chat.", parameters: { type: "object", properties: { html: { type: "string", description: "The raw HTML string, including inline CSS and JS" }, height: { type: "number", description: "The height in pixels of the iframe" } }, required: ["html", "height"] } } },
-        { type: "function", function: { name: "plot_custom_math", description: "Plots custom mathematical data directly onto the visualizer canvas by setting the appropriate sliders.", parameters: { type: "object", properties: { math_type: { type: "string", enum: ["matrix2x2", "vector2", "vector3"] }, data: { type: "array", items: { type: "number" } } }, required: ["math_type", "data"] } } }
+        { type: "function", function: { name: "plot_custom_math", description: "Plots custom mathematical data directly onto the visualizer canvas by setting the appropriate sliders.", parameters: { type: "object", properties: { math_type: { type: "string", enum: ["matrix2x2", "vector2", "vector3"] }, data: { type: "array", items: { type: "number" } } }, required: ["math_type", "data"] } } },
+        { type: "function", function: { name: "evaluate_mission", description: "Evaluate whether the user successfully solved a math challenge based on their current canvas state. Pass success=true and a congratulatory message if they did, or success=false and a hint if they failed.", parameters: { type: "object", properties: { success: { type: "boolean" }, message: { type: "string" } }, required: ["success", "message"] } } }
       ];
 
       const res = await fetch('/api/ai', {
@@ -536,6 +537,24 @@
           if (el) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
         }
         if (typeof window.addVector === 'function') window.addVector();
+      } else if (name === 'evaluate_mission') {
+        const isSuccess = args.success;
+        const msg = args.message || (isSuccess ? "Mission Accomplished!" : "Not quite, try again!");
+        
+        appendMessageUI('assistant', msg, false, true); // Push AI message directly
+        
+        if (isSuccess) {
+          if (!window.confetti) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+            script.onload = () => {
+              window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            };
+            document.head.appendChild(script);
+          } else {
+            window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          }
+        }
       }
     }
   }
@@ -784,6 +803,11 @@
     recognition.onend = () => {
       const micBtn = document.getElementById('ai-mic-btn');
       if (micBtn) micBtn.classList.remove('recording');
+      
+      const input = document.getElementById('ai-chat-input');
+      if (input && input.value.trim().length > 0) {
+        handleChatSubmit();
+      }
     };
 
     return recognition;
