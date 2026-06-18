@@ -69,7 +69,7 @@ Train and inspect a live artificial neural network in your browser:
 - **Activation Functions**: Compare ReLU, Sigmoid, and Tanh curves side-by-side.
 - **Single Perceptron**: Learn binary classification with interactive weight adjusting.
 
-### Scientific Methodology & References (`references.html`)
+### Scientific Methodology & References (`index.html`)
 
 Bridges interactive visualizers with real-world AI applications:
 

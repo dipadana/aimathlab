@@ -212,7 +212,7 @@ function getPageKey() {
   return window.location.pathname.split('/').pop() || 'index.html';
 }
 
-const SKIP_PAGES = new Set(['index.html', 'references.html', '']);
+const SKIP_PAGES = new Set(['index.html', 'index.html', '']);
 
 function isCanvasReady() {
   const c = document.getElementById('canvas');
