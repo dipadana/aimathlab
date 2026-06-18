@@ -446,14 +446,19 @@
         speakText(finalDisplayableText);
       }
 
-      if (Object.keys(toolCalls).length > 0) {
+      const toolCallsArray = Object.values(toolCalls);
+      if (toolCallsArray.length > 0) {
         _isStreaming = false;
         
-        const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
-        const combinedForNext = previousUIString + (previousUIString && displayableText ? '\n\n' : '') + displayableText;
+        const hasTerminalTool = toolCallsArray.some(tc => tc.name === 'evaluate_mission');
         
-        await ask(systemContextMsgs, cardId, null, true, combinedForNext, aiMsgEl);
-        return;
+        if (!hasTerminalTool) {
+          const displayableText = fullResponse.replace(/\[\[(SET|HIGHLIGHT|ANNOTATE|UPDATE_PROFILE):\s*([^\]]+)\]\]/g, '');
+          const combinedForNext = previousUIString + (previousUIString && displayableText ? '\n\n' : '') + displayableText;
+          
+          await ask(systemContextMsgs, cardId, null, true, combinedForNext, aiMsgEl);
+          return;
+        }
       }
 
       setCardState('idle', explainBtn, sendBtn);
